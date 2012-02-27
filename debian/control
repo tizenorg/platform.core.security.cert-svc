@@ -1,0 +1,26 @@
+Source: cert-svc
+Section: libs
+Priority: extra
+Maintainer: KiDong Kim <kd0228.kim@samsung.com>
+Uploaders: 
+Build-Depends: libssl-dev, dlog-dev, ca-certificates
+Standards-Version: 1.0.0
+Homepage: N/A
+
+Package: libcert-svc-dev
+Section: libs
+Architecture: any
+Depends: ${misc:Depends}, libcert-svc-0 (= ${Source-Version}), libssl-dev, dlog-dev
+Description: Certification service development package
+
+Package: libcert-svc-0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Certification service library and executable
+
+Package: libcert-svc-dbg
+Section: debug
+Architecture: any
+Depends: ${misc:Depends}, libcert-svc-0
+Description: debug package of cert-svc library

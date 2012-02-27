@@ -1,0 +1,35 @@
+#!/bin/sh
+
+USE_CERT=6524
+
+# make certificate store directory
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/java/operator
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/java/manufacture
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/java/thirdparty
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/debian
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/wac
+
+mkdir -p /opt/share/cert-svc/certs/code-signing/java/operator
+mkdir -p /opt/share/cert-svc/certs/code-signing/java/manufacture
+mkdir -p /opt/share/cert-svc/certs/code-signing/java/thirdparty
+mkdir -p /opt/share/cert-svc/certs/code-signing/wac
+mkdir -p /opt/share/cert-svc/certs/sim/operator
+mkdir -p /opt/share/cert-svc/certs/sim/thirdparty
+mkdir -p /opt/share/cert-svc/certs/ssl
+mkdir -p /opt/share/cert-svc/certs/user
+mkdir -p /opt/share/cert-svc/certs/trusteduser
+mkdir -p /opt/share/cert-svc/certs/mdm/security/cert
+
+if [ ${USER} == "root" ]
+then
+	chown -R root:${USE_CERT} /opt/share/cert-svc/certs/
+	chmod -R 0775 /opt/share/cert-svc/certs/
+fi
+
+if [ -e "/opt/etc/ssl/certs" ]
+then
+	if [ ! -L "/usr/share/cert-svc/ca-certs/ssl" ]
+	then
+		ln -s /opt/etc/ssl/certs/ /usr/share/cert-svc/ca-certs/ssl
+	fi
+fi

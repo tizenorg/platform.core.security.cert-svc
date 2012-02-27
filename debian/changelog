@@ -1,0 +1,25 @@
+cert-svc (1.0.1-17) unstable; urgency=low
+
+  * add certificate store for MDM 
+  * Git: pkgs/c/cert-svc
+  * Tag: cert-svc_1.0.1-17
+
+ -- Kidong Kim <kd0228.kim@samsung.com>  Thu, 02 Feb 2012 09:29:17 +0900
+
+cert-svc (1.0.1-16) unstable; urgency=low
+
+  * 11/12/21
+  *  - remove self-signed certificate from certificate chain
+  * Git: pkgs/c/cert-svc
+  * Tag: cert-svc_1.0.1-16
+
+ -- Kidong Kim <kd0228.kim@samsung.com>  Wed, 21 Dec 2011 10:06:41 +0900
+
+cert-svc (1.0.1-15) unstable; urgency=low
+
+  * 11/12/07
+  *  - add boiler-plate on testcases
+  * Git: pkgs/c/cert-svc
+  * Tag: cert-svc_1.0.1-15
+
+ -- Kidong Kim <kd0228.kim@samsung.com>  Wed, 07 Dec 2011 09:47:17 +0900

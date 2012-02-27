@@ -1,0 +1,3 @@
+@PREFIX@/lib/*.so*
+@PREFIX@/bin/dpkg-pki-sig
+/opt/share/cert-svc/targetinfo

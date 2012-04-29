@@ -5,9 +5,6 @@ Release:    0
 Group:      System/Libraries
 License:    Apache2.0
 Source0:    cert-svc-%{version}.tar.gz
-Requires(post): /sbin/ldconfig
-Requires(postun): /sbin/ldconfig
-Requires:   ca-certificates
 
 BuildRequires: cmake
 
@@ -33,58 +30,51 @@ Certification service  (developement files)
 
 %build
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
+
+
 make %{?jobs:-j%jobs}
 
 %install
+rm -rf %{buildroot}
 %make_install
 
-# make certificate store directory
-mkdir -p %{buildroot}/usr/share/cert-svc/ca-certs/code-signing/java/operator
-mkdir -p %{buildroot}/usr/share/cert-svc/ca-certs/code-signing/java/manufacture
-mkdir -p %{buildroot}/usr/share/cert-svc/ca-certs/code-signing/java/thirdparty
-mkdir -p %{buildroot}/usr/share/cert-svc/ca-certs/code-signing/debian
-mkdir -p %{buildroot}/usr/share/cert-svc/ca-certs/code-signing/wac
 
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/code-signing/java/operator
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/code-signing/java/manufacture
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/code-signing/java/thirdparty
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/code-signing/wac
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/sim/operator
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/sim/thirdparty
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/ssl
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/user
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/trusteduser
-mkdir -p %{buildroot}/opt/share/cert-svc/certs/mdm/security/cert
+%post
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/java/operator
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/java/manufacture
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/java/thirdparty
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/debian
+mkdir -p /usr/share/cert-svc/ca-certs/code-signing/wac
+ 
+mkdir -p /opt/share/cert-svc/certs/code-signing/java/operator
+mkdir -p /opt/share/cert-svc/certs/code-signing/java/manufacture
+mkdir -p /opt/share/cert-svc/certs/code-signing/java/thirdparty
+mkdir -p /opt/share/cert-svc/certs/code-signing/wac
+mkdir -p /opt/share/cert-svc/certs/sim/operator
+mkdir -p /opt/share/cert-svc/certs/sim/thirdparty
+mkdir -p /opt/share/cert-svc/certs/ssl
+mkdir -p /opt/share/cert-svc/certs/user
+mkdir -p /opt/share/cert-svc/certs/trusteduser
+mkdir -p /opt/share/cert-svc/certs/mdm/security/cert
 
-ln -s /opt/etc/ssl/certs/ %{buildroot}/usr/share/cert-svc/ca-certs/ssl
-%post -p /sbin/ldconfig
+chown -R :6524 /opt/share/cert-svc/certs/
+chmod -R 0775 /opt/share/cert-svc/certs/
 
-%postun -p /sbin/ldconfig
+ln -s /opt/etc/ssl/certs/ /usr/share/cert-svc/ca-certs/ssl
+
+
+%postun
 
 
 %files
-/usr/share/cert-svc/ca-certs/code-signing/java/operator
-/usr/share/cert-svc/ca-certs/code-signing/java/manufacture
-/usr/share/cert-svc/ca-certs/code-signing/java/thirdparty
-/usr/share/cert-svc/ca-certs/code-signing/debian
-/usr/share/cert-svc/ca-certs/code-signing/wac
-/usr/share/cert-svc/ca-certs/ssl
-
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/code-signing/java/operator
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/code-signing/java/manufacture
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/code-signing/java/thirdparty
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/code-signing/wac
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/sim/operator
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/sim/thirdparty
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/ssl
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/user
-%dir %attr(0775,root,use_cert)/opt/share/cert-svc/certs/trusteduser
-/opt/share/cert-svc/targetinfo
+%defattr(-,root,root,-)
 /usr/bin/dpkg-pki-sig
+/opt/share/cert-svc/targetinfo
 /usr/lib/libcert-svc.so.1
 /usr/lib/libcert-svc.so.1.0.0
 
 %files devel
+%defattr(-,root,root,-)
 /usr/lib/pkgconfig/cert-svc.pc
 /usr/lib/libcert-svc.so
 /usr/include/cert-service.h

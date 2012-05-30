@@ -5,6 +5,7 @@ Release:    0
 Group:      System/Libraries
 License:    Apache2.0
 Source0:    cert-svc-%{version}.tar.gz
+Source1001: packaging/cert-svc.manifest 
 
 BuildRequires: cmake
 
@@ -29,6 +30,7 @@ Certification service  (developement files)
 
 
 %build
+cp %{SOURCE1001} .
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
 
 
@@ -67,6 +69,7 @@ ln -s /opt/etc/ssl/certs/ /usr/share/cert-svc/ca-certs/ssl
 
 
 %files
+%manifest cert-svc.manifest
 %defattr(-,root,root,-)
 /usr/bin/dpkg-pki-sig
 /opt/share/cert-svc/targetinfo
@@ -74,6 +77,7 @@ ln -s /opt/etc/ssl/certs/ /usr/share/cert-svc/ca-certs/ssl
 /usr/lib/libcert-svc.so.1.0.0
 
 %files devel
+%manifest cert-svc.manifest
 %defattr(-,root,root,-)
 /usr/lib/pkgconfig/cert-svc.pc
 /usr/lib/libcert-svc.so

@@ -1,7 +1,7 @@
 /*
  * certification service
  *
- * Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd All Rights Reserved 
+ * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Contact: Kidong Kim <kd0228.kim@samsung.com>
  *
@@ -54,10 +54,12 @@ extern "C" {
 #define CERT_SVC_ERR_PERMISSION_DENIED	-16
 #define CERT_SVC_ERR_IS_EXPIRED	-17
 /* default certificate file path */
-#define CERT_SVC_STORE_PATH	"/opt/share/cert-svc/certs/"
-#define CERT_SVC_STORE_PATH_DEFAULT	"/opt/share/cert-svc/certs/ssl/"
-#define CERT_SVC_SEARCH_PATH_RO	"/usr/share/cert-svc/ca-certs/"
-#define CERT_SVC_SEARCH_PATH_RW	"/opt/share/cert-svc/certs/"
+#define CERT_SVC_STORE_PATH         "/opt/share/cert-svc/certs/"
+#define CERT_SVC_STORE_PATH_KEYS    "/opt/share/cert-svc/keys/"
+#define CERT_SVC_STORE_PATH_DEFAULT "//* opt/share/cert-svc/certs/ssl/ */"
+#define CERT_SVC_SEARCH_PATH_RO     "/usr/share/cert-svc/ca-certs/"
+#define CERT_SVC_SEARCH_PATH_RW     "/opt/share/cert-svc/certs/"
+#define CERT_SVC_STORE_PATH_PKCS12  "/opt/share/cert-svc/pkcs12"
 
 /*********************************************************************************/
 /* Type definitions                                                              */

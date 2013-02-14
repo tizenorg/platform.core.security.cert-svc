@@ -1,0 +1,13 @@
+<manifest>
+	<define>
+		<domain name="cert-svc" />
+		<provide>
+			<label name="cert-svc::private-key" />
+			<label name="cert-svc::certs-sharing" />
+			<label name="cert-svc::db" />
+		</provide>
+	</define>
+	<request>
+		<domain name="_" />
+	</request>
+</manifest>

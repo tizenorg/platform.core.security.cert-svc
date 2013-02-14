@@ -1,7 +1,7 @@
 /*
  * certification service
  *
- * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved 
+ * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Contact: Kidong Kim <kd0228.kim@samsung.com>
  *
@@ -25,6 +25,8 @@
 #include <dirent.h>
 #include <error.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <fts.h>
 
 #include <openssl/x509.h>
 
@@ -81,8 +83,12 @@ int parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
 	char **prev_field = NULL;
-	int i = 0, l;
-	memset(fld, 0, sizeof(fld));
+	int i = 0, l = 0;
+    if (fld == NULL) {
+        ret = CERT_SVC_ERR_INVALID_PARAMETER;
+        return ret;
+    }
+	memset(fld, 0, sizeof(cert_svc_name_fld_data));
 	while (str[i] != '\0') {
 		int tag_len;
 		char **field = __get_field_by_tag(str + i, &tag_len, fld);
@@ -190,7 +196,6 @@ int _parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld)
 	else
 		(*fld).emailAddress = NULL;
 
-err:
 	return ret;
 }
 
@@ -263,7 +268,7 @@ cert_svc_linked_list* find_issuer_from_list(cert_svc_linked_list* list, cert_svc
 	for(q = list; q != NULL; q = q->next) {
 		tmp2 = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 		memset(tmp2, 0x00, sizeof(cert_svc_cert_descriptor));
-	
+
 		_extract_certificate_data(q->certificate, tmp2);
 
 		if(!strncmp(tmp2->info.subjectStr, tmp1->info.issuerStr, strlen(tmp1->info.issuerStr))) {	// success
@@ -513,7 +518,7 @@ int _remove_selfsigned_cert_in_chain(cert_svc_linked_list** certList)
 			SLOGE("[ERR][%s] Fail to extract certificate data.\n", __func__);
 			goto err;
 		}
-		
+
 		if(!strncmp(certdesc->info.subjectStr, certdesc->info.issuerStr, strlen(certdesc->info.issuerStr))) { // self-signed
 			if(first_tag == 0) { // first cert is self-signed
 				start = start->next;
@@ -561,7 +566,6 @@ int _verify_certificate(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certL
 	cert_svc_cert_descriptor* findRoot = NULL;
 	cert_svc_filename_list* fileNames = NULL;
 	cert_svc_mem_buff* CACert = NULL;
-	int fileNum = 0;
 	int isCA = -1, isExpired = -1;
 	// variables for verification
 	int certNum = 0;
@@ -602,7 +606,7 @@ int _verify_certificate(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certL
 
 		ret = _extract_certificate_data(p->certificate, findRoot);
 	}
-	else 
+	else
 		ret = _extract_certificate_data(certBuf, findRoot);
 
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
@@ -663,12 +667,12 @@ int _verify_certificate(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certL
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}
-	
+
 	certContent = certBuf->data;
 	d2i_X509(&targetCert, &certContent, certBuf->size);
-	
+
 	q = sorted; // first item is the certificate that user want to verify
-			
+
 	// insert all certificate(s) into chain
 	if(q != NULL) {	// has 2 or more certificates
 		certIndex = 0;
@@ -769,7 +773,7 @@ int _verify_signature(cert_svc_mem_buff* certBuf, unsigned char* message, int ms
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
-	
+
 	/* load signature and decode */
 	sigLen = strlen(signature);
 	decodedSigLen = ((sigLen / 4) * 3) + 1;
@@ -932,7 +936,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	publicKeyAlgoLen = strlen(publicKeyAlgo);
 	certDesc->info.pubKeyAlgo = (unsigned char*)malloc(sizeof(unsigned char) * (publicKeyAlgoLen + 1));
 	memset(certDesc->info.pubKeyAlgo, 0x00, (publicKeyAlgoLen + 1));
-	memcpy(certDesc->info.pubKeyAlgo, publicKeyAlgo, publicKeyAlgoLen);	
+	memcpy(certDesc->info.pubKeyAlgo, publicKeyAlgo, publicKeyAlgoLen);
 	/* get public key */
 	if((evp = X509_get_pubkey(x)) == NULL) {
 		SLOGE("[ERR][%s] Public key is null.\n", __func__);
@@ -951,7 +955,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 		memset(certDesc->info.issuerUID, 0x00, (issuerUidLen + 1));
 		memcpy(certDesc->info.issuerUID, x->cert_info->issuerUID->data, issuerUidLen);
 	}
-	else 
+	else
 		certDesc->info.issuerUID = NULL;
 
 	/* get subject UID */
@@ -961,7 +965,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 		memset(certDesc->info.subjectUID, 0x00, (subjectUidLen + 1));
 		memcpy(certDesc->info.subjectUID, x->cert_info->subjectUID->data, subjectUidLen);
 	}
-	else 
+	else
 		certDesc->info.subjectUID = NULL;
 	/* get extension fields */
 	if(x->cert_info->extensions != NULL) {
@@ -977,7 +981,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 				certDesc->ext.fields[i].name = (unsigned char*)malloc(sizeof(unsigned char) * (extObjLen + 1));
 				memset(certDesc->ext.fields[i].name, 0x00, (extObjLen + 1));
 				memcpy(certDesc->ext.fields[i].name, extObject, extObjLen);
-	
+
 				extValue = ext->value->data;
 				extValLen = ext->value->length;
 				certDesc->ext.fields[i].data = (unsigned char*)malloc(sizeof(unsigned char) * (extValLen + 1));
@@ -1010,93 +1014,6 @@ err:
 
 	if(timeNotBefore != NULL) ASN1_GENERALIZEDTIME_free(timeNotBefore);
 	if(timeNotAfter != NULL) ASN1_GENERALIZEDTIME_free(timeNotAfter);
-
-	return ret;
-}
-
-int get_filelist_recur(char* dirName, cert_svc_filename_list* fileNames, int* fileNum)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	struct dirent **items;
-	int nItems, i;
-	char tmpDirName[CERT_SVC_MAX_FILE_NAME_SIZE];
-	char tmpFileName[CERT_SVC_MAX_FILE_NAME_SIZE];
-	cert_svc_filename_list* new = NULL;
-	cert_svc_filename_list* p = NULL;
-
-	/* find file path with location */
-	if(chdir(dirName) < 0) {
-		SLOGE("[ERR][%s] Fail to open directory: [%s]\n", __func__, dirName);
-		perror("open dir");
-		ret = CERT_SVC_ERR_INVALID_OPERATION;
-		goto err;
-	}
-
-	/* get all items in current directory */
-	nItems = scandir(".", &items, NULL, alphasort);
-
-	for(i = 0; i < nItems; i++) {
-		struct stat fstat;
-		
-		// ignore current dir, parent dir
-		if(!strncmp(items[i]->d_name, ".", 1) || !strncmp(items[i]->d_name, "..", 2))
-			continue;
-
-		// if directory, recursive call
-		stat(items[i]->d_name, &fstat);
-		if((fstat.st_mode & S_IFDIR) == S_IFDIR) {
-			memset(tmpDirName, 0x00, CERT_SVC_MAX_FILE_NAME_SIZE);
-			strncpy(tmpDirName, dirName, strlen(dirName));
-			strncat(tmpDirName, items[i]->d_name, strlen(items[i]->d_name));
-			strncat(tmpDirName, "/", 1);
-
-			if((ret = get_filelist_recur(tmpDirName, fileNames, fileNum)) != CERT_SVC_ERR_NO_ERROR) {
-				SLOGE("[ERR][%s] Fail to search file.\n", __func__);
-				goto err;
-			}
-			continue;
-		}
-		else {	// if file, get filename into filelist
-			memset(tmpFileName, 0x00, CERT_SVC_MAX_FILE_NAME_SIZE);
-			strncpy(tmpFileName, dirName, strlen(dirName));
-			strncat(tmpFileName, items[i]->d_name, strlen(items[i]->d_name));
-
-			(*fileNum)++;
-			p = fileNames;
-
-			if(p->filename == NULL) {
-				if(!(p->filename = (char*)malloc(sizeof(char) * CERT_SVC_MAX_FILE_NAME_SIZE))) {
-					SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
-					ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
-					goto err;
-				}
-				memset(p->filename, 0x00, CERT_SVC_MAX_FILE_NAME_SIZE);
-				strncpy(p->filename, tmpFileName, strlen(tmpFileName));
-				p->next = NULL;
-			}
-			else {
-				while(p->next != NULL)
-					p = p->next;
-
-				new = (cert_svc_filename_list*)malloc(sizeof(cert_svc_filename_list));
-				memset(new, 0x00, sizeof(cert_svc_filename_list));
-				new->filename = (char*)malloc(sizeof(char) * CERT_SVC_MAX_FILE_NAME_SIZE);
-				memset(new->filename, 0x00, CERT_SVC_MAX_FILE_NAME_SIZE);
-
-				strncpy(new->filename, tmpFileName, strlen(tmpFileName));
-				new->next = NULL;
-			
-				p->next = new;
-			}
-		}
-	}
-
-	chdir("..");
-
-err:
-	for(i = 0; i < nItems; i++)
-		free(items[i]);
-	free(items);
 
 	return ret;
 }
@@ -1290,27 +1207,87 @@ int search_data_field(search_field fldName, char* fldData, cert_svc_cert_descrip
 	return ret;
 }
 
-int get_all_certificates(cert_svc_filename_list* allCerts)
+int _get_all_certificates(char* const *paths, cert_svc_filename_list **lst) {
+    int ret = CERT_SVC_ERR_NO_ERROR;
+    FTS *fts = NULL;
+    FTSENT *ftsent;
+
+    char tmp[10];
+    int len;
+    cert_svc_filename_list *local = NULL;
+    cert_svc_filename_list *el;
+
+    if (NULL == (fts = fts_open(paths, FTS_LOGICAL, NULL))) {
+        ret = CERT_SVC_ERR_FILE_IO;
+        SLOGE("[ERR][%s] Fail to open directories.\n", __func__);
+        goto out;
+    }
+
+    while ((ftsent = fts_read(fts)) != NULL) {
+
+        if (ftsent->fts_info == FTS_ERR || ftsent->fts_info == FTS_NS) {
+            ret = CERT_SVC_ERR_FILE_IO;
+            SLOGE("[ERR][%s] Fail to read directories.\n", __func__);
+            goto out;
+        }
+
+        if (ftsent->fts_info != FTS_F)
+            continue;
+
+        if (-1 != readlink(ftsent->fts_path, tmp, 10))
+            continue;
+
+        el = (cert_svc_filename_list*)malloc(sizeof(cert_svc_filename_list));
+        if (!el) {
+            ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+            SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+            goto out;
+        }
+        el->next = local;
+        local = el;
+
+        len = strlen(ftsent->fts_path);
+        local->filename = (char*)malloc(len+1);
+        if (!local->filename) {
+            ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+            SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+            goto out;
+        }
+        strncpy(local->filename, ftsent->fts_path, len+1);
+    }
+
+    *lst = local;
+    local = NULL;
+
+out:
+    while (local) {
+        el = local;
+        local = local->next;
+        free(el->filename);
+        free(el);
+    }
+
+    if (fts != NULL)
+        fts_close(fts);
+    return ret;
+}
+
+int get_all_certificates(cert_svc_filename_list** allCerts)
 {
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	int fileNum = 0;
-	char buf[1024] = {0, };
-	getcwd(buf, 1024);
+    int ret;
+    char ** buffer[] = {CERT_SVC_SEARCH_PATH_RO, CERT_SVC_SEARCH_PATH_RW, NULL};
 
-	if((ret = get_filelist_recur(CERT_SVC_SEARCH_PATH_RO, allCerts, &fileNum)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to get filelist.\n", __func__);
-		ret = CERT_SVC_ERR_INVALID_OPERATION;
-		goto err;
-	}
-	if((ret = get_filelist_recur(CERT_SVC_SEARCH_PATH_RW, allCerts, &fileNum)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to get filelist.\n", __func__);
-		ret = CERT_SVC_ERR_INVALID_OPERATION;
-		goto err;
-	}
+    if (!allCerts) {
+        SLOGE("[ERR][%s] Invalid argument.\n", __func__);
+        return CERT_SVC_ERR_INVALID_PARAMETER;
+    }
 
-err:
-	chdir(buf);
-	return ret;
+    if ((ret = _get_all_certificates((char* const *) buffer, allCerts)) != CERT_SVC_ERR_NO_ERROR) {
+        SLOGE("[ERR][%s] Fail to get filelist.\n", __func__);
+        return ret;
+    }
+
+    return CERT_SVC_ERR_NO_ERROR;
 }
 
 int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName, char* fldData)
@@ -1325,16 +1302,7 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 	int matched = 0;
 	struct stat file_info;
 
-	/* get all certificates from device */
-	if(!(allCerts = (cert_svc_filename_list*)malloc(sizeof(cert_svc_filename_list)))) {
-		SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
-		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
-		goto err;
-	}
-	allCerts->filename = NULL;
-	allCerts->next = NULL;
-
-	if((ret = get_all_certificates(allCerts)) != CERT_SVC_ERR_NO_ERROR) {
+	if((ret = get_all_certificates(&allCerts)) != CERT_SVC_ERR_NO_ERROR) {
 		SLOGE("[ERR][%s] Fail to get all certificate file list, ret: [%d]\n", __func__, ret);
 		goto err;
 	}
@@ -1344,7 +1312,7 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 
 	while(1) {
 		if((lstat(p->filename, &file_info)) < 0) {	// get file information
-			SLOGE("[ERR][%s] Fail to get file information.\n", __func__);
+			SLOGE("[ERR][%s] Fail to get file(%s) information.\n", __func__, p->filename);
 			ret = CERT_SVC_ERR_INVALID_OPERATION;
 			goto err;
 		}
@@ -1359,6 +1327,16 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
+
+		// load content into buffer
+		if((ret = cert_svc_util_load_file_to_buffer(p->filename, certBuf)) != CERT_SVC_ERR_NO_ERROR) {
+			SLOGE("[ERR][%s] Fail to load file to buffer, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
+			free(certBuf);
+			certBuf = NULL;
+			goto fail_to_load_file;
+		}
+
+		// allocate memory
 		if(!(certDesc = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor)))) {
 			SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
@@ -1366,14 +1344,6 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 		}
 
 		// load content into descriptor buffer
-		if((ret = cert_svc_util_load_file_to_buffer(p->filename, certBuf)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to load file to buffer, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
-			free(certBuf);
-			certBuf = NULL;
-			free(certDesc);
-			certDesc = NULL;
-			goto fail_to_load_file;
-		}
 		if((ret = _extract_certificate_data(certBuf, certDesc)) != CERT_SVC_ERR_NO_ERROR) {
 			SLOGE("[ERR][%s] Fail to extract certificate data, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
 			goto fail_to_extract_file;
@@ -1391,10 +1361,11 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 			if(!(new->filename = (char*)malloc(sizeof(char) * CERT_SVC_MAX_FILE_NAME_SIZE))) {
 				SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
 				ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+				free(new);
 				goto err;
 			}
 			memset(new->filename, 0x00, CERT_SVC_MAX_FILE_NAME_SIZE);
-		
+
 			strncpy(new->filename, p->filename, strlen(p->filename));
 			new->next = NULL;
 
@@ -1529,16 +1500,18 @@ int release_cert_list(cert_svc_linked_list* certList)
 	while(1) {
 		curCert = startCert;
 		startCert = startCert->next;
-
-		if(curCert->certificate->data != NULL) {
-			free(curCert->certificate->data);
-			curCert->certificate->data = NULL;
-		}
+	
 		if(curCert->certificate != NULL) {
+			if(curCert->certificate->data != NULL) {
+				free(curCert->certificate->data);
+				curCert->certificate->data = NULL;
+			}
 			free(curCert->certificate);
 			curCert->certificate = NULL;
 		}
+
 		curCert->next = NULL;
+
 		if(curCert != NULL) {
 			free(curCert);
 			curCert = NULL;

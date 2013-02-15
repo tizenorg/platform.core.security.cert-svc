@@ -32,14 +32,17 @@ extern "C" {
 /* Variable definitions                                                          */
 /*********************************************************************************/
 
+struct cert_svc_inode_set;
+
 /*********************************************************************************/
 /* Variable definitions                                                          */
 /*********************************************************************************/
 int parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld);
 int parse_time_fld_data(unsigned char* before, unsigned char* after, cert_svc_validity_fld_data* fld);
 int search_data_field(search_field fldName, char* fldData, cert_svc_cert_descriptor* certDesc);
-int get_filelist_recur(char* dirName, cert_svc_filename_list* fileNames, int* fileNum);
-int get_all_certificates(cert_svc_filename_list* allCerts);
+int get_filelist_recur(char* dirName, cert_svc_filename_list* fileNames,
+        struct cert_svc_inode_set *visited);
+int get_all_certificates(cert_svc_filename_list** allCerts);
 
 int sort_cert_chain(cert_svc_linked_list** unsorted, cert_svc_linked_list** sorted);
 cert_svc_linked_list* find_issuer_from_list(cert_svc_linked_list* list, cert_svc_linked_list* p);

@@ -9,68 +9,75 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+ppTYPE ?= ugapp
+
 CFLAGS ?= -Wall -g
-CXXFLAGS ?=  -Wall -g
-LDFLAGS ?= 
-PREFIX ?= /usr
-DATADIR ?= /opt
+LDFLAGS ?=
+ifneq (,$(findstring app,$(TYPE)))
+		PKGNAME ?= mgr-app
+		PREFIX ?= /opt/apps/mgr-app
+		RESDIR ?= /opt/apps/mgr-app/res
+		DATADIR ?= /opt/apps/mgr-app/data
+else
+		PKGNAME ?= libug-setting-manage-certificates-efl
+		PREFIX ?= /opt/ug
+		RESDIR ?= /opt/ug/res
+		DATADIR ?= /opt/ug/res/etc
+endif
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
-	CXXFLAGS += -O0
+	CFLAGS += -O0 
+	BUILD_TYPE=Debug
 else
-	CFLAGS += -O2
-	CXXFLAGS += -O2
+	CFLAGS += -O2 
+	BUILD_TYPE=Release
 endif
 
 LDFLAGS += -Wl,--rpath=$(PREFIX)/lib -Wl,--as-needed
+
+CMAKE_BUILD_DIR ?= $(CURDIR)/cmake_build_tmp
+CMAKE_CERT_SVC_BUILD_DIR ?= $(CURDIR)/library
+
 
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
-	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" cmake . -DCMAKE_INSTALL_PREFIX=$(PREFIX)
-
-	touch configure-stamp
+	cd $(CMAKE_CERT_SVC_BUILD_DIR) && cmake .
+	mkdir -p $(CMAKE_BUILD_DIR) && cd $(CMAKE_BUILD_DIR) && CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" cmake ../ui/ -DCMAKE_INSTALL_PREFIX="$(PREFIX)" -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" -DPKGNAME="$(PKGNAME)" -DTYPE="$(TYPE)"
+	touch $(CMAKE_BUILD_DIR)/configure-stamp
+	touch $(CMAKE_CERT_SVC_BUILD_DIR)/configure-stamp
 
 build: build-stamp
-
-build-stamp: configure-stamp 
+build-stamp: configure-stamp
 	dh_testdir
 
 	# Add here commands to compile the package.
-	$(MAKE)
-	#docbook-to-man debian/wavplayer.sgml > wavplayer.1
-
-	for f in `find $(CURDIR)/debian/ -name "*.in"`; do \
+	cd $(CMAKE_CERT_SVC_BUILD_DIR) && $(MAKE)
+	cd $(CMAKE_BUILD_DIR) && $(MAKE)
+    
+	for f in `find $(CURDIR)/debian/ -name "$(PREFIX)*.in"`; do \
 		cat $$f > $${f%.in}; \
 		sed -i -e "s#@PREFIX@#$(PREFIX)#g" $${f%.in}; \
+		sed -i -e "s#@RESDIR@#$(RESDIR)#g" $${f%.in}; \
 		sed -i -e "s#@DATADIR@#$(DATADIR)#g" $${f%.in}; \
+		sed -i -e "s#@PKGNAME@#$(PKGNAME)#g" $${f%.in}; \
 	done
 
-
-	touch $@
+	touch $(CMAKE_BUILD_DIR)/$@
+	touch $(CMAKE_CERT_SVC_BUILD_DIR)/$@
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp
 
-	# Add here commands to clean up after the build process.
-	-$(MAKE) clean
-	rm -rf CMakeCache.txt
-	rm -rf CMakeFiles
-	rm -rf cmake_install.cmake
-	rm -rf Makefile
-	rm -rf install_manifest.txt
-	rm -rf *.so
-	rm -rf *.pc
-	rm -rf *.service
+    # Add here commands to clean up after the build process.
+	rm -rf $(CMAKE_BUILD_DIR)
 
 	for f in `find $(CURDIR)/debian/ -name "*.in"`; do \
 		rm -f $${f%.in}; \
 	done
-
 	dh_clean
 
 install: build
@@ -79,8 +86,8 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	# Add here commands to install the package into debian/wavplayer.
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	cd $(CMAKE_BUILD_DIR) && $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	cd $(CMAKE_CERT_SVC_BUILD_DIR) && $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
 
 # Build architecture-independent files here.
@@ -91,26 +98,26 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs 
-	dh_installdocs
-	dh_installexamples
+	#dh_installchangelogs 
+	#dh_installdocs
+	#dh_installexamples
 	dh_install --sourcedir=debian/tmp
-#	dh_installmenu
-#	dh_installdebconf	
-#	dh_installlogrotate
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-#	dh_python
-#	dh_installinit
-#	dh_installcron
-#	dh_installinfo
+	#dh_installmenu
+	#dh_installdebconf   
+	#dh_installlogrotate
+	#dh_installemacsen
+	#dh_installpam
+	#dh_installmime
+	#dh_python
+	#dh_installinit
+	#dh_installcron
+	#dh_installinfo
 	dh_installman
 	dh_link
-	dh_strip --dbg-package=libcert-svc-dbg
+	#dh_strip --dbg-package=$(PKGNAME)-dbg
 	dh_compress
 	dh_fixperms
-#	dh_perl
+	#dh_perl
 	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
@@ -120,3 +127,4 @@ binary-arch: build install
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary install configure
+

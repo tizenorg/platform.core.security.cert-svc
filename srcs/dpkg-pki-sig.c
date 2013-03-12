@@ -26,6 +26,7 @@
 #include <time.h>
 #include <dirent.h>
 #include <error.h>
+#include <limits.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -96,9 +97,9 @@ int delete_directory(const char* path)
 
 	if(rmdir(path) != 0) {
 		fprintf(stderr, "[ERR][%s] Fail to remove directory, [%s]\n", __func__, path);
-		ret = DPS_FILE_ERR;
-		goto err;
-	}
+	    ret = DPS_FILE_ERR;
+        goto err;
+    }
 			
 err:
 	if(dir != NULL) closedir(dir);
@@ -115,14 +116,21 @@ int get_files_from_deb(FILE* fp_deb)
 	FILE* fp_control = NULL;
 	FILE* fp_data = NULL;
 	FILE* fp_sig = NULL;
-	char tempbuf[64];
-	char filename[16];
-	char filelen[10];
+	/* size+1 for null termination */
+	char tempbuf[65];
+	char filename[17];
+	char filelen[11];
 	char* buf = NULL;
 
-	memset(tempbuf, 0x00, 64);
-	memset(filename, 0x00, 16);
-	memset(filelen, 0x00, 10);
+    if (fp_deb == NULL) {
+		fprintf(stderr, "[ERR] Null file pointer passed to function\n");
+		ret = DPS_FILE_ERR;
+        return ret;
+    }
+
+	memset(tempbuf, 0x00, 65);
+	memset(filename, 0x00, 17);
+	memset(filelen, 0x00, 11);
 
 	if(!(fp_control = fopen("./temp/control.tar.gz", "wb"))) {
 		fprintf(stderr, "[ERR][%s] Fail to open file, [control.tar.gz]\n", __func__);
@@ -142,15 +150,21 @@ int get_files_from_deb(FILE* fp_deb)
 
 	while(fgets(tempbuf, 64, fp_deb)) {
 		strncpy(filename, tempbuf, 16);
-		if(memcmp(filename, "!<arch>\n", 8) == 0)
+		if(memcmp(filename, "!<arch>\n", 8) == 0) {
+			memset(tempbuf, 0x00, 65);
 			continue;
+		}
 		if((memcmp(filename, "control.tar.gz", 14) == 0) ||
 				(memcmp(filename, "data.tar.gz", 11) == 0) ||
 				(memcmp(filename, "_sigandcert", 11) == 0)
 				) {
 			strncpy(filelen, tempbuf + 48, 10);
 			size = strtoul(filelen, NULL, 10);
-			
+			if((int)size <= 0) {
+				fprintf(stderr, "[ERR][%s] Fail to get filelen\n", __func__);
+				ret = DPS_FILE_ERR;
+				goto err;
+			}
 			if(!(buf = (char*)malloc(sizeof(char) * (int)size))) {
 				fprintf(stderr, "[ERR][%s] Fail to allocate memory\n", __func__);
 				ret = DPS_MEMORY_ERR;
@@ -226,7 +240,11 @@ int sha256_hashing_file(FILE* fp_file, char* out)
 	int ret = DPS_OPERATION_SUCCESS;
 	
 	fseek(fp_file, 0L, SEEK_END);
-	filelen = ftell(fp_file);
+	if (-1 == (filelen = ftell(fp_file))) {
+		fprintf(stderr, "[ERR] Error returned by ftell()");
+		ret = DPS_FILE_ERR;
+		goto err;
+    }
 	fseek(fp_file, 0L, SEEK_SET);
 
 	if(!(in = (char*)malloc(sizeof(char) * (filelen + 1)))) {
@@ -260,7 +278,7 @@ int sha256_hashing_file(FILE* fp_file, char* out)
 err:
 	if(in != NULL) free(in);
 	if(hashout != NULL) free(hashout);
-	
+
 	return ret;
 }
 
@@ -271,20 +289,18 @@ int get_target_info(char* info)
 	char* token = NULL;
 	char seps[] = " \t\n\r";
 	char buf[16];
-	int ret = DPS_OPERATION_SUCCESS;
 
 	memset(buf, 0x00, 16);
 
 	if(!(fp_info = fopen(TARGET_INFO, "r"))) {	// error
 		fprintf(stderr, "[ERR][%s] Fail to open file, [%s]\n", __func__, TARGET_INFO);
-		ret = DPS_FILE_ERR;
-		goto err;
+		return DPS_FILE_ERR;
 	}
 
 	fgets(buf, 16, fp_info);
 	if(buf[0] == '0') {	// not used
 		// do nothing
-		strncpy(info, "NOT USED", 8);
+		strncpy(info, "NOT USED", sizeof("NOT USED"));
 	}
 	else if(buf[0] == '1') {
 		memset(buf, 0x00, 16);
@@ -293,12 +309,12 @@ int get_target_info(char* info)
 	}
 	else {
 		fprintf(stderr, "[ERR][%s] Check your targetinfo file.\n", __func__);
-		ret = DPS_INVALID_OPERATION;
-		goto err;
+                fclose(fp_info);
+		return DPS_INVALID_OPERATION;
 	}
 
-err:
-	return ret;
+        fclose(fp_info);
+	return DPS_OPERATION_SUCCESS;
 }
 
 int generate_sdk_cert(int argc, const char** argv)
@@ -358,7 +374,7 @@ int package_sign(int argc, const char** argv)
 	int ret = DPS_OPERATION_SUCCESS;
 	int ch = 0, i = 0;
 	int certwrite = 0;
-	unsigned long int privlen = 0;
+	unsigned long int  privlen = 0;
 	unsigned long int encodedlen = 0;
 	unsigned long int certlen = 0;
 	unsigned long int sigfilelen = 0;
@@ -488,6 +504,12 @@ int package_sign(int argc, const char** argv)
 	privlen = ftell(fp_priv);
 	fseek(fp_priv, 0L, SEEK_SET);
 
+	if((int)privlen <= 0){
+		fprintf(stderr, "[ERR][%s] Fail to get file lengh\n", __func__);
+		ret = DPS_FILE_ERR;
+		goto err;
+	}
+
 	if(!(prikey = (char*)malloc(sizeof(char) * (int)privlen))) {
 		fprintf(stderr, "[ERR][%s] Fail to allocate memory\n", __func__);
 		ret = DPS_FILE_ERR;
@@ -573,7 +595,15 @@ int package_sign(int argc, const char** argv)
 		ret = DPS_FILE_ERR;
 		goto err;
 	}
+
 	fseek(fp_cert, 0L, SEEK_END);
+
+	if(ftell(fp_cert) < 0) {
+		fprintf(stderr, "[ERR][%s] Fail to find EOF\n", __func__);
+		ret = DPS_FILE_ERR;
+		goto err;
+	}
+
 	certlen = ftell(fp_cert);
 	fseek(fp_cert, 0L, SEEK_SET);
 
@@ -605,7 +635,12 @@ int package_sign(int argc, const char** argv)
 	}
 
 	/* insert file into deb archive */
-	sigfilelen = ftell(fp_sig);
+    if (-1 == (sigfilelen = ftell(fp_sig))) {
+        fprintf(stderr, "[ERR] Failed to get filesize by ftell()\n");
+        ret = DPS_FILE_ERR;
+        goto err;
+    }
+
 	fseek(fp_sig, 0L, SEEK_SET);
 	fseek(fp_deb, 0L, SEEK_END);
 
@@ -693,62 +728,96 @@ int package_verify(int argc, const char** argv)
 		fprintf(stderr, "[ERR][%s] Fail to make temporary directory, [%s]\n", __func__, "./temp");
 		ret = DPS_INVALID_OPERATION;
 		goto err;
-	}	
-	
+	}
+
 	/* extract files from .deb */
 	if((fp_deb = fopen(argv[0], "rb")) == NULL) {
 		fprintf(stderr, "[ERR][%s] Fail to open file. [%s]\n", __func__, argv[0]);
 		ret = DPS_FILE_ERR;
 		goto err;
 	}
-	
+
 	if((ret = get_files_from_deb(fp_deb)) != DPS_OPERATION_SUCCESS) {
 		fprintf(stderr, "[ERR][%s] Fail to extract files.\n", __func__);
 		goto err;
 	}
-	
+
 	/* get msg, sig, cert from_sigandcert */
 	if((fp_sig = fopen("./temp/_sigandcert", "r")) == NULL) {
 		fprintf(stderr, "[ERR][%s] Fail to open file. [_sigandcert]\n", __func__);
 		ret = DPS_FILE_ERR;
 		goto err;
 	}
-	
+
 	memset(filebuf, 0x00, 64);
 	while(fgets(filebuf, 64, fp_sig) != NULL) {
-		if(!strncmp(filebuf, "MESSAGES:", 9)) {
-			fgets(filebuf, 64, fp_sig);
-			msglen = (int)strtoul(filebuf, NULL, 10);
-			msg = (char*)malloc(sizeof(char) * (msglen + 1));
-			memset(msg, 0x00, (msglen + 1));
-			if(fread(msg, sizeof(char), msglen, fp_sig) != msglen) {
-				fprintf(stderr, "[ERR][%s] Fail to get contents from file, [messages]\n", __func__); 
-				ret = DPS_INVALID_OPERATION;
-				goto err;
-			}
-		}
-		else if(!strncmp(filebuf, "SIGNATURE:", 10)) {
-			fgets(filebuf, 64, fp_sig);
-			siglen = (int)strtoul(filebuf, NULL, 10);
-			sig = (char*)malloc(sizeof(char) * (siglen + 1));
-			memset(sig, 0x00, (siglen + 1));
-			if(fread(sig, sizeof(char), siglen, fp_sig) != siglen) {
-				fprintf(stderr, "[ERR][%s] Fail to get contents from file, [signature]\n", __func__); 
-				ret = DPS_INVALID_OPERATION;
-				goto err;
-			}
-		}
-		else if(!strncmp(filebuf, "CERTIFICATE:", 12)) {
-			fgets(filebuf, 64, fp_sig);
-			certlen = (int)strtoul(filebuf, NULL, 10);
-			cert = (char*)malloc(sizeof(char) * (certlen + 1));
-			memset(cert, 0x00, (certlen + 1));
-			if(fread(cert, sizeof(char), certlen, fp_sig) != certlen) {
-				fprintf(stderr, "[ERR][%s] Fail to get contents from file, [certificate]\n", __func__); 
-				ret = DPS_INVALID_OPERATION;
-				goto err;
-			}
-		}
+        if(!strncmp(filebuf, "MESSAGES:", 9)) {
+            fgets(filebuf, 64, fp_sig);
+            msglen = (int)strtoul(filebuf, NULL, 10);
+            if ((msglen < 1) || (msglen >= INT_MAX)) {
+                fprintf(stderr, "[ERR][%s] Fail to get length of certificate\n", __func__);
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+
+            msg = (char*)malloc(sizeof(char) * (msglen + 1));
+            if(!msg){
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+
+            memset(msg, 0x00, (msglen + 1));
+            if(fread(msg, sizeof(char), msglen, fp_sig) != msglen) {
+                fprintf(stderr, "[ERR][%s] Fail to get contents from file, [messages]\n", __func__); 
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+
+            free(msg);
+            msg = NULL;
+        }
+        else if(!strncmp(filebuf, "SIGNATURE:", 10)) {
+            fgets(filebuf, 64, fp_sig);
+            siglen = (int)strtoul(filebuf, NULL, 10);
+            if ((siglen < 1) || (siglen >= INT_MAX)) {
+                fprintf(stderr, "[ERR][%s] Fail to get length of certificate\n", __func__);
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+            sig = (char*)malloc(sizeof(char) * (siglen + 1));
+            if(!sig){
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+
+            memset(sig, 0x00, (siglen + 1));
+            if(fread(sig, sizeof(char), siglen, fp_sig) != siglen) {
+                fprintf(stderr, "[ERR][%s] Fail to get contents from file, [signature]\n", __func__); 
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+
+            free(sig);
+            sig = NULL;
+        }
+        else if(!strncmp(filebuf, "CERTIFICATE:", 12)) {
+            fgets(filebuf, 64, fp_sig);
+            certlen = (int)strtoul(filebuf, NULL, 10);
+            if ((certlen < 1) || (certlen >= INT_MAX)) {
+                fprintf(stderr, "[ERR][%s] Fail to get length of certificate\n", __func__);
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+            cert = (char*)malloc(sizeof(char) * (certlen + 1));
+            memset(cert, 0x00, (certlen + 1));
+            if(fread(cert, sizeof(char), certlen, fp_sig) != certlen) {
+                fprintf(stderr, "[ERR][%s] Fail to get contents from file, [certificate]\n", __func__); 
+                ret = DPS_INVALID_OPERATION;
+                goto err;
+            }
+            free(cert);
+            cert = NULL;
+        }
 	}
 
 	/* get certificate data */
@@ -788,7 +857,7 @@ int package_verify(int argc, const char** argv)
 			}
 		}
 	}
-	
+
 	/* verify certificate */
 	if((ret = cert_svc_verify_certificate(ctx, &val_cert)) != CERT_SVC_ERR_NO_ERROR) {
 		fprintf(stderr, "[ERR][%s] Fail to verify certificate, [%d]\n", __func__, ret);
@@ -828,10 +897,10 @@ err:
 	if(msg != NULL) free(msg);
 	if(sig != NULL) free(sig);
 	if(cert != NULL) free(cert);
-	if(target_info != NULL)	free(target_info);
+	if(target_info != NULL) free(target_info);
 
 	cert_svc_cert_context_final(ctx);
-	
+
 	return ret;
 }
 

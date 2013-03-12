@@ -44,10 +44,10 @@ int get_file_full_path(char* originalName, const char* location, char* outBuf)
 	memset(pathLocation, 0x00, CERT_SVC_MAX_FILE_NAME_SIZE);
 
 	if(location == NULL) 	// use default path
-		strncpy(buf, CERT_SVC_STORE_PATH_DEFAULT, strlen(CERT_SVC_STORE_PATH_DEFAULT));
+		strncpy(buf, CERT_SVC_STORE_PATH_DEFAULT, strlen(CERT_SVC_STORE_PATH_DEFAULT)+1);
 	else {
 		strncpy(pathLocation, location, strlen(location));
-		strncpy(buf, CERT_SVC_STORE_PATH, strlen(CERT_SVC_STORE_PATH));
+		strncpy(buf, CERT_SVC_STORE_PATH, strlen(CERT_SVC_STORE_PATH)+1);
 		token = strtok(pathLocation, seps);
 		while(token) {
 			strncat(buf, token, strlen(token));

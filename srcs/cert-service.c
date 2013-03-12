@@ -96,7 +96,6 @@ CERT_SVC_API
 int cert_svc_verify_certificate(CERT_CONTEXT* ctx, int* validity)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
-	int i = 0, first = 0;
 
 	if((ctx == NULL) || (ctx->certBuf == NULL)) {
 		SLOGE("[ERR][%s] Check your parameter. Cannot find certificate.\n", __func__);
@@ -143,7 +142,6 @@ CERT_SVC_API
 int cert_svc_verify_signature(CERT_CONTEXT* ctx, unsigned char* message, int msgLen, unsigned char* signature, char* algo, int* validity)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
-	cert_svc_mem_buff* certBuf = NULL;
 
 	if((message == NULL) || (signature == NULL) || (ctx == NULL) || (ctx->certBuf == NULL)) {
 		SLOGE("[ERR][%s] Invalid parameter, please check your parameter\n", __func__);
@@ -208,7 +206,6 @@ CERT_SVC_API
 int cert_svc_search_certificate(CERT_CONTEXT* ctx, search_field fldName, char* fldData)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
-	int i = 0;
 
 	/* check parameter */
 	if((ctx == NULL) || (fldName < SEARCH_FIELD_START ) || (fldName > SEARCH_FIELD_END) || (fldData == NULL)) {
@@ -238,7 +235,6 @@ err:
 CERT_SVC_API
 CERT_CONTEXT* cert_svc_cert_context_init()
 {
-	int ret = CERT_SVC_ERR_NO_ERROR;
 	CERT_CONTEXT* ctx = NULL;
 
 	if(!(ctx = (CERT_CONTEXT*)malloc(sizeof(CERT_CONTEXT)))) {
@@ -260,8 +256,6 @@ CERT_SVC_API
 int cert_svc_cert_context_final(CERT_CONTEXT* context)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
-	cert_svc_linked_list* pLink = NULL;
-	cert_svc_filename_list* pFile = NULL;
 
 	if(context == NULL)	// already be freed
 		goto err;
@@ -330,6 +324,7 @@ int cert_svc_load_buf_to_context(CERT_CONTEXT* ctx, unsigned char* buf)
 	if((ret = cert_svc_util_base64_decode(buf, size, decodedStr, &decodedSize)) != CERT_SVC_ERR_NO_ERROR) {
 		SLOGE("[ERR][%s] Fail to decode string, ret: [%d]\n", __func__, ret);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
+		free(decodedStr);
 		goto err;
 	}
 
@@ -405,6 +400,7 @@ int cert_svc_push_buf_into_context(CERT_CONTEXT *ctx, unsigned char* buf)
 	}
 	if(!(new->certificate = (cert_svc_mem_buff*)malloc(sizeof(cert_svc_mem_buff)))) {
 		SLOGE("[ERR][%s] Fail to allcate memory.\n", __func__);
+		free(new);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -415,6 +411,7 @@ int cert_svc_push_buf_into_context(CERT_CONTEXT *ctx, unsigned char* buf)
 
 	if(!(decodedStr = (char*)malloc(sizeof(char) * decodedSize))) {
 		SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+		release_cert_list(new);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -422,6 +419,8 @@ int cert_svc_push_buf_into_context(CERT_CONTEXT *ctx, unsigned char* buf)
 	/* decode */
 	if((ret = cert_svc_util_base64_decode(buf, size, decodedStr, &decodedSize)) != CERT_SVC_ERR_NO_ERROR) {
 		SLOGE("[ERR][%s] Fail to decode string, ret: [%d]\n", __func__, ret);
+		release_cert_list(new);
+		free(decodedStr);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}
@@ -436,12 +435,8 @@ int cert_svc_push_buf_into_context(CERT_CONTEXT *ctx, unsigned char* buf)
 		ctx->certLink = new;
 	else {
 		cur = ctx->certLink;
-		while(1) {
-			if(cur->next == NULL)
-				break;
+		while(cur->next)
 			cur = cur->next;
-		}
-
 		cur->next = new;
 	}
 	
@@ -475,6 +470,7 @@ int cert_svc_push_file_into_context(CERT_CONTEXT *ctx, const char* filePath)
 	if(!(new->certificate = (cert_svc_mem_buff*)malloc(sizeof(cert_svc_mem_buff)))) {
 		SLOGE("[ERR][%s] Fail to allcate memory.\n", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+		free(new);
 		goto err;
 	}
 	memset(new->certificate, 0x00, sizeof(cert_svc_mem_buff));
@@ -482,6 +478,7 @@ int cert_svc_push_file_into_context(CERT_CONTEXT *ctx, const char* filePath)
 	/* get content to ctx->certBuf */
 	if((ret = cert_svc_util_load_file_to_buffer(filePath, new->certificate)) != CERT_SVC_ERR_NO_ERROR) {
 		SLOGE("[ERR][%s] Fail to load file, filepath: [%s], ret: [%d]\n", __func__, filePath, ret);
+		release_cert_list(new);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}

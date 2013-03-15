@@ -14,12 +14,12 @@
  *    limitations under the License.
  */
 /*
- * @file        WrtSignatureValidator.cpp
+ * @file        SignatureValidator.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
  * @brief       Implementatin of tizen signature validation protocol.
  */
-#include <vcore/WrtSignatureValidator.h>
+#include <vcore/SignatureValidator.h>
 
 #include <dpl/log/log.h>
 
@@ -43,13 +43,13 @@ const std::string TOKEN_PROFILE_URI =
 
 namespace ValidationCore {
 
-class WrtSignatureValidator::Impl {
+class SignatureValidator::ImplSignatureValidator {
 public:
-    virtual WrtSignatureValidator::Result check(
+    virtual SignatureValidator::Result check(
         SignatureData &data,
         const std::string &widgetContentPath) = 0;
 
-    explicit Impl(bool ocspEnable,
+    explicit ImplSignatureValidator(bool ocspEnable,
                   bool crlEnable,
                   bool complianceMode)
       : m_ocspEnable(ocspEnable)
@@ -57,7 +57,7 @@ public:
       , m_complianceModeEnabled(complianceMode)
     {}
 
-    virtual ~Impl(){}
+    virtual ~ImplSignatureValidator(){}
 
     bool checkRoleURI(const SignatureData &data) {
         std::string roleURI = data.getRoleURI();
@@ -109,33 +109,33 @@ protected:
     bool m_complianceModeEnabled;
 };
 
-class ImplTizen : public WrtSignatureValidator::Impl
+class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureValidator
 {
   public:
-    WrtSignatureValidator::Result check(SignatureData &data,
+    SignatureValidator::Result check(SignatureData &data,
             const std::string &widgetContentPath);
 
-    explicit ImplTizen(bool ocspEnable,
+    explicit ImplTizenSignatureValidator(bool ocspEnable,
                        bool crlEnable,
                        bool complianceMode)
-      : Impl(ocspEnable, crlEnable, complianceMode)
+      : ImplSignatureValidator(ocspEnable, crlEnable, complianceMode)
     {}
 
-    virtual ~ImplTizen() {}
+    virtual ~ImplTizenSignatureValidator() {}
 };
 
-WrtSignatureValidator::Result ImplTizen::check(
+SignatureValidator::Result ImplTizenSignatureValidator::check(
         SignatureData &data,
         const std::string &widgetContentPath)
 {
     bool disregard = false;
 
     if (!checkRoleURI(data)) {
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     if (!checkProfileURI(data)) {
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     //  CertificateList sortedCertificateList = data.getCertList();
@@ -146,13 +146,13 @@ WrtSignatureValidator::Result ImplTizen::check(
     // First step - sort certificate
     if (!collection.sort()) {
         LogWarning("Certificates do not form valid chain.");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     // Check for error
     if (collection.empty()) {
         LogWarning("Certificate list in signature is empty.");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     CertificateList sortedCertificateList = collection.getChain();
@@ -189,6 +189,7 @@ WrtSignatureValidator::Result ImplTizen::check(
     LogDebug(" visibility level is partner-manufacturer :  "
         << storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER));
 
+/*
     // WAC chapter 3.2.1 - verified definition
     if (data.isAuthorSignature()) {
         if (!storeIdSet.contains(CertStoreId::WAC_PUBLISHER)) {
@@ -207,6 +208,7 @@ WrtSignatureValidator::Result ImplTizen::check(
         } else
             LogDebug("Root CA for distributor signature is correct.");
     }
+	*/
 
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
@@ -236,19 +238,19 @@ WrtSignatureValidator::Result ImplTizen::check(
 
     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
         LogWarning("Installation break - invalid package!");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     data.setReference(context.referenceSet);
 
     if (!checkObjectReferences(data)) {
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     ReferenceValidator fileValidator(widgetContentPath);
     if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(data)) {
         LogWarning("Invalid package - file references broken");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     // It is good time to do OCSP check
@@ -261,7 +263,7 @@ WrtSignatureValidator::Result ImplTizen::check(
 
         if (!coll.sort()) {
             LogDebug("Collection does not contain chain!");
-            return WrtSignatureValidator::SIGNATURE_INVALID;
+            return SignatureValidator::SIGNATURE_INVALID;
         }
 
         // If ORANGE_LEGACY is set we cannot check ocsp
@@ -272,7 +274,7 @@ WrtSignatureValidator::Result ImplTizen::check(
         VerificationStatus result = verificator.check(coll);
 
         if (result == VERIFICATION_STATUS_REVOKED) {
-            return WrtSignatureValidator::SIGNATURE_REVOKED;
+            return SignatureValidator::SIGNATURE_REVOKED;
         }
 
         if (result == VERIFICATION_STATUS_UNKNOWN ||
@@ -284,38 +286,38 @@ WrtSignatureValidator::Result ImplTizen::check(
 
     if (disregard) {
         LogWarning("Signature is disregard.");
-        return WrtSignatureValidator::SIGNATURE_DISREGARD;
+        return SignatureValidator::SIGNATURE_DISREGARD;
     }
-    return WrtSignatureValidator::SIGNATURE_VERIFIED;
+    return SignatureValidator::SIGNATURE_VERIFIED;
 }
 
-class ImplWac : public WrtSignatureValidator::Impl
+class ImplWacSignatureValidator : public SignatureValidator::ImplSignatureValidator
 {
   public:
-    WrtSignatureValidator::Result check(SignatureData &data,
+    SignatureValidator::Result check(SignatureData &data,
             const std::string &widgetContentPath);
 
-    explicit ImplWac(bool ocspEnable,
+    explicit ImplWacSignatureValidator(bool ocspEnable,
                      bool crlEnable,
                      bool complianceMode)
-      : Impl(ocspEnable, crlEnable, complianceMode)
+      : ImplSignatureValidator(ocspEnable, crlEnable, complianceMode)
     {}
 
-    virtual ~ImplWac() {}
+    virtual ~ImplWacSignatureValidator() {}
 };
 
-WrtSignatureValidator::Result ImplWac::check(
+SignatureValidator::Result ImplWacSignatureValidator::check(
     SignatureData &data,
     const std::string &widgetContentPath)
 {
     bool disregard = false;
 
     if (!checkRoleURI(data)) {
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     if (!checkProfileURI(data)) {
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     //  CertificateList sortedCertificateList = data.getCertList();
@@ -326,13 +328,13 @@ WrtSignatureValidator::Result ImplWac::check(
     // First step - sort certificate
     if (!collection.sort()) {
         LogWarning("Certificates do not form valid chain.");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     // Check for error
     if (collection.empty()) {
         LogWarning("Certificate list in signature is empty.");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     CertificateList sortedCertificateList = collection.getChain();
@@ -418,19 +420,19 @@ WrtSignatureValidator::Result ImplWac::check(
 
     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
         LogWarning("Installation break - invalid package!");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     data.setReference(context.referenceSet);
 
     if (!checkObjectReferences(data)) {
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     ReferenceValidator fileValidator(widgetContentPath);
     if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(data)) {
         LogWarning("Invalid package - file references broken");
-        return WrtSignatureValidator::SIGNATURE_INVALID;
+        return SignatureValidator::SIGNATURE_INVALID;
     }
 
     // It is good time to do OCSP check
@@ -443,14 +445,14 @@ WrtSignatureValidator::Result ImplWac::check(
 
         if (!coll.sort()) {
             LogDebug("Collection does not contain chain!");
-            return WrtSignatureValidator::SIGNATURE_INVALID;
+            return SignatureValidator::SIGNATURE_INVALID;
         }
 
         CertificateVerifier verificator(m_ocspEnable, m_crlEnable);
         VerificationStatus result = verificator.check(coll);
 
         if (result == VERIFICATION_STATUS_REVOKED) {
-            return WrtSignatureValidator::SIGNATURE_REVOKED;
+            return SignatureValidator::SIGNATURE_REVOKED;
         }
 
         if (result == VERIFICATION_STATUS_UNKNOWN ||
@@ -462,14 +464,14 @@ WrtSignatureValidator::Result ImplWac::check(
 
     if (disregard) {
         LogWarning("Signature is disregard.");
-        return WrtSignatureValidator::SIGNATURE_DISREGARD;
+        return SignatureValidator::SIGNATURE_DISREGARD;
     }
-    return WrtSignatureValidator::SIGNATURE_VERIFIED;
+    return SignatureValidator::SIGNATURE_VERIFIED;
 }
 
-// Implementation of WrtSignatureValidator
+// Implementation of SignatureValidator
 
-WrtSignatureValidator::WrtSignatureValidator(
+SignatureValidator::SignatureValidator(
     AppType appType,
     bool ocspEnable,
     bool crlEnable,
@@ -477,16 +479,16 @@ WrtSignatureValidator::WrtSignatureValidator(
   : m_impl(0)
 {
     if (appType == TIZEN)
-        m_impl = new ImplTizen(ocspEnable,crlEnable,complianceMode);
+        m_impl = new ImplTizenSignatureValidator(ocspEnable,crlEnable,complianceMode);
     else
-        m_impl = new ImplWac(ocspEnable,crlEnable,complianceMode);
+        m_impl = new ImplWacSignatureValidator(ocspEnable,crlEnable,complianceMode);
 }
 
-WrtSignatureValidator::~WrtSignatureValidator() {
+SignatureValidator::~SignatureValidator() {
     delete m_impl;
 }
 
-WrtSignatureValidator::Result WrtSignatureValidator::check(
+SignatureValidator::Result SignatureValidator::check(
     SignatureData &data,
     const std::string &widgetContentPath)
 {

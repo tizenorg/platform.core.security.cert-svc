@@ -112,6 +112,7 @@ fi
 %dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs
 %dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/code-signing
 %dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/code-signing/wac
+%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/code-signing/tizen
 %dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/sim
 %dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/sim/operator
 %dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/sim/thirdparty

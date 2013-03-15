@@ -41,6 +41,15 @@ const Type TIZEN_MEMBER = 1 << 4;
 // RootCA certificates used by orange
 const Type ORANGE_LEGACY = 1 << 5;
 
+// RootCA's visibility level : public
+const Type VIS_PUBLIC = 1 << 6;
+// RootCA's visibility level : partner
+const Type VIS_PARTNER = 1 << 7;
+// RootCA's visibility level : partner-operator
+const Type VIS_PARTNER_OPERATOR = 1 << 8;
+// RootCA's visibility level : partner-manufacturer
+const Type VIS_PARTNER_MANUFACTURER = 1 << 9;
+
 class Set
 {
   public:

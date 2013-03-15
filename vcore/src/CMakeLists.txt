@@ -58,6 +58,7 @@ SET(VCORE_SOURCES
     ${VCORE_SRC_DIR}/ValidatorFactories.cpp
     ${VCORE_SRC_DIR}/VCore.cpp
     ${VCORE_SRC_DIR}/WrtSignatureValidator.cpp
+    ${VCORE_SRC_DIR}/SignatureValidator.cpp
     ${VCORE_SRC_DIR}/XmlsecAdapter.cpp
     ${VCORE_SRC_DIR}/pkcs12.c
     )
@@ -118,6 +119,7 @@ INSTALL(FILES
     ${VCORE_SRC_DIR}/SignatureFinder.h
     ${VCORE_SRC_DIR}/SignatureReader.h
     ${VCORE_SRC_DIR}/WrtSignatureValidator.h
+    ${VCORE_SRC_DIR}/SignatureValidator.h
     ${VCORE_SRC_DIR}/VerificationStatus.h
     ${VCORE_SRC_DIR}/VCore.h
     DESTINATION ${INCLUDEDIR}/cert-svc/vcore

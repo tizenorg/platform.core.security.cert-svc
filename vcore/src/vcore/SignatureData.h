@@ -128,6 +128,22 @@ class SignatureData
         return m_storeIdSet;
     }
 
+	const CertStoreId::Type getVisibilityLevel(void) const
+	{
+		if (m_storeIdSet.contains(CertStoreId::VIS_PUBLIC) == true)
+			return CertStoreId::VIS_PUBLIC;
+		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER) == true)
+			return CertStoreId::VIS_PARTNER;
+		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR) == true)
+			return CertStoreId::VIS_PARTNER_OPERATOR;
+		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER) == true)
+			return CertStoreId::VIS_PARTNER_MANUFACTURER;
+		else {
+			LogWarning("Visibility level was broken.");
+			return 0;
+		}
+	}
+
     const IMEIList& getIMEIList() const
     {
         return m_imeiList;
@@ -155,6 +171,7 @@ class SignatureData
     }
 
     friend class SignatureReader;
+
   private:
     ReferenceSet m_referenceSet;
     CertificateList m_certList;

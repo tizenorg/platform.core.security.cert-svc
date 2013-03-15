@@ -40,6 +40,11 @@ const std::string TOKEN_VALUE_DEVELOPER = "developer";
 const std::string TOKEN_VALUE_TIZEN_MEMBER = "tizenmember";
 const std::string TOKEN_VALUE_ORANGE_LEGACY = "orangelegacy";
 
+const std::string TOKEN_VALUE_VISIBILITY_PUBLIC = "tizen-public";
+const std::string TOKEN_VALUE_VISIBILITY_PARTNER = "tizen-partner";
+const std::string TOKEN_VALUE_VISIBILITY_PARTNER_OPERATOR = "tizen-partner-operator";
+const std::string TOKEN_VALUE_VISIBILITY_PARTNER_MANUFACTURER = "tizen-partner-manufacturer";
+
 int hexCharToInt(char c)
 {
     if (c >= 'a' && c <= 'f') {
@@ -112,7 +117,15 @@ void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
         m_certificateDomain = CertStoreId::TIZEN_MEMBER;
     } else if (name == TOKEN_VALUE_ORANGE_LEGACY) {
         m_certificateDomain = CertStoreId::ORANGE_LEGACY;
-    } else {
+    } else if (name == TOKEN_VALUE_VISIBILITY_PUBLIC) {
+        m_certificateDomain = CertStoreId::VIS_PUBLIC;
+    } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER) {
+        m_certificateDomain = CertStoreId::VIS_PARTNER;
+    } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER_OPERATOR) {
+        m_certificateDomain = CertStoreId::VIS_PARTNER_OPERATOR;
+    } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER_MANUFACTURER) {
+        m_certificateDomain = CertStoreId::VIS_PARTNER_MANUFACTURER;
+	} else {
         LogWarning("This domain will be ignored: " << name);
         m_certificateDomain = 0;
     }

@@ -35,6 +35,8 @@
 #include <openssl/x509.h>
 #include <openssl/pem.h>
 #include <ss_manager.h>
+#include <dlfcn.h>
+#include <dlog.h>
 
 #define SYSCALL(call) while(((call) == -1) && (errno == EINTR))
 
@@ -179,6 +181,8 @@ int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar 
   gsize i, n;
   gchar *data;
   gsize length;
+  static int  initFlag = 0;
+  const char appInfo[]  = "certsvcp12";
 
   certv = NULL;
   pkvalue = NULL;
@@ -296,6 +300,53 @@ int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar 
     goto free_data;
   }
   result = CERTSVC_SUCCESS;
+
+#if 1
+  	LOGD("( %s, %s)", path, password);
+    void* pSymAddr = NULL;
+	void* pInitAddr = NULL;
+	typedef int (*InsertPkcs12FuncPointer)(const char*, const char*);
+	typedef void (*InitAppInfoPointer)(const char*, const char*);
+
+	InsertPkcs12FuncPointer pInsertPkcs12FuncPointer = NULL;
+	InitAppInfoPointer pInit = NULL;
+
+	void* dlHandle = dlopen("/usr/lib/osp/libosp-appfw.so", RTLD_LAZY);
+	if (!dlHandle)
+	{
+		LOGD("Failed to open so with reason : %s",  dlerror());
+		goto free_data;
+	}
+
+	pInsertPkcs12FuncPointer = (InsertPkcs12FuncPointer)dlsym(dlHandle, "InsertPkcs12Content");
+	if (dlerror() != NULL)
+	{
+		LOGD("Failed to find InsertPkcs12Content symbol : %s",  dlerror());
+		goto free_data;
+	}
+
+	if(initFlag == 0)
+	{
+		pInit = (InitAppInfoPointer)dlsym(dlHandle, "InitWebAppInfo");
+		if (dlerror() != NULL)
+		{
+			LOGD("Failed to find InitWebAppInfo symbol : %s",  dlerror());
+			goto free_data;
+		}
+
+		pInit(appInfo, NULL);
+		initFlag = 1;
+	}
+
+	int errCode = pInsertPkcs12FuncPointer(path, password);
+	if (errCode != 0)
+	{
+		LOGD("dlHandle is not able to call function");
+		goto free_data;
+	}
+	dlclose(dlHandle);
+#endif
+
  free_data:
   g_free(data);
  clean_cert_chain_and_pkey:

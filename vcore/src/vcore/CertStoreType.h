@@ -49,6 +49,8 @@ const Type VIS_PARTNER = 1 << 7;
 const Type VIS_PARTNER_OPERATOR = 1 << 8;
 // RootCA's visibility level : partner-manufacturer
 const Type VIS_PARTNER_MANUFACTURER = 1 << 9;
+// RootCA's visibility level : platform
+const Type VIS_PLATFORM = 1 << 10;
 
 class Set
 {

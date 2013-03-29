@@ -188,6 +188,8 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
         << storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR));
     LogDebug(" visibility level is partner-manufacturer :  "
         << storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER));
+	LogDebug(" visibility level is platform :  "
+		<< storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
 /*
     // WAC chapter 3.2.1 - verified definition
@@ -247,11 +249,13 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
         return SignatureValidator::SIGNATURE_INVALID;
     }
 
+	/*
     ReferenceValidator fileValidator(widgetContentPath);
     if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(data)) {
         LogWarning("Invalid package - file references broken");
         return SignatureValidator::SIGNATURE_INVALID;
     }
+	*/
 
     // It is good time to do OCSP check
     // ocspCheck will throw an exception on any error.
@@ -370,6 +374,8 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
         << storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR));
     LogDebug(" visibility level is partner-manufacturer :  "
         << storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER));
+	LogDebug(" visibility level is platform :  "
+		<< storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
     // WAC chapter 3.2.1 - verified definition
     if (data.isAuthorSignature()) {

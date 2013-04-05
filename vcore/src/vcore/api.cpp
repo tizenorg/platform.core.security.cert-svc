@@ -905,7 +905,10 @@ public:
                 sk_X509_free(ustore);
                 return CERTSVC_WRONG_ARGUMENT;
             }
-            sk_X509_push(ustore, iter->second->getX509());
+            if (sk_X509_push(ustore, iter->second->getX509()) == 0)
+            {
+                break;
+            }
         }
         X509_STORE_CTX context;
         X509_STORE_CTX_init(&context, store, cert, ustore);

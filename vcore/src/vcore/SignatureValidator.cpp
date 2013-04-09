@@ -177,8 +177,12 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
         << storeIdSet.contains(CertStoreId::WAC_MEMBER));
     LogDebug("Is root certificate from TIZEN_MEMBER domain:  "
         << storeIdSet.contains(CertStoreId::TIZEN_MEMBER));
-    LogDebug("Is root certificate from TIZEN_ORANGE domain:  "
-        << storeIdSet.contains(CertStoreId::ORANGE_LEGACY));
+    LogDebug("Is root certificate from TIZEN_PUBLIC domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
+    LogDebug("Is root certificate from TIZEN_PARTNER domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PARTNER));
+    LogDebug("Is root certificate from TIZEN_PLATFORM domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
     LogDebug(" visibility level is public :  "
         << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
@@ -363,8 +367,12 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
         << storeIdSet.contains(CertStoreId::WAC_MEMBER));
     LogDebug("Is root certificate from TIZEN_MEMBER domain:  "
         << storeIdSet.contains(CertStoreId::TIZEN_MEMBER));
-    LogDebug("Is root certificate from ORANGE_LEGACY domain:  "
-        << storeIdSet.contains(CertStoreId::ORANGE_LEGACY));
+    LogDebug("Is root certificate from TIZEN_PUBLIC domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
+    LogDebug("Is root certificate from TIZEN_PARTNER domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PARTNER));
+    LogDebug("Is root certificate from TIZEN_PLATFORM domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
     LogDebug(" visibility level is public :  "
         << storeIdSet.contains(CertStoreId::VIS_PUBLIC));

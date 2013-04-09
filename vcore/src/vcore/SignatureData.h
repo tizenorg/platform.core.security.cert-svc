@@ -130,14 +130,16 @@ class SignatureData
 
 	const CertStoreId::Type getVisibilityLevel(void) const
 	{
-		if (m_storeIdSet.contains(CertStoreId::VIS_PUBLIC) == true)
-			return CertStoreId::VIS_PUBLIC;
+		if (m_storeIdSet.contains(CertStoreId::VIS_PLATFORM) == true)
+			return CertStoreId::VIS_PLATFORM;
+		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER) == true)
+			return CertStoreId::VIS_PLATFORM;
+		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR) == true)
+			return CertStoreId::VIS_PLATFORM;
 		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER) == true)
 			return CertStoreId::VIS_PARTNER;
-		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR) == true)
-			return CertStoreId::VIS_PARTNER_OPERATOR;
-		else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER) == true)
-			return CertStoreId::VIS_PARTNER_MANUFACTURER;
+		else if (m_storeIdSet.contains(CertStoreId::VIS_PUBLIC) == true)
+			return CertStoreId::VIS_PUBLIC;
 		else {
 			LogWarning("Visibility level was broken.");
 			return 0;

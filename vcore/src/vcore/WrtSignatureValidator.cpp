@@ -190,7 +190,7 @@ WrtSignatureValidator::Result ImplTizen::check(
         << storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER));
 
     // WAC chapter 3.2.1 - verified definition
-    if (data.isAuthorSignature()) {
+/*    if (data.isAuthorSignature()) {
         if (!storeIdSet.contains(CertStoreId::WAC_PUBLISHER)) {
             LogWarning("Author signature has got unrecognized Root CA "
                        "certificate. Signature will be disregarded.");
@@ -207,7 +207,7 @@ WrtSignatureValidator::Result ImplTizen::check(
         } else
             LogDebug("Root CA for distributor signature is correct.");
     }
-
+*/
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
 

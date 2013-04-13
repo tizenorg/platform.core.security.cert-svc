@@ -29,17 +29,9 @@ namespace CertStoreId {
 typedef unsigned int Type;
 
 // RootCA certificates for developer mode.
-const Type DEVELOPER = 1;
+const Type TIZEN_DEVELOPER = 1;
 // RootCA certificates for author signatures.
-const Type WAC_PUBLISHER = 1 << 1;
-// RootCA certificates for wac-signed widgets.
-const Type WAC_ROOT = 1 << 2;
-// RootCA certificates for wac-members ie. operators, manufacturers.
-const Type WAC_MEMBER = 1 << 3;
-// RootCA certificates for tizen-member ie. samsung and operators
-const Type TIZEN_MEMBER = 1 << 4;
-// RootCA certificates used by orange
-const Type ORANGE_LEGACY = 1 << 5;
+const Type TIZEN_TEST = 1 << 1;
 
 // RootCA's visibility level : public
 const Type VIS_PUBLIC = 1 << 6;

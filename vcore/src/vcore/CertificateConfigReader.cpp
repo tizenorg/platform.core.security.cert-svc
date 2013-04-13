@@ -33,13 +33,8 @@ const std::string TOKEN_CERTIFICATE_DOMAIN = "CertificateDomain";
 const std::string TOKEN_FINGERPRINT_SHA1 = "FingerprintSHA1";
 
 const std::string TOKEN_ATTR_NAME = "name";
-const std::string TOKEN_VALUE_WAC_ROOT = "wacroot";
-const std::string TOKEN_VALUE_WAC_PUBLISHER = "wacpublisher";
-const std::string TOKEN_VALUE_WAC_MEMBER = "wacmember";
-const std::string TOKEN_VALUE_DEVELOPER = "developer";
-const std::string TOKEN_VALUE_TIZEN_MEMBER = "tizenmember";
-const std::string TOKEN_VALUE_ORANGE_LEGACY = "orangelegacy";
-
+const std::string TOKEN_VALUE_TIZEN_DEVELOPER = "tizen-developer";
+const std::string TOKEN_VALUE_TIZEN_TEST = "tizen-test";
 const std::string TOKEN_VALUE_VISIBILITY_PUBLIC = "tizen-public";
 const std::string TOKEN_VALUE_VISIBILITY_PARTNER = "tizen-partner";
 const std::string TOKEN_VALUE_VISIBILITY_PARTNER_OPERATOR = "tizen-partner-operator";
@@ -106,18 +101,10 @@ void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
         LogWarning("Invalid fingerprint file. Domain name is mandatory");
         ThrowMsg(Exception::InvalidFile,
                  "Invalid fingerprint file. Domain name is mandatory");
-    } else if (name == TOKEN_VALUE_DEVELOPER) {
-        m_certificateDomain = CertStoreId::DEVELOPER;
-    } else if (name == TOKEN_VALUE_WAC_ROOT) {
-        m_certificateDomain = CertStoreId::WAC_ROOT;
-    } else if (name == TOKEN_VALUE_WAC_PUBLISHER) {
-        m_certificateDomain = CertStoreId::WAC_PUBLISHER;
-    } else if (name == TOKEN_VALUE_WAC_MEMBER) {
-        m_certificateDomain = CertStoreId::WAC_MEMBER;
-    } else if (name == TOKEN_VALUE_TIZEN_MEMBER) {
-        m_certificateDomain = CertStoreId::TIZEN_MEMBER;
-    } else if (name == TOKEN_VALUE_ORANGE_LEGACY) {
-        m_certificateDomain = CertStoreId::ORANGE_LEGACY;
+    } else if (name == TOKEN_VALUE_TIZEN_DEVELOPER) {
+        m_certificateDomain = CertStoreId::TIZEN_DEVELOPER;
+    } else if (name == TOKEN_VALUE_TIZEN_TEST) {
+        m_certificateDomain = CertStoreId::TIZEN_TEST;
     } else if (name == TOKEN_VALUE_VISIBILITY_PUBLIC) {
         m_certificateDomain = CertStoreId::VIS_PUBLIC;
     } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER) {

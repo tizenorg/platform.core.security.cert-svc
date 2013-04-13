@@ -167,47 +167,52 @@ WrtSignatureValidator::Result ImplTizen::check(
     // Is Root CA certificate trusted?
     CertStoreId::Set storeIdSet = createCertificateIdentifier().find(root);
 
-    LogDebug("Is root certificate from WAC_PUBLISHER domain: "
-        << storeIdSet.contains(CertStoreId::WAC_PUBLISHER));
-    LogDebug("Is root certificate from WAC_DEVELOPER domain: "
-        << storeIdSet.contains(CertStoreId::DEVELOPER));
-    LogDebug("Is root certificate from WAC_ROOT domain:      "
-        << storeIdSet.contains(CertStoreId::WAC_ROOT));
-    LogDebug("Is root certificate from WAC_MEMBER domain:    "
-        << storeIdSet.contains(CertStoreId::WAC_MEMBER));
-    LogDebug("Is root certificate from TIZEN_MEMBER domain:  "
-        << storeIdSet.contains(CertStoreId::TIZEN_MEMBER));
-    LogDebug("Is root certificate from TIZEN_ORANGE domain:  "
-        << storeIdSet.contains(CertStoreId::ORANGE_LEGACY));
-
-    LogDebug(" visibility level is public :  "
+    LogDebug("Is root certificate from TIZEN_DEVELOPER domain:  "
+        << storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER));
+    LogDebug("Is root certificate from TIZEN_TEST domain:  "
+        << storeIdSet.contains(CertStoreId::TIZEN_TEST));
+    LogDebug("Is root certificate from TIZEN_PUBLIC domain:  "
         << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
-    LogDebug(" visibility level is partner :  "
+    LogDebug("Is root certificate from TIZEN_PARTNER domain:  "
         << storeIdSet.contains(CertStoreId::VIS_PARTNER));
-    LogDebug(" visibility level is partner-operator :  "
-        << storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR));
-    LogDebug(" visibility level is partner-manufacturer :  "
-        << storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER));
+    LogDebug("Is root certificate from TIZEN_PLATFORM domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
-    // WAC chapter 3.2.1 - verified definition
-/*    if (data.isAuthorSignature()) {
-        if (!storeIdSet.contains(CertStoreId::WAC_PUBLISHER)) {
-            LogWarning("Author signature has got unrecognized Root CA "
+    LogDebug("Visibility level is public :  "
+        << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
+    LogDebug("Visibility level is partner :  "
+        << storeIdSet.contains(CertStoreId::VIS_PARTNER));
+	LogDebug("Visibility level is platform :  "
+		<< storeIdSet.contains(CertStoreId::VIS_PLATFORM));
+
+	if (data.isAuthorSignature())
+	{
+		if (!storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER))
+		{
+            LogWarning("author-signature.xml has got unrecognized Root CA "
                        "certificate. Signature will be disregarded.");
             disregard = true;
-        }
+		}
         LogDebug("Root CA for author signature is correct.");
-    } else {
-        if (!storeIdSet.contains(CertStoreId::DEVELOPER) &&
-            !storeIdSet.contains(CertStoreId::TIZEN_MEMBER))
-        {
-            LogWarning("Distiributor signature has got unrecognized Root CA "
-                       "certificate. Signature will be disregarded.");
-            disregard = true;
-        } else
-            LogDebug("Root CA for distributor signature is correct.");
-    }
-*/
+	}
+	else
+	{
+		LogDebug("signaturefile name = " <<  data.getSignatureFileName().c_str());
+		if (data.getSignatureNumber() == 1)
+		{
+			if (storeIdSet.contains(CertStoreId::VIS_PUBLIC) || storeIdSet.contains(CertStoreId::VIS_PARTNER) || storeIdSet.contains(CertStoreId::VIS_PLATFORM))
+			{
+				LogDebug("Root CA for signature1.xml is correct.");
+			}
+			else
+			{
+				LogWarning("author-signature.xml has got unrecognized Root CA "
+				        "certificate. Signature will be disregarded.");
+				disregard = true;
+			}
+		}
+	}
+
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
 
@@ -228,12 +233,49 @@ WrtSignatureValidator::Result ImplTizen::check(
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     // due to expiration of the author certificate.
     time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
-    bool expired = notAfter < time(NULL);
-    if (data.isAuthorSignature() && expired) {
-        context.validationTime = notAfter - TIMET_DAY;
-    }
-    // end
+    time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
 
+	time_t nowTime = time(NULL);
+	struct tm *t;
+
+	if (data.isAuthorSignature())
+	{
+		// time_t 2038 year bug exist. So, notAtter() cann't check...
+		/*
+		if (notAfter < nowTime)
+		{
+			context.validationTime = notAfter - TIMET_DAY;
+			LogWarning("Author certificate is expired. notAfter...");
+		}
+		*/
+
+		if (notBefore > nowTime)
+		{
+			LogWarning("Author certificate is expired. notBefore time is greater than system-time.");
+
+			t = localtime(&nowTime);
+			LogDebug("System's current Year : " << t->tm_year + 1900);
+			LogDebug("System's current month : " << t->tm_mon + 1);
+			LogDebug("System's current day : " << t->tm_mday);
+
+			t = localtime(&notBefore);
+			LogDebug("Author certificate's notBefore Year : " << t->tm_year + 1900);
+			LogDebug("Author certificate's notBefore month : " << t->tm_mon + 1);
+			LogDebug("Author certificate's notBefore day : " << t->tm_mday);
+
+			context.validationTime = notBefore + TIMET_DAY;
+
+			t = localtime(&context.validationTime);
+			LogDebug("Modified current Year : " << t->tm_year + 1900);
+			LogDebug("Modified current notBefore month : " << t->tm_mon + 1);
+			LogDebug("Modified current notBefore day : " << t->tm_mday);
+		}
+	}
+	
+    // WAC 2.0 SP-2066 The wrt must not block widget installation
+	//context.allowBrokenChain = true;
+
+	// end
     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
         LogWarning("Installation break - invalid package!");
         return WrtSignatureValidator::SIGNATURE_INVALID;
@@ -264,11 +306,7 @@ WrtSignatureValidator::Result ImplTizen::check(
             return WrtSignatureValidator::SIGNATURE_INVALID;
         }
 
-        // If ORANGE_LEGACY is set we cannot check ocsp
-        bool runOCSP = storeIdSet.contains(CertStoreId::ORANGE_LEGACY) ?
-            false : m_ocspEnable;
-
-        CertificateVerifier verificator(runOCSP, m_crlEnable);
+        CertificateVerifier verificator(m_ocspEnable, m_crlEnable);
         VerificationStatus result = verificator.check(coll);
 
         if (result == VERIFICATION_STATUS_REVOKED) {
@@ -283,7 +321,7 @@ WrtSignatureValidator::Result ImplTizen::check(
     }
 
     if (disregard) {
-        LogWarning("Signature is disregard.");
+        LogWarning("Signature is disregard. RootCA is not a member of Tizen");
         return WrtSignatureValidator::SIGNATURE_DISREGARD;
     }
     return WrtSignatureValidator::SIGNATURE_VERIFIED;
@@ -347,48 +385,51 @@ WrtSignatureValidator::Result ImplWac::check(
     // Is Root CA certificate trusted?
     CertStoreId::Set storeIdSet = createCertificateIdentifier().find(root);
 
-    LogDebug("Is root certificate from WAC_PUBLISHER domain: "
-        << storeIdSet.contains(CertStoreId::WAC_PUBLISHER));
-    LogDebug("Is root certificate from WAC_DEVELOPER domain: "
-        << storeIdSet.contains(CertStoreId::DEVELOPER));
-    LogDebug("Is root certificate from WAC_ROOT domain:      "
-        << storeIdSet.contains(CertStoreId::WAC_ROOT));
-    LogDebug("Is root certificate from WAC_MEMBER domain:    "
-        << storeIdSet.contains(CertStoreId::WAC_MEMBER));
-    LogDebug("Is root certificate from TIZEN_MEMBER domain:  "
-        << storeIdSet.contains(CertStoreId::TIZEN_MEMBER));
-    LogDebug("Is root certificate from ORANGE_LEGACY domain:  "
-        << storeIdSet.contains(CertStoreId::ORANGE_LEGACY));
-
-    LogDebug(" visibility level is public :  "
+    LogDebug("Is root certificate from TIZEN_DEVELOPER domain:  "
+        << storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER));
+    LogDebug("Is root certificate from TIZEN_TEST domain:  "
+        << storeIdSet.contains(CertStoreId::TIZEN_TEST));
+    LogDebug("Is root certificate from TIZEN_PUBLIC domain:  "
         << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
-    LogDebug(" visibility level is partner :  "
+    LogDebug("Is root certificate from TIZEN_PARTNER domain:  "
         << storeIdSet.contains(CertStoreId::VIS_PARTNER));
-    LogDebug(" visibility level is partner-operator :  "
-        << storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR));
-    LogDebug(" visibility level is partner-manufacturer :  "
-        << storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER));
+    LogDebug("Is root certificate from TIZEN_PLATFORM domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
-    // WAC chapter 3.2.1 - verified definition
-    if (data.isAuthorSignature()) {
-        if (!storeIdSet.contains(CertStoreId::WAC_PUBLISHER)) {
-            LogWarning("Author signature has got unrecognized Root CA "
+    LogDebug("Visibility level is public :  "
+        << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
+    LogDebug("Visibility level is partner :  "
+        << storeIdSet.contains(CertStoreId::VIS_PARTNER));
+	LogDebug("Visibility level is platform :  "
+		<< storeIdSet.contains(CertStoreId::VIS_PLATFORM));
+
+	if (data.isAuthorSignature())
+	{
+		if (!storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER))
+		{
+            LogWarning("author-signature.xml has got unrecognized Root CA "
                        "certificate. Signature will be disregarded.");
             disregard = true;
-        }
+		}
         LogDebug("Root CA for author signature is correct.");
-    } else {
-        if (!storeIdSet.contains(CertStoreId::DEVELOPER) &&
-            !storeIdSet.contains(CertStoreId::WAC_ROOT) &&
-            !storeIdSet.contains(CertStoreId::WAC_MEMBER))
-        {
-            LogWarning("Distiributor signature has got unrecognized Root CA "
-                       "certificate. Signature will be disregarded.");
-            disregard = true;
-        } else {
-           LogDebug("Root CA for distributor signature is correct.");
-        }
-    }
+	}
+	else
+	{
+		LogDebug("signaturefile name = " <<  data.getSignatureFileName().c_str());
+		if (data.getSignatureNumber() == 1)
+		{
+			if (storeIdSet.contains(CertStoreId::VIS_PUBLIC) || storeIdSet.contains(CertStoreId::VIS_PARTNER) || storeIdSet.contains(CertStoreId::VIS_PLATFORM))
+			{
+				LogDebug("Root CA for signature1.xml is correct.");
+			}
+			else
+			{
+				LogWarning("author-signature.xml has got unrecognized Root CA "
+				        "certificate. Signature will be disregarded.");
+				disregard = true;
+			}
+		}
+	}
 
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
@@ -408,13 +449,46 @@ WrtSignatureValidator::Result ImplWac::check(
     }
 
     // WAC 2.0 SP-2066 The wrt must not block widget installation
-    // due to expiration of the author certificate.
-    time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
-    bool expired = notAfter < time(NULL);
-    if (data.isAuthorSignature() && expired) {
-        context.validationTime = notAfter - TIMET_DAY;
-    }
-    // end
+	// due to expiration of the author certificate.
+	time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
+	time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
+
+	time_t nowTime = time(NULL);
+	struct tm *t;
+
+	if (data.isAuthorSignature())
+	{
+		// time_t 2038 year bug exist. So, notAtter() cann't check...
+		/*
+		if (notAfter < nowTime)
+		{
+			context.validationTime = notAfter - TIMET_DAY;
+			LogWarning("Author certificate is expired. notAfter...");
+		 }
+		 */
+
+		if (notBefore > nowTime)
+		{
+			LogWarning("Author certificate is expired. notBefore time is greater than system-time.");
+
+			t = localtime(&nowTime);
+			LogDebug("System's current Year : " << t->tm_year + 1900);
+			LogDebug("System's current month : " << t->tm_mon + 1);
+			LogDebug("System's current day : " << t->tm_mday);
+
+			t = localtime(&notBefore);
+			LogDebug("Author certificate's notBefore Year : " << t->tm_year + 1900);
+			LogDebug("Author certificate's notBefore month : " << t->tm_mon + 1);
+			LogDebug("Author certificate's notBefore day : " << t->tm_mday);
+
+			context.validationTime = notBefore + TIMET_DAY;
+
+			t = localtime(&context.validationTime);
+			LogDebug("Modified current Year : " << t->tm_year + 1900);
+			LogDebug("Modified current notBefore month : " << t->tm_mon + 1);
+			LogDebug("Modified current notBefore day : " << t->tm_mday);
+		}
+	}
 
     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
         LogWarning("Installation break - invalid package!");
@@ -461,7 +535,7 @@ WrtSignatureValidator::Result ImplWac::check(
     }
 
     if (disregard) {
-        LogWarning("Signature is disregard.");
+        LogWarning("Signature is disregard. RootCA is not a member of Tizen.");
         return WrtSignatureValidator::SIGNATURE_DISREGARD;
     }
     return WrtSignatureValidator::SIGNATURE_VERIFIED;

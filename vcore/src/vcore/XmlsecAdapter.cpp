@@ -36,6 +36,7 @@
 #include <xmlsec/crypto.h>
 #include <xmlsec/io.h>
 #include <xmlsec/keyinfo.h>
+#include <xmlsec/errors.h>
 
 #include <dpl/assert.h>
 #include <dpl/log/log.h>
@@ -91,8 +92,10 @@ int XmlSec::fileReadCallback(void *context,
     int output = xmlFileRead(fw->file, buffer, len);
     if (output == 0) {
         fw->released = true;
+		LogDebug("Xmlsec close: ");
         xmlFileClose(fw->file);
     }
+	LogDebug("Xmlsec reading: ");
     return output;
 }
 
@@ -100,6 +103,7 @@ int XmlSec::fileCloseCallback(void *context)
 {
     FileWrapper *fw = static_cast<FileWrapper*>(context);
     int output = 0;
+	LogDebug("Xmlsec closeing: ");
     if (!(fw->released)) {
         output = xmlFileClose(fw->file);
     }
@@ -122,6 +126,21 @@ void XmlSec::fileExtractPrefix(XmlSecContext *context)
         s_prefixPath.erase(pos + 1, std::string::npos);
     }
 }
+
+void 	LogDebugPrint(const char* file, 
+								 int line, 
+				    				 const char* func,
+								 const char* errorObject,
+								 const char* errorSubject,
+								 int reason, 
+								 const char* msg)
+{	
+//	std::string strTemp = msg;	
+	//LogDebug("func: " << (char*)func);
+	//LogDebug("reason: " << reason);	
+	LogDebug("msg: " << msg);
+}
+
 
 XmlSec::XmlSec() :
     m_initialized(false)
@@ -211,6 +230,7 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
     xmlSecDSigCtxPtr dsigCtx = NULL;
     int size, res = -1;
 
+   LogDebug("XmlSec::validateFile: start >> ");
     fileExtractPrefix(context);
     LogDebug("Prefix path: " << s_prefixPath);
 
@@ -311,6 +331,7 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
     }
 
 done:
+	xmlSecDSigSetNoHash(0); //set gNoHash(default : 0)
     /*   cleanup */
     if (dsigCtx != NULL) {
         xmlSecDSigCtxDestroy(dsigCtx);
@@ -367,6 +388,9 @@ void XmlSec::loadPEMCertificateFile(XmlSecContext *context,
 
 XmlSec::Result XmlSec::validate(XmlSecContext *context)
 {
+	LogDebug("XmlSec::validate: start >> ");
+
+	xmlSecErrorsSetCallback(LogDebugPrint);
     Assert(context);
     Assert(!(context->signatureFile.empty()));
     Assert(context->certificatePtr.Get() || !(context->certificatePath.empty()));
@@ -399,4 +423,75 @@ XmlSec::Result XmlSec::validate(XmlSecContext *context)
 
     return validateFile(context, mngr.get());
 }
+
+XmlSec::Result XmlSec::validateNoHash(XmlSecContext *context)
+{
+	LogDebug("XmlSec::validateNoHash start >>");
+
+	xmlSecDSigSetNoHash(1);
+    return validate(context);
+}
+
+XmlSec::Result XmlSec::validatePartialHash(XmlSecContext *context)
+{
+	LogDebug("XmlSec::validatePartialHash start >>");
+
+    return validate(context);
+}
+
+
+XmlSec::Result XmlSec::setPartialHashList(std::list<std::string>& targetUri)
+{
+	char *uri;
+	int len;
+ 	std::string tmpString;
+	HashUriList* pTmp =(HashUriList*)malloc(sizeof(HashUriList));
+	std::list<std::string>::const_iterator iter = targetUri.begin();
+	char* strange = NULL;
+
+	LogDebug("XmlSec::setPartialHashList start >>");
+	xmlSecErrorsSetCallback(LogDebugPrint);
+	
+	for (iter; iter != targetUri.end(); ++iter)
+	{				
+		//tmpString.append(*iter);
+		tmpString = (*iter);
+		uri = (char*)tmpString.c_str();
+		len = tmpString.size();
+			
+		LogDebug("setPartialHashList: uri :" << uri);
+		LogDebug("setPartialHashList: len :" << len);
+
+	
+		strange = strstr(uri, "/i");
+		if( strange != NULL)
+		{
+			LogDebug("setPartialHashList: r-strange :" << strange);
+			uri = strange+1;
+			LogDebug("setPartialHashList: r-uri :" << uri);
+			len = strlen(uri);
+		}
+			
+		pTmp->uri = (char*)malloc(len+1);
+		memcpy(pTmp->uri, uri, len);
+		pTmp->uri[len] = '\0';		
+
+		LogDebug("setPartialHashList: " << pTmp->uri);
+
+		pTmp->pNext = (HashUriList*)malloc(sizeof(HashUriList));	
+		pTmp = pTmp->pNext;
+	
+	}
+
+	pTmp->pNext = NULL;
+
+	xmlSecDSigSetPartialHash(pTmp);
+	
+	LogDebug("XmlSec::setPartialHashList end >>");
+
+	return NO_ERROR;
+}
+
+
+
 } // namespace ValidationCore

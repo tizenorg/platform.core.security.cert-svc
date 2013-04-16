@@ -36,6 +36,7 @@ public:
 
     enum AppType
     {
+	    TIZEN_NO_HASH, //no-hash
         TIZEN,
         WAC20
     };
@@ -60,6 +61,10 @@ public:
     Result check(
         SignatureData &data,
         const std::string &widgetContentPath);
+
+
+	Result setPartialHashList(std::list<std::string>& targetUri);
+		
 
 private:
 	ImplSignatureValidator *m_impl;

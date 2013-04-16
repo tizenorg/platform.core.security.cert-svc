@@ -105,11 +105,6 @@ class XmlSec : public DPL::Noncopyable
      * Context - input/output param.
      */
     Result validate(XmlSecContext *context);
-
-	 Result validateNoHash(XmlSecContext *context);
-	 Result validatePartialHash(XmlSecContext *context);
-	 Result setPartialHashList(std::list<std::string>& targetUri);
-	 
   protected:
     XmlSec();
     ~XmlSec();

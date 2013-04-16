@@ -49,18 +49,12 @@ public:
         SignatureData &data,
         const std::string &widgetContentPath) = 0;
 
-
-	virtual SignatureValidator::Result setPartialHashList(std::list<std::string>& targetUri) = 0;
-	virtual	bool setNoHash(bool noHash) = 0;
-
     explicit ImplSignatureValidator(bool ocspEnable,
                   bool crlEnable,
                   bool complianceMode)
       : m_ocspEnable(ocspEnable)
       , m_crlEnable(crlEnable)
       , m_complianceModeEnabled(complianceMode)
-      , m_noHash(false)
-      ,m_partialHash(false)
     {}
 
     virtual ~ImplSignatureValidator(){}
@@ -113,8 +107,6 @@ protected:
     bool m_ocspEnable;
     bool m_crlEnable;
     bool m_complianceModeEnabled;
-	bool m_noHash; 	// sign, cert, no hash
-	bool m_partialHash; 	//partialHash
 };
 
 class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureValidator
@@ -122,12 +114,6 @@ class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureVali
   public:
     SignatureValidator::Result check(SignatureData &data,
             const std::string &widgetContentPath);
-
-	bool setNoHash(bool noHash){ 
-		LogDebug("setNoHash : noHash  >>");
-		m_noHash = noHash;	}
-	
-	SignatureValidator::Result setPartialHashList(std::list<std::string>& targetUri);
 
     explicit ImplTizenSignatureValidator(bool ocspEnable,
                        bool crlEnable,
@@ -137,23 +123,6 @@ class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureVali
 
     virtual ~ImplTizenSignatureValidator() {}
 };
-
-SignatureValidator::Result 
-ImplTizenSignatureValidator::setPartialHashList(std::list<std::string>& targetUri)
-{	
-	LogDebug("setPartialHashList start >>");
-
-	m_partialHash = true;
-	if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().setPartialHashList(targetUri)) {
-		LogWarning("Installation break - setPartialHashList fail!");	
-		LogDebug("setPartialHashList end : fail >>");	
-		return SignatureValidator::SIGNATURE_INVALID;
-	}
-
-	LogDebug("setPartialHashList end : success >>");
-   return SignatureValidator::SIGNATURE_VALID;
-}
-
 
 SignatureValidator::Result ImplTizenSignatureValidator::check(
         SignatureData &data,
@@ -307,24 +276,7 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
 	//context.allowBrokenChain = true;
 
 	// end
-	
-	if(m_noHash == true) 
-	{
-		LogDebug("noHash : validateNoHash >>");
-		if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validateNoHash(&context)) {
-		LogWarning("Installation break - invalid package!");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
-	}
-	else if(m_partialHash == true)
-   	{
-    	LogDebug("partialHash : validatePartialHash >>");
-		if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validatePartialHash(&context)) {
-		LogWarning("Installation break - invalid package!");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
-   	}
-    else if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
+    if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
         LogWarning("Installation break - invalid package!");
         return SignatureValidator::SIGNATURE_INVALID;
     }
@@ -382,9 +334,6 @@ class ImplWacSignatureValidator : public SignatureValidator::ImplSignatureValida
   public:
     SignatureValidator::Result check(SignatureData &data,
             const std::string &widgetContentPath);
-	
-	SignatureValidator::Result setPartialHashList(std::list<std::string>& targetUri){}
-	bool setNoHash(bool noHash){}
 
     explicit ImplWacSignatureValidator(bool ocspEnable,
                      bool crlEnable,
@@ -603,16 +552,9 @@ SignatureValidator::SignatureValidator(
     bool complianceMode)
   : m_impl(0)
 {
-  	if (appType == TIZEN_NO_HASH || appType == TIZEN) 
-       {
-       		m_impl = new ImplTizenSignatureValidator(ocspEnable,crlEnable,complianceMode);
-			if(appType == TIZEN_NO_HASH)
-			{
-				m_impl->setNoHash(true);
-				LogDebug( "m_impl->setNoHash(true)");
-			}
-  		}
-      else
+    if (appType == TIZEN)
+        m_impl = new ImplTizenSignatureValidator(ocspEnable,crlEnable,complianceMode);
+    else
         m_impl = new ImplWacSignatureValidator(ocspEnable,crlEnable,complianceMode);
 }
 
@@ -625,12 +567,6 @@ SignatureValidator::Result SignatureValidator::check(
     const std::string &widgetContentPath)
 {
     return m_impl->check(data, widgetContentPath);
-}
-
-
-SignatureValidator::Result SignatureValidator::setPartialHashList(std::list<std::string>& targetUri)
-{
-    return m_impl->setPartialHashList(targetUri);
 }
 
 } // namespace ValidationCore

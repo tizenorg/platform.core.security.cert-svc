@@ -7,7 +7,13 @@
 			<label name="cert-svc::db" />
 		</provide>
 	</define>
+	<assign>
+		<filesystem path="/usr/lib/libcert-svc.so.1" label="_" />
+		<filesystem path="/usr/lib/libcert-svc.so.1.0.0" label="_" />
+		<filesystem path="/usr/lib/libcert-svc-vcore.so.1" label="_" />
+		<filesystem path="/usr/lib/libcert-svc-vcore.so.1.0.0" label="_" />
+	</assign>
 	<request>
-		<domain name="_" />
+		<domain name="cert-svc" />
 	</request>
 </manifest>

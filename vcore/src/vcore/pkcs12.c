@@ -47,7 +47,7 @@
 static const char  CERTSVC_PKCS12_STORAGE_KEY_PKEY[]  = "pkey";
 static const char  CERTSVC_PKCS12_STORAGE_KEY_CERTS[] = "certs";
 static const gchar CERTSVC_PKCS12_STORAGE_SEPARATOR  = ';';
-static const char  CERTSVC_PKCS12_UNIX_GROUP[] = "secure-storage::privatekey";
+static const char* CERTSVC_PKCS12_UNIX_GROUP = NULL;
 
 static gboolean keyfile_check(const char *pathname) {
   int result;

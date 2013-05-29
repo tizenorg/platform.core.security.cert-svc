@@ -104,7 +104,9 @@ public:
         virtual ~ClassName() {}                          \
     };
 
+#ifndef OPENSSL_NO_MD2
 DECLARE_OPENSSL_HASH_ALGORITHM(MD2, EVP_md2)
+#endif
 DECLARE_OPENSSL_HASH_ALGORITHM(MD4, EVP_md4)
 DECLARE_OPENSSL_HASH_ALGORITHM(MD5, EVP_md5)
 DECLARE_OPENSSL_HASH_ALGORITHM(SHA, EVP_sha)

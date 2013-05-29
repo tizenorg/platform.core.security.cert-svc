@@ -44,12 +44,12 @@ Certification service (developement files)
 
 %build
 %{!?build_type:%define build_type "Release"}
-cmake . -DPREFIX=%{_prefix} \
-        -DEXEC_PREFIX=%{_exec_prefix} \
-        -DLIBDIR=%{_libdir} \
-        -DBINDIR=%{_bindir} \
-        -DINCLUDEDIR=%{_includedir} \
-        -DCMAKE_BUILD_TYPE=%{build_type}
+%cmake . -DPREFIX=%{_prefix} \
+         -DEXEC_PREFIX=%{_exec_prefix} \
+         -DBINDIR=%{_bindir} \
+         -DINCLUDEDIR=%{_includedir} \
+         -DCMAKE_BUILD_TYPE=%{build_type}
+
 make %{?jobs:-j%jobs}
 
 %install

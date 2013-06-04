@@ -1,0 +1,8 @@
+Change-Id: I65f94207554ba9be7900c99e90b65117d0164848
+Code-Review+2: Anas Nashif
+Verified+1: Xavier Roche <xavier.roche@eurogiciel.fr>
+Submitted-by: Anas Nashif
+Submitted-at: Tue, 04 Jun 2013 05:28:34 -0700
+Reviewed-on: https://review.tizen.org/gerrit/3794
+Project: platform/core/security/cert-svc
+Branch: refs/heads/tizen

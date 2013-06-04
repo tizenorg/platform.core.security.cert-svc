@@ -1,0 +1,3 @@
+* Tue Jun 04 2013 Xavier Roche <xavrock.os@gmail.com> accepted/tizen/20130520.101205@65f9420
+- Fix lib var path for x64 build
+

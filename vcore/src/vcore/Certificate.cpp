@@ -136,7 +136,7 @@ bool Certificate::isSignedBy(const CertificatePtr &parent) const
 Certificate::Fingerprint Certificate::getFingerprint(
         Certificate::FingerprintType type) const
 {
-    size_t fingerprintlength = EVP_MAX_MD_SIZE;
+    unsigned int fingerprintlength = EVP_MAX_MD_SIZE; //EVP_MAX_MD_SIZE is smaller than  2^64
     unsigned char fingerprint[EVP_MAX_MD_SIZE];
     Fingerprint raw;
 

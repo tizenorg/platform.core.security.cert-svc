@@ -36,6 +36,8 @@
 #define CERT_SVC_API	__attribute__((visibility("default")))
 #endif
 
+#define CRT_FILE_PATH	"/opt/usr/share/certs/ca-certificate.crt"
+
 CERT_SVC_API
 int cert_svc_add_certificate_to_store(const char* filePath, const char* location)
 {
@@ -561,3 +563,10 @@ int cert_svc_check_ocsp_status(CERT_CONTEXT* ctx, const char* uri)
 err:
 	return ret;
 }
+
+CERT_SVC_API
+char* cert_svc_get_certificate_crt_file_path(void)
+{
+	return CRT_FILE_PATH;
+}
+

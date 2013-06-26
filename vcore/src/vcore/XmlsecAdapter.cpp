@@ -36,6 +36,7 @@
 #include <xmlsec/crypto.h>
 #include <xmlsec/io.h>
 #include <xmlsec/keyinfo.h>
+#include <xmlsec/errors.h>
 
 #include <dpl/assert.h>
 #include <dpl/log/log.h>
@@ -120,6 +121,24 @@ void XmlSec::fileExtractPrefix(XmlSecContext *context)
         s_prefixPath.clear();
     } else {
         s_prefixPath.erase(pos + 1, std::string::npos);
+    }
+}
+
+void LogDebugPrint(const char* file, int line, const char* func, 
+       const char* errorObject, const char* errorSubject, 
+       int reason, const char* msg)
+{
+    char total[1024];
+    sprintf(total, "[%s(%d)] : [%s] : [%s] : [%s]", func, line, errorObject, errorSubject, msg);
+
+    if(reason != 256)
+    {
+       fprintf(stderr, "## [validate error]: %s\n", total);
+       LogError(" " << total);
+    }
+    else
+    {
+       LogDebug(" " << total);
     }
 }
 
@@ -256,7 +275,9 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
 
     /*   Verify signature */
     if (xmlSecDSigCtxVerify(dsigCtx, node) < 0) {
-        LogWarning("Signature verify error.");
+         LogError("Signature verify error.");
+         fprintf(stderr, "## [validate error]: Signature verify error\n");
+         res = -1;
         goto done;
     }
 
@@ -273,6 +294,7 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
         res = 0;
     } else {
         LogDebug("Signature is INVALID");
+        res = -1;
         goto done;
     }
 
@@ -370,6 +392,8 @@ XmlSec::Result XmlSec::validate(XmlSecContext *context)
     Assert(context);
     Assert(!(context->signatureFile.empty()));
     Assert(context->certificatePtr.Get() || !(context->certificatePath.empty()));
+
+    xmlSecErrorsSetCallback(LogDebugPrint);
 
     if (!m_initialized) {
         LogError("XmlSec is not initialized.");

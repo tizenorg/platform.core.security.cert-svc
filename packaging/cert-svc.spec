@@ -95,6 +95,7 @@ fi
 /sbin/ldconfig
 
 %files
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %manifest %{_datadir}/%{name}.manifest
 %attr(0755,root,root) %{_bindir}/cert_svc_create_clean_db.sh
@@ -126,6 +127,7 @@ fi
 /opt/share/cert-svc/pkcs12/storage
 
 %files devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_includedir}/*
 %{_libdir}/pkgconfig/*

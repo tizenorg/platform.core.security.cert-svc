@@ -6,7 +6,8 @@ Release: 45
 Group:   System/Libraries
 License: SAMSUNG
 Source0: %{name}-%{version}.tar.gz
-Source1: %{name}.manifest
+Source1001: %{name}.manifest
+Source1002: %{name}-devel.manifest
 
 Requires(post):   /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -41,6 +42,8 @@ Certification service (developement files)
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
+cp %{SOURCE1002} .
 
 %build
 %{!?build_type:%define build_type "Release"}
@@ -57,7 +60,6 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/license
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
 %make_install
-install -D %{SOURCE1} %{buildroot}%{_datadir}/%{name}.manifest
 ln -sf /opt/etc/ssl/certs %{buildroot}/opt/share/cert-svc/certs/ssl
 touch %{buildroot}/opt/share/cert-svc/pkcs12/storage
 chmod 766 %{buildroot}/opt/share/cert-svc/pkcs12/storage
@@ -97,7 +99,6 @@ fi
 %files
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
-%manifest %{_datadir}/%{name}.manifest
 %attr(0755,root,root) %{_bindir}/cert_svc_create_clean_db.sh
 %{_libdir}/*.so.*
 %{_bindir}/dpkg-pki-sig
@@ -127,7 +128,7 @@ fi
 /opt/share/cert-svc/pkcs12/storage
 
 %files devel
-%manifest %{name}.manifest
+%manifest %{name}-devel.manifest
 %defattr(-,root,root,-)
 %{_includedir}/*
 %{_libdir}/pkgconfig/*

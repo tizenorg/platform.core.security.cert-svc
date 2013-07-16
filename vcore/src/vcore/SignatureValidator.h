@@ -61,8 +61,14 @@ public:
         SignatureData &data,
         const std::string &widgetContentPath);
 
+    Result checkList(
+        SignatureData &data,
+        const std::string &widgetContentPath,
+        const std::list<std::string>& uriList,
+        bool  exceptionUriHash = false);
+
 private:
-	ImplSignatureValidator *m_impl;
+     ImplSignatureValidator *m_impl;
 };
 
 } // namespace ValidationCore

@@ -49,6 +49,12 @@ public:
         SignatureData &data,
         const std::string &widgetContentPath) = 0;
 
+    virtual SignatureValidator::Result checkList(
+        SignatureData &data,
+        const std::string &widgetContentPath,
+        const std::list<std::string>& uriList,
+        bool  exceptionUriHash = false) = 0;
+
     explicit ImplSignatureValidator(bool ocspEnable,
                   bool crlEnable,
                   bool complianceMode)
@@ -57,7 +63,7 @@ public:
       , m_complianceModeEnabled(complianceMode)
     {}
 
-    virtual ~ImplSignatureValidator(){}
+    virtual ~ImplSignatureValidator(){ }
 
     bool checkRoleURI(const SignatureData &data) {
         std::string roleURI = data.getRoleURI();
@@ -114,6 +120,11 @@ class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureVali
   public:
     SignatureValidator::Result check(SignatureData &data,
             const std::string &widgetContentPath);
+
+    SignatureValidator::Result checkList(SignatureData &data,
+            const std::string &widgetContentPath,
+            const std::list<std::string>& uriList,
+            bool  exceptionUriHash = false);
 
     explicit ImplTizenSignatureValidator(bool ocspEnable,
                        bool crlEnable,
@@ -182,36 +193,36 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
         << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
     LogDebug("Visibility level is partner :  "
         << storeIdSet.contains(CertStoreId::VIS_PARTNER));
-	LogDebug("Visibility level is platform :  "
-		<< storeIdSet.contains(CertStoreId::VIS_PLATFORM));
+    LogDebug("Visibility level is platform :  "
+      << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
-	if (data.isAuthorSignature())
-	{
-		if (!storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER))
-		{
+    if (data.isAuthorSignature())
+    {
+     if (!storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER))
+     {
             LogWarning("author-signature.xml has got unrecognized Root CA "
                        "certificate. Signature will be disregarded.");
             disregard = true;
-		}
+     }
         LogDebug("Root CA for author signature is correct.");
-	}
-	else
-	{
-		LogDebug("signaturefile name = " <<  data.getSignatureFileName().c_str());
-		if (data.getSignatureNumber() == 1)
-		{
-			if (storeIdSet.contains(CertStoreId::VIS_PUBLIC) || storeIdSet.contains(CertStoreId::VIS_PARTNER) || storeIdSet.contains(CertStoreId::VIS_PLATFORM))
-			{
-				LogDebug("Root CA for signature1.xml is correct.");
-			}
-			else
-			{
-				LogWarning("author-signature.xml has got unrecognized Root CA "
-				        "certificate. Signature will be disregarded.");
-				disregard = true;
-			}
-		}
-	}
+   }
+   else
+   {
+      LogDebug("signaturefile name = " <<  data.getSignatureFileName().c_str());
+      if (data.getSignatureNumber() == 1)
+      {
+         if (storeIdSet.contains(CertStoreId::VIS_PUBLIC) || storeIdSet.contains(CertStoreId::VIS_PARTNER) || storeIdSet.contains(CertStoreId::VIS_PLATFORM))
+         {
+            LogDebug("Root CA for signature1.xml is correct.");
+         }
+         else
+         {
+            LogWarning("author-signature.xml has got unrecognized Root CA "
+                       "certificate. Signature will be disregarded.");
+            disregard = true;
+         }
+      }
+   }
 
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
@@ -235,65 +246,293 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
     time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
     time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
 
-	time_t nowTime = time(NULL);
-	struct tm *t;
+    time_t nowTime = time(NULL);
+    struct tm *t;
 
-	if (data.isAuthorSignature())
-	{
-		// time_t 2038 year bug exist. So, notAtter() cann't check...
-		/*
-		if (notAfter < nowTime)
-		{
-			context.validationTime = notAfter - TIMET_DAY;
-			LogWarning("Author certificate is expired. notAfter...");
-		}
-		*/
+    if (data.isAuthorSignature())
+    {
+       // time_t 2038 year bug exist. So, notAtter() cann't check...
+       /*
+       if (notAfter < nowTime)
+       {
+          context.validationTime = notAfter - TIMET_DAY;
+          LogWarning("Author certificate is expired. notAfter...");
+       }
+       */
 
-		if (notBefore > nowTime)
-		{
-			LogWarning("Author certificate is expired. notBefore time is greater than system-time.");
+       if (notBefore > nowTime)
+       {
+          LogWarning("Author certificate is expired. notBefore time is greater than system-time.");
 
-			t = localtime(&nowTime);
-			LogDebug("System's current Year : " << t->tm_year + 1900);
-			LogDebug("System's current month : " << t->tm_mon + 1);
-			LogDebug("System's current day : " << t->tm_mday);
+          t = localtime(&nowTime);
+          LogDebug("System's current Year : " << t->tm_year + 1900);
+          LogDebug("System's current month : " << t->tm_mon + 1);
+          LogDebug("System's current day : " << t->tm_mday);
 
-			t = localtime(&notBefore);
-			LogDebug("Author certificate's notBefore Year : " << t->tm_year + 1900);
-			LogDebug("Author certificate's notBefore month : " << t->tm_mon + 1);
-			LogDebug("Author certificate's notBefore day : " << t->tm_mday);
+          t = localtime(&notBefore);
+          LogDebug("Author certificate's notBefore Year : " << t->tm_year + 1900);
+          LogDebug("Author certificate's notBefore month : " << t->tm_mon + 1);
+          LogDebug("Author certificate's notBefore day : " << t->tm_mday);
 
-			context.validationTime = notBefore + TIMET_DAY;
+          context.validationTime = notBefore + TIMET_DAY;
 
-			t = localtime(&context.validationTime);
-			LogDebug("Modified current Year : " << t->tm_year + 1900);
-			LogDebug("Modified current notBefore month : " << t->tm_mon + 1);
-			LogDebug("Modified current notBefore day : " << t->tm_mday);
-		}
-	}
-	
+          t = localtime(&context.validationTime);
+          LogDebug("Modified current Year : " << t->tm_year + 1900);
+          LogDebug("Modified current notBefore month : " << t->tm_mon + 1);
+          LogDebug("Modified current notBefore day : " << t->tm_mday);
+      }
+    }
+
     // WAC 2.0 SP-2066 The wrt must not block widget installation
-	//context.allowBrokenChain = true;
+    //context.allowBrokenChain = true;
 
-	// end
-    if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
-        LogWarning("Installation break - invalid package!");
-        return SignatureValidator::SIGNATURE_INVALID;
-    }
+    // end
 
-    data.setReference(context.referenceSet);
+   if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
+         LogWarning("Installation break - invalid package! >> validate");
+         return SignatureValidator::SIGNATURE_INVALID;
+   }
 
-    if (!checkObjectReferences(data)) {
-        return SignatureValidator::SIGNATURE_INVALID;
-    }
+   data.setReference(context.referenceSet);
+   if (!checkObjectReferences(data)) {
+       return SignatureValidator::SIGNATURE_INVALID;
+   }
 
-	/*
+  /*
     ReferenceValidator fileValidator(widgetContentPath);
     if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(data)) {
         LogWarning("Invalid package - file references broken");
         return SignatureValidator::SIGNATURE_INVALID;
     }
-	*/
+ */
+
+    // It is good time to do OCSP check
+    // ocspCheck will throw an exception on any error.
+    // TODO Probably we should catch this exception and add
+    // some information to SignatureData.
+    if (!m_complianceModeEnabled && !data.isAuthorSignature()) {
+        CertificateCollection coll;
+        coll.load(sortedCertificateList);
+
+        if (!coll.sort()) {
+            LogDebug("Collection does not contain chain!");
+            return SignatureValidator::SIGNATURE_INVALID;
+        }
+
+        CertificateVerifier verificator(m_ocspEnable, m_crlEnable);
+        VerificationStatus result = verificator.check(coll);
+
+        if (result == VERIFICATION_STATUS_REVOKED) {
+            return SignatureValidator::SIGNATURE_REVOKED;
+        }
+
+        if (result == VERIFICATION_STATUS_UNKNOWN ||
+            result == VERIFICATION_STATUS_ERROR)
+        {
+            disregard = true;
+        }
+    }
+
+    if (disregard) {
+        LogWarning("Signature is disregard. RootCA is not a member of Tizen.");
+        return SignatureValidator::SIGNATURE_DISREGARD;
+    }
+    return SignatureValidator::SIGNATURE_VERIFIED;
+}
+
+SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData &data,
+            const std::string &widgetContentPath,
+            const std::list<std::string>& uriList,
+            bool  exceptionUriHash)
+{
+    if(exceptionUriHash == true && uriList.size() != 0 )
+    {
+      LogWarning("Installation break >> invalid input parameter");
+      return SignatureValidator::SIGNATURE_INVALID;
+    }
+
+    bool disregard = false;
+    bool partialHash;
+
+    if (!checkRoleURI(data)) {
+        return SignatureValidator::SIGNATURE_INVALID;
+    }
+
+    if (!checkProfileURI(data)) {
+        return SignatureValidator::SIGNATURE_INVALID;
+    }
+
+    //  CertificateList sortedCertificateList = data.getCertList();
+
+    CertificateCollection collection;
+    collection.load(data.getCertList());
+
+    // First step - sort certificate
+    if (!collection.sort()) {
+        LogWarning("Certificates do not form valid chain.");
+        return SignatureValidator::SIGNATURE_INVALID;
+    }
+
+    // Check for error
+    if (collection.empty()) {
+        LogWarning("Certificate list in signature is empty.");
+        return SignatureValidator::SIGNATURE_INVALID;
+    }
+
+    CertificateList sortedCertificateList = collection.getChain();
+
+    // TODO move it to CertificateCollection
+    // Add root CA and CA certificates (if chain is incomplete)
+    sortedCertificateList =
+        OCSPCertMgrUtil::completeCertificateChain(sortedCertificateList);
+
+    CertificatePtr root = sortedCertificateList.back();
+
+    // Is Root CA certificate trusted?
+    CertStoreId::Set storeIdSet = createCertificateIdentifier().find(root);
+
+    LogDebug("Is root certificate from TIZEN_DEVELOPER domain:  "
+        << storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER));
+    LogDebug("Is root certificate from TIZEN_TEST domain:  "
+        << storeIdSet.contains(CertStoreId::TIZEN_TEST));
+    LogDebug("Is root certificate from TIZEN_PUBLIC domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
+    LogDebug("Is root certificate from TIZEN_PARTNER domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PARTNER));
+    LogDebug("Is root certificate from TIZEN_PLATFORM domain:  "
+        << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
+
+    LogDebug("Visibility level is public :  "
+        << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
+    LogDebug("Visibility level is partner :  "
+        << storeIdSet.contains(CertStoreId::VIS_PARTNER));
+    LogDebug("Visibility level is platform :  "
+      << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
+
+    if (data.isAuthorSignature())
+    {
+     if (!storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER))
+     {
+            LogWarning("author-signature.xml has got unrecognized Root CA "
+                       "certificate. Signature will be disregarded.");
+            disregard = true;
+     }
+        LogDebug("Root CA for author signature is correct.");
+   }
+   else
+   {
+      LogDebug("signaturefile name = " <<  data.getSignatureFileName().c_str());
+      if (data.getSignatureNumber() == 1)
+      {
+         if (storeIdSet.contains(CertStoreId::VIS_PUBLIC) || storeIdSet.contains(CertStoreId::VIS_PARTNER) || storeIdSet.contains(CertStoreId::VIS_PLATFORM))
+         {
+            LogDebug("Root CA for signature1.xml is correct.");
+         }
+         else
+         {
+            LogWarning("author-signature.xml has got unrecognized Root CA "
+                       "certificate. Signature will be disregarded.");
+            disregard = true;
+         }
+      }
+   }
+
+    data.setStorageType(storeIdSet);
+    data.setSortedCertificateList(sortedCertificateList);
+
+    // We add only Root CA certificate because WAC ensure that the rest
+    // of certificates are present in signature files ;-)
+    XmlSec::XmlSecContext context;
+    context.signatureFile = data.getSignatureFileName();
+    context.certificatePtr = root;
+
+    // Now we should have full certificate chain.
+    // If the end certificate is not ROOT CA we should disregard signature
+    // but still signature must be valid... Aaaaaa it's so stupid...
+    if (!(root->isSignedBy(root))) {
+        LogWarning("Root CA certificate not found. Chain is incomplete.");
+    //  context.allowBrokenChain = true;
+    }
+
+    // WAC 2.0 SP-2066 The wrt must not block widget installation
+    // due to expiration of the author certificate.
+    time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
+    time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
+
+    time_t nowTime = time(NULL);
+    struct tm *t;
+
+    if (data.isAuthorSignature())
+    {
+       // time_t 2038 year bug exist. So, notAtter() cann't check...
+       /*
+       if (notAfter < nowTime)
+       {
+          context.validationTime = notAfter - TIMET_DAY;
+          LogWarning("Author certificate is expired. notAfter...");
+       }
+       */
+
+       if (notBefore > nowTime)
+       {
+          LogWarning("Author certificate is expired. notBefore time is greater than system-time.");
+
+          t = localtime(&nowTime);
+          LogDebug("System's current Year : " << t->tm_year + 1900);
+          LogDebug("System's current month : " << t->tm_mon + 1);
+          LogDebug("System's current day : " << t->tm_mday);
+
+          t = localtime(&notBefore);
+          LogDebug("Author certificate's notBefore Year : " << t->tm_year + 1900);
+          LogDebug("Author certificate's notBefore month : " << t->tm_mon + 1);
+          LogDebug("Author certificate's notBefore day : " << t->tm_mday);
+
+          context.validationTime = notBefore + TIMET_DAY;
+
+          t = localtime(&context.validationTime);
+          LogDebug("Modified current Year : " << t->tm_year + 1900);
+          LogDebug("Modified current notBefore month : " << t->tm_mon + 1);
+          LogDebug("Modified current notBefore day : " << t->tm_mday);
+      }
+    }
+
+    // WAC 2.0 SP-2066 The wrt must not block widget installation
+    //context.allowBrokenChain = true;
+
+    // end
+   if(exceptionUriHash == true || uriList.size() == 0)
+   {
+     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validateNoHash(&context)) {
+        LogWarning("Installation break - invalid package! >> validateNoHash");
+        return SignatureValidator::SIGNATURE_INVALID;
+     }
+   }
+  else if(uriList.size() != 0)
+  {
+    partialHash = true;
+    XmlSecSingleton::Instance().setPartialHashList(uriList);
+    if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validatePartialHash(&context)) {
+        LogWarning("Installation break - invalid package! >> validatePartialHash");
+        return SignatureValidator::SIGNATURE_INVALID;
+    }
+  }
+
+   if(exceptionUriHash != true && partialHash != true)
+   {
+      data.setReference(context.referenceSet);
+
+      if (!checkObjectReferences(data)) {
+         return SignatureValidator::SIGNATURE_INVALID;
+      }
+   }
+
+  /*
+    ReferenceValidator fileValidator(widgetContentPath);
+    if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(data)) {
+        LogWarning("Invalid package - file references broken");
+        return SignatureValidator::SIGNATURE_INVALID;
+    }
+ */
 
     // It is good time to do OCSP check
     // ocspCheck will throw an exception on any error.
@@ -335,6 +574,11 @@ class ImplWacSignatureValidator : public SignatureValidator::ImplSignatureValida
     SignatureValidator::Result check(SignatureData &data,
             const std::string &widgetContentPath);
 
+    SignatureValidator::Result checkList(SignatureData &data,
+            const std::string &widgetContentPath,
+            const std::list<std::string>& uriList,
+            bool  exceptionUriHash = false);
+
     explicit ImplWacSignatureValidator(bool ocspEnable,
                      bool crlEnable,
                      bool complianceMode)
@@ -343,6 +587,17 @@ class ImplWacSignatureValidator : public SignatureValidator::ImplSignatureValida
 
     virtual ~ImplWacSignatureValidator() {}
 };
+
+
+SignatureValidator::Result ImplWacSignatureValidator::checkList(
+        SignatureData &data,
+        const std::string &widgetContentPath,
+        const std::list<std::string>& uriList,
+        bool  exceptionUriHash)
+{
+    return SignatureValidator::SIGNATURE_INVALID;
+}
+
 
 SignatureValidator::Result ImplWacSignatureValidator::check(
     SignatureData &data,
@@ -402,36 +657,34 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
         << storeIdSet.contains(CertStoreId::VIS_PUBLIC));
     LogDebug("Visibility level is partner :  "
         << storeIdSet.contains(CertStoreId::VIS_PARTNER));
-	LogDebug("Visibility level is platform :  "
-		<< storeIdSet.contains(CertStoreId::VIS_PLATFORM));
+    LogDebug("Visibility level is platform :  "
+        << storeIdSet.contains(CertStoreId::VIS_PLATFORM));
 
-	if (data.isAuthorSignature())
-	{
-		if (!storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER))
-		{
-            LogWarning("author-signature.xml has got unrecognized Root CA "
-                       "certificate. Signature will be disregarded.");
-            disregard = true;
-		}
+    if (data.isAuthorSignature())
+    {
+     if (!storeIdSet.contains(CertStoreId::TIZEN_DEVELOPER))
+     {
+        LogWarning("author-signature.xml has got unrecognized Root CA "
+                   "certificate. Signature will be disregarded.");
+        disregard = true;
+     }
         LogDebug("Root CA for author signature is correct.");
-	}
-	else
-	{
-		LogDebug("signaturefile name = " <<  data.getSignatureFileName().c_str());
-		if (data.getSignatureNumber() == 1)
-		{
-			if (storeIdSet.contains(CertStoreId::VIS_PUBLIC) || storeIdSet.contains(CertStoreId::VIS_PARTNER) || storeIdSet.contains(CertStoreId::VIS_PLATFORM))
-			{
-				LogDebug("Root CA for signature1.xml is correct.");
-			}
-			else
-			{
-				LogWarning("author-signature.xml has got unrecognized Root CA "
-				        "certificate. Signature will be disregarded.");
-				disregard = true;
-			}
-		}
-	}
+    } else {
+        LogDebug("signaturefile name = " <<  data.getSignatureFileName().c_str());
+       if (data.getSignatureNumber() == 1)
+       {
+          if (storeIdSet.contains(CertStoreId::VIS_PUBLIC) || storeIdSet.contains(CertStoreId::VIS_PARTNER) || storeIdSet.contains(CertStoreId::VIS_PLATFORM))
+          {
+             LogDebug("Root CA for signature1.xml is correct.");
+          }
+          else
+          {
+             LogWarning("author-signature.xml has got unrecognized Root CA "
+                        "certificate. Signature will be disregarded.");
+             disregard = true;
+          }
+       }
+    }
 
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
@@ -451,46 +704,46 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
     }
 
     // WAC 2.0 SP-2066 The wrt must not block widget installation
-	// due to expiration of the author certificate.
-	time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
-	time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
+    // due to expiration of the author certificate.
+    time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
+    time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
 
-	time_t nowTime = time(NULL);
-	struct tm *t;
+    time_t nowTime = time(NULL);
+    struct tm *t;
 
-	if (data.isAuthorSignature())
-	{
-		// time_t 2038 year bug exist. So, notAtter() cann't check...
-		/*
-		if (notAfter < nowTime)
-		{
-			context.validationTime = notAfter - TIMET_DAY;
-			LogWarning("Author certificate is expired. notAfter...");
-		 }
-		 */
+    if (data.isAuthorSignature())
+    {
+      // time_t 2038 year bug exist. So, notAtter() cann't check...
+      /*
+      if (notAfter < nowTime)
+      {
+         context.validationTime = notAfter - TIMET_DAY;
+         LogWarning("Author certificate is expired. notAfter...");
+      }
+      */
 
-		if (notBefore > nowTime)
-		{
-			LogWarning("Author certificate is expired. notBefore time is greater than system-time.");
+    if (notBefore > nowTime)
+    {
+       LogWarning("Author certificate is expired. notBefore time is greater than system-time.");
 
-			t = localtime(&nowTime);
-			LogDebug("System's current Year : " << t->tm_year + 1900);
-			LogDebug("System's current month : " << t->tm_mon + 1);
-			LogDebug("System's current day : " << t->tm_mday);
+       t = localtime(&nowTime);
+       LogDebug("System's current Year : " << t->tm_year + 1900);
+       LogDebug("System's current month : " << t->tm_mon + 1);
+       LogDebug("System's current day : " << t->tm_mday);
 
-			t = localtime(&notBefore);
-			LogDebug("Author certificate's notBefore Year : " << t->tm_year + 1900);
-			LogDebug("Author certificate's notBefore month : " << t->tm_mon + 1);
-			LogDebug("Author certificate's notBefore day : " << t->tm_mday);
+       t = localtime(&notBefore);
+       LogDebug("Author certificate's notBefore Year : " << t->tm_year + 1900);
+       LogDebug("Author certificate's notBefore month : " << t->tm_mon + 1);
+       LogDebug("Author certificate's notBefore day : " << t->tm_mday);
 
-			context.validationTime = notBefore + TIMET_DAY;
+       context.validationTime = notBefore + TIMET_DAY;
 
-			t = localtime(&context.validationTime);
-			LogDebug("Modified current Year : " << t->tm_year + 1900);
-			LogDebug("Modified current notBefore month : " << t->tm_mon + 1);
-			LogDebug("Modified current notBefore day : " << t->tm_mday);
-		}
-	}
+       t = localtime(&context.validationTime);
+       LogDebug("Modified current Year : " << t->tm_year + 1900);
+       LogDebug("Modified current notBefore month : " << t->tm_mon + 1);
+       LogDebug("Modified current notBefore day : " << t->tm_mday);
+    }
+   }
 
     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
         LogWarning("Installation break - invalid package!");
@@ -537,7 +790,7 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
     }
 
     if (disregard) {
-		LogWarning("Signature is disregard. RootCA is not a member of Tizen.");
+        LogWarning("Signature is disregard. RootCA is not a member of Tizen.");
         return SignatureValidator::SIGNATURE_DISREGARD;
     }
     return SignatureValidator::SIGNATURE_VERIFIED;
@@ -552,10 +805,16 @@ SignatureValidator::SignatureValidator(
     bool complianceMode)
   : m_impl(0)
 {
-    if (appType == TIZEN)
-        m_impl = new ImplTizenSignatureValidator(ocspEnable,crlEnable,complianceMode);
-    else
-        m_impl = new ImplWacSignatureValidator(ocspEnable,crlEnable,complianceMode);
+    LogDebug( "appType :" << appType );
+
+    if(appType == TIZEN)
+    {
+     m_impl = new ImplTizenSignatureValidator(ocspEnable,crlEnable,complianceMode);
+    }
+    else if(appType == WAC20)
+    {
+     m_impl = new ImplWacSignatureValidator(ocspEnable,crlEnable,complianceMode);
+    }
 }
 
 SignatureValidator::~SignatureValidator() {
@@ -567,6 +826,15 @@ SignatureValidator::Result SignatureValidator::check(
     const std::string &widgetContentPath)
 {
     return m_impl->check(data, widgetContentPath);
+}
+
+SignatureValidator::Result SignatureValidator::checkList(
+    SignatureData &data,
+    const std::string &widgetContentPath,
+    const std::list<std::string>& uriList,
+    bool  exceptionUriHash)
+{
+    return m_impl->checkList(data, widgetContentPath, uriList, exceptionUriHash );
 }
 
 } // namespace ValidationCore

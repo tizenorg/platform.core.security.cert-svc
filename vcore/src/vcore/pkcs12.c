@@ -302,7 +302,7 @@ int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar 
   result = CERTSVC_SUCCESS;
 
 #if 1
-  	LOGD("( %s, %s)", path, password);
+  	SECURE_LOGD("( %s, %s)", path, password);
     void* pSymAddr = NULL;
 	void* pInitAddr = NULL;
 	typedef int (*InsertPkcs12FuncPointer)(const char*, const char*);

@@ -97,12 +97,12 @@ int _add_certificate_to_store(const char* filePath, const char* location)
 
 	/* file open and write */
 	if(!(fp_in = fopen(filePath, "rb"))) {
-		SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filePath);
 		ret = CERT_SVC_ERR_FILE_IO;
 		goto err;
 	}
 	if(!(fp_out = fopen(fileFullPath, "wb"))) {
-		SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, fileFullPath);
+		SECURE_SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, fileFullPath);
 		if(errno == EACCES)
 			ret = CERT_SVC_ERR_PERMISSION_DENIED;
 		else
@@ -111,7 +111,7 @@ int _add_certificate_to_store(const char* filePath, const char* location)
 	}
 
 	if((ret = cert_svc_util_get_file_size(filePath, &inFileLen)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to get file size, [%s]\n", __func__, filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to get file size, [%s]\n", __func__, filePath);
 		goto err;
 	}
 
@@ -124,12 +124,12 @@ int _add_certificate_to_store(const char* filePath, const char* location)
 	memset(fileContent, 0x00, inFileLen);
 
 	if(fread(fileContent, sizeof(char), inFileLen, fp_in) != inFileLen) {
-		SLOGE("[ERR][%s] Fail to read file, [%s]\n", __func__, filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to read file, [%s]\n", __func__, filePath);
 		ret = CERT_SVC_ERR_FILE_IO;
 		goto err;
 	}
 	if(fwrite(fileContent, sizeof(char), inFileLen, fp_out) != inFileLen) {
-		SLOGE("[ERR][%s] Fail to write file, [%s]\n", __func__, fileFullPath);
+		SECURE_SLOGE("[ERR][%s] Fail to write file, [%s]\n", __func__, fileFullPath);
 		ret = CERT_SVC_ERR_FILE_IO;
 		goto err;
 	}
@@ -167,7 +167,7 @@ int _delete_certificate_from_store(const char* fileName, const char* location)
 
 	/* delete designated certificate */
 	if(unlink(fileFullPath) == -1) {
-		SLOGE("[ERR][%s] Fail to delete file, [%s]\n", __func__, fileName);
+		SECURE_SLOGE("[ERR][%s] Fail to delete file, [%s]\n", __func__, fileName);
 		if(errno == EACCES)
 			ret = CERT_SVC_ERR_PERMISSION_DENIED;
 		else

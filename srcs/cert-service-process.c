@@ -490,7 +490,7 @@ int VerifyCallbackfunc(int ok, X509_STORE_CTX* store)
 		X509_NAME_oneline(X509_get_subject_name(store->current_cert), buf, 256);
 	else
 		strncpy(buf, "test", 4);
-	SLOGD("[%s] Certificate %i: %s\n", __func__, verify_context->depth, buf);
+	SECURE_SLOGD("[%s] Certificate %i: %s\n", __func__, verify_context->depth, buf);
 
 	return ok;
 }
@@ -1312,7 +1312,7 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 
 	while(1) {
 		if((lstat(p->filename, &file_info)) < 0) {	// get file information
-			SLOGE("[ERR][%s] Fail to get file(%s) information.\n", __func__, p->filename);
+			SECURE_SLOGE("[ERR][%s] Fail to get file(%s) information.\n", __func__, p->filename);
 			ret = CERT_SVC_ERR_INVALID_OPERATION;
 			goto err;
 		}
@@ -1330,7 +1330,7 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 
 		// load content into buffer
 		if((ret = cert_svc_util_load_file_to_buffer(p->filename, certBuf)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to load file to buffer, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
+			SECURE_SLOGE("[ERR][%s] Fail to load file to buffer, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
 			free(certBuf);
 			certBuf = NULL;
 			goto fail_to_load_file;
@@ -1345,7 +1345,7 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 
 		// load content into descriptor buffer
 		if((ret = _extract_certificate_data(certBuf, certDesc)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to extract certificate data, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
+			SECURE_SLOGE("[ERR][%s] Fail to extract certificate data, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
 			goto fail_to_extract_file;
 		}
 

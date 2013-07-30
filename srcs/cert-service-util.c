@@ -160,7 +160,7 @@ int cert_svc_util_get_file_size(const char* filepath, unsigned long int* length)
 	FILE* fp_in = NULL;
 
 	if(!(fp_in = fopen(filepath, "r"))) {
-		SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filepath);
+		SECURE_SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filepath);
 		ret = CERT_SVC_ERR_FILE_IO;
 		goto err;
 	}
@@ -182,7 +182,7 @@ int cert_svc_util_get_extension(const char* filePath, cert_svc_mem_buff* certBuf
     X509 *x = NULL;
 
     if ((in = fopen(filePath, "r")) == NULL) {
-        SLOGE("[ERR] Error opening file %s\n", filePath);
+        SECURE_SLOGE("[ERR] Error opening file %s\n", filePath);
         ret = CERT_SVC_ERR_FILE_IO;
         goto end;
     }
@@ -206,7 +206,7 @@ int cert_svc_util_get_extension(const char* filePath, cert_svc_mem_buff* certBuf
         goto end;
     }
 
-    SLOGE("[ERR] Unknown file type: %s\n", filePath);
+    SECURE_SLOGE("[ERR] Unknown file type: %s\n", filePath);
     ret = CERT_SVC_ERR_FILE_IO;
 
 end:
@@ -230,14 +230,14 @@ int cert_svc_util_load_file_to_buffer(const char* filePath, cert_svc_mem_buff* c
 
 	/* get file size */
 	if((ret = cert_svc_util_get_file_size(filePath, &fileSize)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to get file size, [%s]\n", __func__, filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to get file size, [%s]\n", __func__, filePath);
 		goto err;
 	}
 	certBuf->size = fileSize;
 
 	/* open file and write to buffer */
 	if(!(fp_in = fopen(filePath, "rb"))) {
-		SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filePath);
 		ret = CERT_SVC_ERR_FILE_IO;
 		goto err;
 	}
@@ -249,7 +249,7 @@ int cert_svc_util_load_file_to_buffer(const char* filePath, cert_svc_mem_buff* c
 	}
     memset(content, 0x00, (fileSize + 1));  //ensuring that content[] will be NULL terminated
 	if(fread(content, sizeof(unsigned char), fileSize, fp_in) != fileSize) {
-		SLOGE("[ERR][%s] Fail to read file, [%s]\n", __func__, filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to read file, [%s]\n", __func__, filePath);
 		ret = CERT_SVC_ERR_FILE_IO;
 		goto err;
 	}
@@ -257,7 +257,7 @@ int cert_svc_util_load_file_to_buffer(const char* filePath, cert_svc_mem_buff* c
 	/* find out certificate type */
 	memset(certBuf->type, 0x00, 4);
     if (cert_svc_util_get_extension(filePath, certBuf) != CERT_SVC_ERR_NO_ERROR) {
-        SLOGE("[ERR] cert_svc_util_get_extension failed to identify %s\n", filePath);
+        SECURE_SLOGE("[ERR] cert_svc_util_get_extension failed to identify %s\n", filePath);
         ret = CERT_SVC_ERR_FILE_IO;
         goto err;
     }
@@ -265,13 +265,13 @@ int cert_svc_util_load_file_to_buffer(const char* filePath, cert_svc_mem_buff* c
 	/* load file into buffer */
 	if(!strncmp(certBuf->type, "PEM", sizeof(certBuf->type))) {	// PEM format
 		if((ret = get_content_into_buf_PEM(content, certBuf)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to load file to buffer, [%s]\n", __func__, filePath);
+			SECURE_SLOGE("[ERR][%s] Fail to load file to buffer, [%s]\n", __func__, filePath);
 			goto err;
 		}
 	}
 	else if(!strncmp(certBuf->type, "DER", sizeof(certBuf->type))) {	// DER format
 		if((ret = get_content_into_buf_DER(content, certBuf)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to load file to buffer, [%s]\n", __func__, filePath);
+			SECURE_SLOGE("[ERR][%s] Fail to load file to buffer, [%s]\n", __func__, filePath);
 			goto err;
 		}
 	}
@@ -364,7 +364,7 @@ int cert_svc_util_load_PFX_file_to_buffer(const char* filePath, cert_svc_mem_buf
 
 	/* open file and write to buffer */
 	if(!(fp_in = fopen(filePath, "rb"))) {
-		SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to open file, [%s]\n", __func__, filePath);
 		ret = CERT_SVC_ERR_FILE_IO;
 		goto err;
 	}

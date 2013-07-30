@@ -374,7 +374,7 @@ int package_sign(int argc, const char** argv)
 	int ret = DPS_OPERATION_SUCCESS;
 	int ch = 0, i = 0;
 	int certwrite = 0;
-	unsigned long int  privlen = 0;
+	unsigned long int privlen = 0;
 	unsigned long int encodedlen = 0;
 	unsigned long int certlen = 0;
 	unsigned long int sigfilelen = 0;

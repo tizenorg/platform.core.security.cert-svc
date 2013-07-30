@@ -63,10 +63,10 @@ int cert_svc_add_certificate_to_store(const char* filePath, const char* location
 	ret = _add_certificate_to_store(_filePath, location);
 
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to store certificate, [%s]\n", __func__, _filePath);
+		SECURE_SLOGE("[ERR][%s] Fail to store certificate, [%s]\n", __func__, _filePath);
 		goto err;
 	}
-	SLOGD("[%s] Success to add certificate [%s].\n", __func__, filePath);
+	SECURE_SLOGD("[%s] Success to add certificate [%s].\n", __func__, filePath);
 
 err:
 	return ret;
@@ -85,10 +85,10 @@ int cert_svc_delete_certificate_from_store(const char* fileName, const char* loc
 
 	ret = _delete_certificate_from_store(fileName, location);
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to delete certificate, [%s]\n", __func__, fileName);
+		SECURE_SLOGE("[ERR][%s] Fail to delete certificate, [%s]\n", __func__, fileName);
 		goto err;
 	}
-	SLOGD("[%s] Success to delete certificate [%s].\n", __func__, fileName);
+	SECURE_SLOGD("[%s] Success to delete certificate [%s].\n", __func__, fileName);
 
 err:
 	return ret;
@@ -367,7 +367,7 @@ int cert_svc_load_file_to_context(CERT_CONTEXT* ctx, const char* filePath)
 
 	/* get content to (*ctx)->certBuf */
 	if((ret = cert_svc_util_load_file_to_buffer(filePath, ctx->certBuf)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to load file, filepath: [%s], ret: [%d]\n", __func__, filePath, ret);
+		SECURE_SLOGE("[ERR][%s] Fail to load file, filepath: [%s], ret: [%d]\n", __func__, filePath, ret);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}
@@ -479,7 +479,7 @@ int cert_svc_push_file_into_context(CERT_CONTEXT *ctx, const char* filePath)
 
 	/* get content to ctx->certBuf */
 	if((ret = cert_svc_util_load_file_to_buffer(filePath, new->certificate)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to load file, filepath: [%s], ret: [%d]\n", __func__, filePath, ret);
+		SECURE_SLOGE("[ERR][%s] Fail to load file, filepath: [%s], ret: [%d]\n", __func__, filePath, ret);
 		release_cert_list(new);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
@@ -530,7 +530,7 @@ int cert_svc_load_PFX_file_to_context(CERT_CONTEXT* ctx, unsigned char** private
 
 	/* get content to ctx->certBuf */
 	if((ret = cert_svc_util_load_PFX_file_to_buffer(filePath, ctx->certBuf, ctx->certLink, privateKey, priKeyLen, passPhrase)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to load file, filepath: [%s], ret: [%d]\n", __func__, filePath, ret);
+		SECURE_SLOGE("[ERR][%s] Fail to load file, filepath: [%s], ret: [%d]\n", __func__, filePath, ret);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}

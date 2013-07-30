@@ -20,6 +20,7 @@
  * @brief       PKCS#12 container manipulation routines.
  */
 #define _GNU_SOURCE
+#define  _CERT_SVC_VERIFY_PKCS12
 
 #include "pkcs12.h"
 #include <cert-svc/cerror.h>
@@ -47,7 +48,7 @@
 static const char  CERTSVC_PKCS12_STORAGE_KEY_PKEY[]  = "pkey";
 static const char  CERTSVC_PKCS12_STORAGE_KEY_CERTS[] = "certs";
 static const gchar CERTSVC_PKCS12_STORAGE_SEPARATOR  = ';';
-static const char* CERTSVC_PKCS12_UNIX_GROUP = NULL;
+static const char  CERTSVC_PKCS12_UNIX_GROUP[] = "secure-storage::pkcs12";
 
 static gboolean keyfile_check(const char *pathname) {
   int result;
@@ -216,10 +217,216 @@ int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar 
   }
   result = PKCS12_parse(container, password, &key, &cert, &certv);
   PKCS12_free(container);
-  if(result == 0) {
-    result = CERTSVC_FAIL;
-    goto free_keyfile;
-  }
+	if (result == 0)
+	{
+		result = CERTSVC_FAIL;
+		goto free_keyfile;
+	}
+
+#define _CERT_SVC_VERIFY_PKCS12
+#ifdef _CERT_SVC_VERIFY_PKCS12
+
+	if (certv == NULL)
+	{
+		char* pSubject = NULL;
+		char* pIssuerName = NULL;
+		int isSelfSigned = 0;
+
+		pSubject = X509_NAME_oneline(cert->cert_info->subject, NULL, 0);
+		if (!pSubject)
+		{
+			LOGD("Failed to get subject name");
+			result = CERTSVC_FAIL;
+			goto free_keyfile;
+		}
+
+		pIssuerName = X509_NAME_oneline(cert->cert_info->issuer, NULL, 0);
+		if (!pIssuerName)
+		{
+			LOGD("Failed to get issuer name");
+			free(pSubject);
+			result = CERTSVC_FAIL;
+			goto free_keyfile;
+		}
+
+		if (strcmp((const char*)pSubject, (const char*)pIssuerName) == 0)
+		{
+			//self signed..
+			isSelfSigned = 1;
+
+			EVP_PKEY* pKey = X509_get_pubkey(cert);
+			if (!pKey)
+			{
+				LOGD("Failed to get public key");
+				result = CERTSVC_FAIL;
+				free(pSubject);
+				free(pIssuerName);
+				goto free_keyfile;
+			}
+
+			if (X509_verify(cert, pKey) <= 0)
+			{
+				LOGD("P12 verification failed");
+				result = CERTSVC_FAIL;
+				EVP_PKEY_free(pKey);
+				free(pSubject);
+				free(pIssuerName);
+				goto free_keyfile;
+			}
+			LOGD("P12 verification Success");
+			EVP_PKEY_free(pKey);
+		}
+		else
+		{
+			isSelfSigned = 0;
+			int res = 0;
+			X509_STORE_CTX *cert_ctx = NULL;
+			X509_STORE *cert_store = NULL;
+
+			cert_store = X509_STORE_new();
+			if (!cert_store)
+			{
+				LOGD("Memory allocation failed");
+				free(pSubject);
+				free(pIssuerName);
+				result = CERTSVC_FAIL;
+				goto free_keyfile;
+			}
+
+			res = X509_STORE_load_locations(cert_store, NULL, "/opt/etc/ssl/certs/");
+			if (res != 1)
+			{
+				LOGD("P12 load certificate store failed");
+				free(pSubject);
+				free(pIssuerName);
+				X509_STORE_free(cert_store);
+				result = CERTSVC_FAIL;
+				goto free_keyfile;
+			}
+
+			res = X509_STORE_set_default_paths(cert_store);
+			if (res != 1)
+			{
+				LOGD("P12 load certificate store path failed");
+				free(pSubject);
+				free(pIssuerName);
+				X509_STORE_free(cert_store);
+				result = CERTSVC_FAIL;
+				goto free_keyfile;
+			}
+
+			// initialize store and store context
+			cert_ctx = X509_STORE_CTX_new();
+			if (cert_ctx == NULL)
+			{
+				LOGD("Memory allocation failed");
+				free(pSubject);
+				free(pIssuerName);
+				X509_STORE_free(cert_store);
+				result = CERTSVC_FAIL;
+				goto free_keyfile;
+			}
+
+			// construct store context
+			if (!X509_STORE_CTX_init(cert_ctx, cert_store, cert, NULL))
+			{
+				LOGD("Memory allocation failed");
+				free(pSubject);
+				free(pIssuerName);
+				X509_STORE_free(cert_store);
+				X509_STORE_CTX_free(cert_ctx);
+				result = CERTSVC_FAIL;
+				goto free_keyfile;
+			}
+
+			res = X509_verify_cert(cert_ctx);
+			if (res != 1)
+			{
+				LOGD("P12 verification failed");
+				free(pSubject);
+				free(pIssuerName);
+				X509_STORE_free(cert_store);
+				X509_STORE_CTX_free(cert_ctx);
+				result = CERTSVC_FAIL;
+				goto free_keyfile;
+			}
+			X509_STORE_free(cert_store);
+			X509_STORE_CTX_free(cert_ctx);
+			LOGD("P12 verification Success");
+		}
+		free(pSubject);
+		free(pIssuerName);
+	}
+	else if (certv != NULL)
+	{
+		// Cert Chain
+		int res = 0;
+		X509_STORE_CTX *cert_ctx = NULL;
+		X509_STORE *cert_store = NULL;
+
+		cert_store = X509_STORE_new();
+		if (!cert_store)
+		{
+			LOGD("Memory allocation failed");
+			result = CERTSVC_FAIL;
+			goto free_keyfile;
+		}
+
+		res = X509_STORE_load_locations(cert_store, NULL, "/opt/share/cert-svc/certs/ssl/");
+		if (res != 1)
+		{
+			LOGD("P12 load certificate store failed");
+			result = CERTSVC_FAIL;
+			X509_STORE_free(cert_store);
+			goto free_keyfile;
+		}
+
+		res = X509_STORE_set_default_paths(cert_store);
+		if (res != 1)
+		{
+			LOGD("P12 load certificate path failed");
+			result = CERTSVC_FAIL;
+			X509_STORE_free(cert_store);
+			goto free_keyfile;
+		}
+
+		// initialize store and store context
+		cert_ctx = X509_STORE_CTX_new();
+		if (cert_ctx == NULL)
+		{
+			LOGD("Memory allocation failed");
+			result = CERTSVC_FAIL;
+			X509_STORE_free(cert_store);
+			goto free_keyfile;
+		}
+
+		// construct store context
+		if (!X509_STORE_CTX_init(cert_ctx, cert_store, cert, NULL))
+		{
+			LOGD("Memory allocation failed");
+			result = CERTSVC_FAIL;
+			X509_STORE_free(cert_store);
+			X509_STORE_CTX_free(cert_ctx);
+			goto free_keyfile;
+		}
+
+		X509_STORE_CTX_trusted_stack(cert_ctx, certv);
+
+		res = X509_verify_cert(cert_ctx);
+		if (res != 1)
+		{
+			LOGD("P12 verification failed");
+			result = CERTSVC_FAIL;
+			X509_STORE_free(cert_store);
+			X509_STORE_CTX_free(cert_ctx);
+			goto free_keyfile;
+		}
+
+		LOGD("P12 verification Success");
+		X509_STORE_free(cert_store);
+		X509_STORE_CTX_free(cert_ctx);
+	}
+#endif //_CERT_SVC_VERIFY_PKCS12
   nicerts = certv ? sk_X509_num(certv) : 0;
   cvaluev = (gchar **)calloc(1 + nicerts, sizeof(gchar *));
   n = 0;

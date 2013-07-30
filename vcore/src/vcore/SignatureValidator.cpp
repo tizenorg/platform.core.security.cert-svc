@@ -39,6 +39,9 @@ const std::string TOKEN_ROLE_DISTRIBUTOR_URI =
     "http://www.w3.org/ns/widgets-digsig#role-distributor";
 const std::string TOKEN_PROFILE_URI =
     "http://www.w3.org/ns/widgets-digsig#profile";
+
+const char* TIZEN_STORE_CN = "Tizen Store";
+
 } // namespace anonymouse
 
 namespace ValidationCore {
@@ -47,7 +50,8 @@ class SignatureValidator::ImplSignatureValidator {
 public:
     virtual SignatureValidator::Result check(
         SignatureData &data,
-        const std::string &widgetContentPath) = 0;
+        const std::string &widgetContentPath,
+        AppInstallPath appInstallPath = TIZEN_STORE) = 0;
 
     virtual SignatureValidator::Result checkList(
         SignatureData &data,
@@ -119,7 +123,8 @@ class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureVali
 {
   public:
     SignatureValidator::Result check(SignatureData &data,
-            const std::string &widgetContentPath);
+            const std::string &widgetContentPath,
+            SignatureValidator::AppInstallPath appInstallPath = SignatureValidator::TIZEN_STORE);
 
     SignatureValidator::Result checkList(SignatureData &data,
             const std::string &widgetContentPath,
@@ -137,7 +142,8 @@ class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureVali
 
 SignatureValidator::Result ImplTizenSignatureValidator::check(
         SignatureData &data,
-        const std::string &widgetContentPath)
+        const std::string &widgetContentPath,
+        SignatureValidator::AppInstallPath appInstallPath)
 {
     bool disregard = false;
 
@@ -226,6 +232,35 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
 
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
+
+    if (data.getSignatureNumber() == 1 && appInstallPath != SignatureValidator::TIZEN_STORE)
+    {
+       CertificatePtr endCert = data.getEndEntityCertificatePtr();
+       DPL::String subjectD = endCert->getOneLine(Certificate::FIELD_SUBJECT);
+       std::string subject = DPL::ToUTF8String(subjectD);
+       LogDebug("endCert subject : " << subject);
+
+       char* subString = (char*)subject.c_str();
+       char* findCN = NULL;
+       findCN = strstr(subString, "/CN=");
+       if(findCN == NULL)
+       {
+           LogDebug("### Signature is invalid. CN does not exist.");
+           fprintf(stderr, "### Signature is invalid. CN does not exist.\n");
+           return SignatureValidator::SIGNATURE_INVALID;
+        }
+
+       findCN += strlen("/CN=");
+       int cmp = -1;
+      cmp = strncmp(findCN, TIZEN_STORE_CN, strlen(TIZEN_STORE_CN));
+
+      if(cmp == 0)
+      {
+        LogDebug("### Signature is invalid. End Issure is Tizen Store.");
+        fprintf(stderr, "### Signature is invalid. End Issure is Tizen Store.\n");
+        return SignatureValidator::SIGNATURE_INVALID;
+      }
+     }
 
     // We add only Root CA certificate because WAC ensure that the rest
     // of certificates are present in signature files ;-)
@@ -572,7 +607,8 @@ class ImplWacSignatureValidator : public SignatureValidator::ImplSignatureValida
 {
   public:
     SignatureValidator::Result check(SignatureData &data,
-            const std::string &widgetContentPath);
+            const std::string &widgetContentPath,
+            SignatureValidator::AppInstallPath appInstallPath);
 
     SignatureValidator::Result checkList(SignatureData &data,
             const std::string &widgetContentPath,
@@ -601,7 +637,8 @@ SignatureValidator::Result ImplWacSignatureValidator::checkList(
 
 SignatureValidator::Result ImplWacSignatureValidator::check(
     SignatureData &data,
-    const std::string &widgetContentPath)
+    const std::string &widgetContentPath,
+    SignatureValidator::AppInstallPath appInstallPath)
 {
     bool disregard = false;
 
@@ -823,9 +860,10 @@ SignatureValidator::~SignatureValidator() {
 
 SignatureValidator::Result SignatureValidator::check(
     SignatureData &data,
-    const std::string &widgetContentPath)
+    const std::string &widgetContentPath,
+    AppInstallPath appInstallPath)
 {
-    return m_impl->check(data, widgetContentPath);
+    return m_impl->check(data, widgetContentPath, appInstallPath);
 }
 
 SignatureValidator::Result SignatureValidator::checkList(

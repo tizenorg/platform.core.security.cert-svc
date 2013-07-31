@@ -262,26 +262,40 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
       }
      }
 
-    // We add only Root CA certificate because WAC ensure that the rest
-    // of certificates are present in signature files ;-)
     XmlSec::XmlSecContext context;
     context.signatureFile = data.getSignatureFileName();
     context.certificatePtr = root;
 
-    // Now we should have full certificate chain.
-    // If the end certificate is not ROOT CA we should disregard signature
-    // but still signature must be valid... Aaaaaa it's so stupid...
     if (!(root->isSignedBy(root))) {
         LogWarning("Root CA certificate not found. Chain is incomplete.");
     //  context.allowBrokenChain = true;
     }
 
+    time_t nowTime = time(NULL);
+
+    ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
+    ASN1_TIME* notBeforeTime = data.getEndEntityCertificatePtr()->getNotBeforeTime();
+
+	if (data.isAuthorSignature())
+	{
+		if (X509_cmp_time(notBeforeTime, &nowTime) > 0)
+		{
+			LogDebug("notBeforeTime is greater then current time");
+			return SignatureValidator::SIGNATURE_INVALID;
+		}
+
+		if (X509_cmp_time(notAfterTime, &nowTime) < 0)
+		{
+			LogDebug("notAfterTime is less then current time");
+			return SignatureValidator::SIGNATURE_INVALID;
+		}
+	}
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     // due to expiration of the author certificate.
+#if 0
     time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
     time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
 
-    time_t nowTime = time(NULL);
     struct tm *t;
 
     if (data.isAuthorSignature())
@@ -317,7 +331,7 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
           LogDebug("Modified current notBefore day : " << t->tm_mday);
       }
     }
-
+#endif
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     //context.allowBrokenChain = true;
 
@@ -491,10 +505,34 @@ SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData 
 
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     // due to expiration of the author certificate.
+    time_t nowTime = time(NULL);
+
+#define CHECK_TIME
+#ifdef CHECK_TIME
+
+    ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
+    ASN1_TIME* notBeforeTime = data.getEndEntityCertificatePtr()->getNotBeforeTime();
+
+	if (data.isAuthorSignature())
+	{
+		if (X509_cmp_time(notBeforeTime, &nowTime) > 0)
+		{
+			LogDebug("notBeforeTime is greater then current time");
+			return SignatureValidator::SIGNATURE_INVALID;
+		}
+
+		if (X509_cmp_time(notAfterTime, &nowTime) < 0)
+		{
+			LogDebug("notAfterTime is less then current time");
+			return SignatureValidator::SIGNATURE_INVALID;
+		}
+	}
+#endif
+
+#if 0
     time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
     time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
 
-    time_t nowTime = time(NULL);
     struct tm *t;
 
     if (data.isAuthorSignature())
@@ -530,7 +568,7 @@ SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData 
           LogDebug("Modified current notBefore day : " << t->tm_mday);
       }
     }
-
+#endif
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     //context.allowBrokenChain = true;
 
@@ -740,12 +778,35 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
 //        context.allowBrokenChain = true;
     }
 
+    time_t nowTime = time(NULL);
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     // due to expiration of the author certificate.
+#define CHECK_TIME
+#ifdef CHECK_TIME
+
+    ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
+    ASN1_TIME* notBeforeTime = data.getEndEntityCertificatePtr()->getNotBeforeTime();
+
+	if (data.isAuthorSignature())
+	{
+		if (X509_cmp_time(notBeforeTime, &nowTime) > 0)
+		{
+			LogDebug("notBeforeTime is greater then current time");
+			return SignatureValidator::SIGNATURE_INVALID;
+		}
+
+		if (X509_cmp_time(notAfterTime, &nowTime) < 0)
+		{
+			LogDebug("notAfterTime is less then current time");
+			return SignatureValidator::SIGNATURE_INVALID;
+		}
+	}
+#endif
+
+#if 0
     time_t notAfter = data.getEndEntityCertificatePtr()->getNotAfter();
     time_t notBefore = data.getEndEntityCertificatePtr()->getNotBefore();
 
-    time_t nowTime = time(NULL);
     struct tm *t;
 
     if (data.isAuthorSignature())
@@ -781,7 +842,7 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
        LogDebug("Modified current notBefore day : " << t->tm_mday);
     }
    }
-
+#endif
     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
         LogWarning("Installation break - invalid package!");
         return SignatureValidator::SIGNATURE_INVALID;

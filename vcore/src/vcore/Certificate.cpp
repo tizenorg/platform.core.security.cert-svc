@@ -367,6 +367,27 @@ time_t Certificate::getNotBefore() const
     return output;
 }
 
+ASN1_TIME* Certificate::getNotAfterTime() const
+{
+	ASN1_TIME *timeafter = X509_get_notAfter(m_x509);
+	if (!timeafter) {
+		LogError("Reading Not After error.");
+		ThrowMsg(Exception::OpensslInternalError, "Reading Not After error.");
+	}
+
+	return timeafter;
+}
+
+ASN1_TIME* Certificate::getNotBeforeTime() const
+{
+	ASN1_TIME *timebefore = X509_get_notBefore(m_x509);
+	if (!timebefore) {
+		LogError("Reading Not Before error.");
+		ThrowMsg(Exception::OpensslInternalError, "Reading Not Before error.");
+	}
+	return timebefore;
+}
+
 bool Certificate::isRootCert()
 {
     // based on that root certificate has the same subject as issuer name

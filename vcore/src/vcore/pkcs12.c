@@ -37,7 +37,7 @@
 #include <openssl/pem.h>
 #include <ss_manager.h>
 #include <dlfcn.h>
-#include <dlog.h>
+#include <cert-service-debug.h>
 
 #define SYSCALL(call) while(((call) == -1) && (errno == EINTR))
 

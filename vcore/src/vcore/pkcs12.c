@@ -556,6 +556,9 @@ int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar 
 
  free_data:
   g_free(data);
+  if(dlHandle){
+    dlclose(dlHandle);
+  }
  clean_cert_chain_and_pkey:
   EVP_PKEY_free(key);
   X509_free(cert);

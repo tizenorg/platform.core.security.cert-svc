@@ -560,7 +560,7 @@ SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData 
    data.setReference(context.referenceSet);
    //if (!checkObjectReferences(data)) {
    //     return SignatureValidator::SIGNATURE_INVALID;
-   }
+   //}
 
   /*
     ReferenceValidator fileValidator(widgetContentPath);

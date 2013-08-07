@@ -49,12 +49,6 @@ public:
         SIGNATURE_REVOKED
     };
 
-    enum AppInstallPath
-    {
-        TIZEN_STORE,
-        OTHER_PATH
-    };
-
     explicit SignatureValidator(
         AppType appType,
         bool ocspEnable,
@@ -65,14 +59,12 @@ public:
 
     Result check(
         SignatureData &data,
-        const std::string &widgetContentPath,
-        AppInstallPath appInstallPath = TIZEN_STORE);
+        const std::string &widgetContentPath);
 
     Result checkList(
         SignatureData &data,
         const std::string &widgetContentPath,
-        const std::list<std::string>& uriList,
-        bool  exceptionUriHash = false);
+        const std::list<std::string>& uriList);
 
 private:
      ImplSignatureValidator *m_impl;

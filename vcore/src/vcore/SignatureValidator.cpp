@@ -50,14 +50,12 @@ class SignatureValidator::ImplSignatureValidator {
 public:
     virtual SignatureValidator::Result check(
         SignatureData &data,
-        const std::string &widgetContentPath,
-        AppInstallPath appInstallPath = TIZEN_STORE) = 0;
+        const std::string &widgetContentPath) = 0;
 
     virtual SignatureValidator::Result checkList(
         SignatureData &data,
         const std::string &widgetContentPath,
-        const std::list<std::string>& uriList,
-        bool  exceptionUriHash = false) = 0;
+        const std::list<std::string>& uriList) = 0;
 
     explicit ImplSignatureValidator(bool ocspEnable,
                   bool crlEnable,
@@ -123,14 +121,11 @@ class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureVali
 {
   public:
     SignatureValidator::Result check(SignatureData &data,
-            const std::string &widgetContentPath,
-            SignatureValidator::AppInstallPath appInstallPath = SignatureValidator::TIZEN_STORE);
+            const std::string &widgetContentPath);
 
     SignatureValidator::Result checkList(SignatureData &data,
             const std::string &widgetContentPath,
-            const std::list<std::string>& uriList,
-            bool  exceptionUriHash = false);
-
+            const std::list<std::string>& uriList);
     explicit ImplTizenSignatureValidator(bool ocspEnable,
                        bool crlEnable,
                        bool complianceMode)
@@ -142,11 +137,11 @@ class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureVali
 
 SignatureValidator::Result ImplTizenSignatureValidator::check(
         SignatureData &data,
-        const std::string &widgetContentPath,
-        SignatureValidator::AppInstallPath appInstallPath)
+        const std::string &widgetContentPath)
 {
     bool disregard = false;
 
+    DPL::Log::LogSystemSingleton::Instance().SetTag("OSP");
     if (!checkRoleURI(data)) {
         return SignatureValidator::SIGNATURE_INVALID;
     }
@@ -233,45 +228,19 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
     data.setStorageType(storeIdSet);
     data.setSortedCertificateList(sortedCertificateList);
 
-    if (data.getSignatureNumber() == 1 && appInstallPath != SignatureValidator::TIZEN_STORE)
-    {
-       CertificatePtr endCert = data.getEndEntityCertificatePtr();
-       DPL::String subjectD = endCert->getOneLine(Certificate::FIELD_SUBJECT);
-       std::string subject = DPL::ToUTF8String(subjectD);
-       LogDebug("endCert subject : " << subject);
-
-       char* subString = (char*)subject.c_str();
-       char* findCN = NULL;
-       findCN = strstr(subString, "/CN=");
-       if(findCN == NULL)
-       {
-           LogDebug("### Signature is invalid. CN does not exist.");
-           fprintf(stderr, "### Signature is invalid. CN does not exist.\n");
-           return SignatureValidator::SIGNATURE_INVALID;
-        }
-
-       findCN += strlen("/CN=");
-       int cmp = -1;
-      cmp = strncmp(findCN, TIZEN_STORE_CN, strlen(TIZEN_STORE_CN));
-
-      if(cmp == 0)
-      {
-        LogDebug("### Signature is invalid. End Issure is Tizen Store.");
-        fprintf(stderr, "### Signature is invalid. End Issure is Tizen Store.\n");
-        return SignatureValidator::SIGNATURE_INVALID;
-      }
-     }
-
     XmlSec::XmlSecContext context;
     context.signatureFile = data.getSignatureFileName();
     context.certificatePtr = root;
 
-    if (!(root->isSignedBy(root))) {
-        LogWarning("Root CA certificate not found. Chain is incomplete.");
+   if (!(root->isSignedBy(root))) {
+       LogWarning("Root CA certificate not found. Chain is incomplete.");
     //  context.allowBrokenChain = true;
     }
 
     time_t nowTime = time(NULL);
+
+#define CHECK_TIME
+#ifdef CHECK_TIME
 
     ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
     ASN1_TIME* notBeforeTime = data.getEndEntityCertificatePtr()->getNotBeforeTime();
@@ -290,6 +259,7 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
 			return SignatureValidator::SIGNATURE_INVALID;
 		}
 	}
+#endif
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     // due to expiration of the author certificate.
 #if 0
@@ -391,17 +361,14 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
 
 SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData &data,
             const std::string &widgetContentPath,
-            const std::list<std::string>& uriList,
-            bool  exceptionUriHash)
+            const std::list<std::string>& uriList)
 {
-    if(exceptionUriHash == true && uriList.size() != 0 )
-    {
-      LogWarning("Installation break >> invalid input parameter");
-      return SignatureValidator::SIGNATURE_INVALID;
-    }
+    DPL::Log::LogSystemSingleton::Instance().SetTag("OSP");
+    if(uriList.size() == 0 )
+       LogWarning("checkList >> no hash");
 
     bool disregard = false;
-    bool partialHash;
+    bool partialHash = false;
 
     if (!checkRoleURI(data)) {
         return SignatureValidator::SIGNATURE_INVALID;
@@ -573,30 +540,26 @@ SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData 
     //context.allowBrokenChain = true;
 
     // end
-   if(exceptionUriHash == true || uriList.size() == 0)
+   if(uriList.size() == 0)
    {
      if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validateNoHash(&context)) {
         LogWarning("Installation break - invalid package! >> validateNoHash");
         return SignatureValidator::SIGNATURE_INVALID;
      }
    }
-  else if(uriList.size() != 0)
-  {
-    partialHash = true;
-    XmlSecSingleton::Instance().setPartialHashList(uriList);
-    if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validatePartialHash(&context)) {
-        LogWarning("Installation break - invalid package! >> validatePartialHash");
-        return SignatureValidator::SIGNATURE_INVALID;
-    }
-  }
-
-   if(exceptionUriHash != true && partialHash != true)
+   else if(uriList.size() != 0)
    {
-      data.setReference(context.referenceSet);
-
-      if (!checkObjectReferences(data)) {
+     partialHash = true;
+     XmlSecSingleton::Instance().setPartialHashList(uriList);
+     if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validatePartialHash(&context)) {
+         LogWarning("Installation break - invalid package! >> validatePartialHash");
          return SignatureValidator::SIGNATURE_INVALID;
-      }
+     }
+   }
+
+   data.setReference(context.referenceSet);
+   //if (!checkObjectReferences(data)) {
+   //     return SignatureValidator::SIGNATURE_INVALID;
    }
 
   /*
@@ -645,14 +608,11 @@ class ImplWacSignatureValidator : public SignatureValidator::ImplSignatureValida
 {
   public:
     SignatureValidator::Result check(SignatureData &data,
-            const std::string &widgetContentPath,
-            SignatureValidator::AppInstallPath appInstallPath);
+            const std::string &widgetContentPath);
 
     SignatureValidator::Result checkList(SignatureData &data,
             const std::string &widgetContentPath,
-            const std::list<std::string>& uriList,
-            bool  exceptionUriHash = false);
-
+            const std::list<std::string>& uriList);
     explicit ImplWacSignatureValidator(bool ocspEnable,
                      bool crlEnable,
                      bool complianceMode)
@@ -666,8 +626,7 @@ class ImplWacSignatureValidator : public SignatureValidator::ImplSignatureValida
 SignatureValidator::Result ImplWacSignatureValidator::checkList(
         SignatureData &data,
         const std::string &widgetContentPath,
-        const std::list<std::string>& uriList,
-        bool  exceptionUriHash)
+        const std::list<std::string>& uriList)
 {
     return SignatureValidator::SIGNATURE_INVALID;
 }
@@ -675,8 +634,7 @@ SignatureValidator::Result ImplWacSignatureValidator::checkList(
 
 SignatureValidator::Result ImplWacSignatureValidator::check(
     SignatureData &data,
-    const std::string &widgetContentPath,
-    SignatureValidator::AppInstallPath appInstallPath)
+    const std::string &widgetContentPath)
 {
     bool disregard = false;
 
@@ -921,19 +879,17 @@ SignatureValidator::~SignatureValidator() {
 
 SignatureValidator::Result SignatureValidator::check(
     SignatureData &data,
-    const std::string &widgetContentPath,
-    AppInstallPath appInstallPath)
+    const std::string &widgetContentPath)
 {
-    return m_impl->check(data, widgetContentPath, appInstallPath);
+    return m_impl->check(data, widgetContentPath);
 }
 
 SignatureValidator::Result SignatureValidator::checkList(
     SignatureData &data,
     const std::string &widgetContentPath,
-    const std::list<std::string>& uriList,
-    bool  exceptionUriHash)
+    const std::list<std::string>& uriList)
 {
-    return m_impl->checkList(data, widgetContentPath, uriList, exceptionUriHash );
+    return m_impl->checkList(data, widgetContentPath, uriList);
 }
 
 } // namespace ValidationCore

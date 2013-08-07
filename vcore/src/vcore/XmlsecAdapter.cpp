@@ -78,7 +78,7 @@ void* XmlSec::fileOpenCallback(const char *filename)
 {
     std::string path = s_prefixPath + filename;
 
-    LogDebug("Xmlsec opening: " << path);
+   // LogDebug("Xmlsec opening: " << path);
     return new FileWrapper(xmlFileOpen(path.c_str()),false);
 }
 
@@ -100,7 +100,7 @@ int XmlSec::fileReadCallback(void *context,
 
 int XmlSec::fileCloseCallback(void *context)
 {
-  LogDebug("Xmlsec closing:  ");
+  //LogDebug("Xmlsec closing:  ");
     FileWrapper *fw = static_cast<FileWrapper*>(context);
     int output = 0;
     if (!(fw->released)) {
@@ -318,7 +318,7 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
         }
         pList[n] = '\0';
 
-        res = xmlSecDSigCtxVerifyEx(dsigCtx, node, 1, (void*)pList);
+        res = xmlSecDSigCtxVerifyEx(dsigCtx, node, 0, (void*)pList);
         i = 0;
         while(pList[i] != NULL) {
           free(pList[i]);
@@ -363,8 +363,8 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
 
     if (dsigCtx->c14nMethod && dsigCtx->c14nMethod->id &&
         dsigCtx->c14nMethod->id->name) {
-        LogInfo("Canonicalization method: " <<
-                reinterpret_cast<const char *>(dsigCtx->c14nMethod->id->name));
+       // LogInfo("Canonicalization method: " <<
+         //       reinterpret_cast<const char *>(dsigCtx->c14nMethod->id->name));
     }
 
     size = xmlSecPtrListGetSize(&(dsigCtx->signedInfoReferences));
@@ -380,10 +380,10 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
                     reinterpret_cast<const char *>(dsigRefCtx->digestMethod->id
                                                        ->name);
                 std::string strDigest(pDigest);
-                LogInfo("reference digest method: " <<
-                        reinterpret_cast<const char *>(dsigRefCtx->digestMethod
+                /*LogInfo("reference digest method: " <<
+                      reinterpret_cast<const char *>(dsigRefCtx->digestMethod
                                                            ->id
-                                                           ->name));
+                                                           ->name));*/
                 if (strDigest == DIGEST_MD5) {
                     LogWarning("MD5 digest method used! Please use sha");
                     res = -1;

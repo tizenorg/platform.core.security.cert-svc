@@ -44,6 +44,37 @@ const char* TIZEN_STORE_CN = "Tizen Store";
 
 } // namespace anonymouse
 
+
+static tm _ASN1_GetTimeT(ASN1_TIME* time)
+{
+    struct tm t;
+    const char* str = (const char*) time->data;
+    size_t i = 0;
+
+    memset(&t, 0, sizeof(t));
+
+    if (time->type == V_ASN1_UTCTIME) /* two digit year */
+    {
+        t.tm_year = (str[i++] - '0') * 10 + (str[++i] - '0');
+        if (t.tm_year < 70)
+        t.tm_year += 100;
+    }
+    else if (time->type == V_ASN1_GENERALIZEDTIME) /* four digit year */
+    {
+        t.tm_year = (str[i++] - '0') * 1000 + (str[++i] - '0') * 100 + (str[++i] - '0') * 10 + (str[++i] - '0');
+        t.tm_year -= 1900;
+    }
+    t.tm_mon = ((str[i++] - '0') * 10 + (str[++i] - '0')) - 1; // -1 since January is 0 not 1.
+    t.tm_mday = (str[i++] - '0') * 10 + (str[++i] - '0');
+    t.tm_hour = (str[i++] - '0') * 10 + (str[++i] - '0');
+    t.tm_min  = (str[i++] - '0') * 10 + (str[++i] - '0');
+    t.tm_sec  = (str[i++] - '0') * 10 + (str[++i] - '0');
+
+    /* Note: we did not adjust the time based on time zone information */
+    return t;
+}
+
+
 namespace ValidationCore {
 
 class SignatureValidator::ImplSignatureValidator {
@@ -245,20 +276,31 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
     ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
     ASN1_TIME* notBeforeTime = data.getEndEntityCertificatePtr()->getNotBeforeTime();
 
-	if (data.isAuthorSignature())
+    if (X509_cmp_time(notBeforeTime, &nowTime) > 0  || X509_cmp_time(notAfterTime, &nowTime) < 0)
 	{
-		if (X509_cmp_time(notBeforeTime, &nowTime) > 0)
-		{
-			LogDebug("notBeforeTime is greater then current time");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
+	  struct tm *t;
+	  struct tm ta;
+	  char msg[1024];
+	  
+	  t = localtime(&nowTime);
 
-		if (X509_cmp_time(notAfterTime, &nowTime) < 0)
-		{
-			LogDebug("notAfterTime is less then current time");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
+	  sprintf(msg, "Year: %d, month: %d, day : %d", t->tm_year + 1900, t->tm_mon + 1,t->tm_mday );
+	  LogDebug("## System's current Year : " << msg);
+	  fprintf(stderr, "## System's current Year : %s\n", msg);
+	  
+	  ta = _ASN1_GetTimeT(notBeforeTime);
+	  sprintf(msg, "Year: %d, month: %d, day : %d", ta.tm_year + 1900, ta.tm_mon + 1,ta.tm_mday );
+	  LogDebug("## certificate's notBefore Year : " << msg);
+	  fprintf(stderr, "## certificate's notAfterTime Year : %s\n", msg);
+	  
+	  ta = _ASN1_GetTimeT(notAfterTime);
+	  sprintf(msg, "Year: %d, month: %d, day : %d", ta.tm_year + 1900, ta.tm_mon + 1,ta.tm_mday );
+	  LogDebug("## certificate's notAfterTime Year : " << msg);
+	  fprintf(stderr, "## certificate's notAfterTime Year : %s\n", msg);
+	 
+	  return SignatureValidator::SIGNATURE_INVALID;
 	}
+
 #endif
     // WAC 2.0 SP-2066 The wrt must not block widget installation
     // due to expiration of the author certificate.
@@ -480,20 +522,32 @@ SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData 
     ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
     ASN1_TIME* notBeforeTime = data.getEndEntityCertificatePtr()->getNotBeforeTime();
 
-	if (data.isAuthorSignature())
+  
+	if (X509_cmp_time(notBeforeTime, &nowTime) > 0  || X509_cmp_time(notAfterTime, &nowTime) < 0)
 	{
-		if (X509_cmp_time(notBeforeTime, &nowTime) > 0)
-		{
-			LogDebug("notBeforeTime is greater then current time");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
+	  struct tm *t;
+	  struct tm ta;
+	  char msg[1024];
+	  
+	  t = localtime(&nowTime);
 
-		if (X509_cmp_time(notAfterTime, &nowTime) < 0)
-		{
-			LogDebug("notAfterTime is less then current time");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
+	  sprintf(msg, "Year: %d, month: %d, day : %d", t->tm_year + 1900, t->tm_mon + 1,t->tm_mday );
+	  LogDebug("## System's current Year : " << msg);
+	  fprintf(stderr, "## System's current Year : %s\n", msg);
+	  
+	  ta = _ASN1_GetTimeT(notBeforeTime);
+	  sprintf(msg, "Year: %d, month: %d, day : %d", ta.tm_year + 1900, ta.tm_mon + 1,ta.tm_mday );
+	  LogDebug("## certificate's notBefore Year : " << msg);
+	  fprintf(stderr, "## certificate's notAfterTime Year : %s\n", msg);
+	  
+	  ta = _ASN1_GetTimeT(notAfterTime);
+	  sprintf(msg, "Year: %d, month: %d, day : %d", ta.tm_year + 1900, ta.tm_mon + 1,ta.tm_mday );
+	  LogDebug("## certificate's notAfterTime Year : " << msg);
+	  fprintf(stderr, "## certificate's notAfterTime Year : %s\n", msg);
+	 
+	  return SignatureValidator::SIGNATURE_INVALID;
 	}
+
 #endif
 
 #if 0
@@ -745,20 +799,32 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
     ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
     ASN1_TIME* notBeforeTime = data.getEndEntityCertificatePtr()->getNotBeforeTime();
 
-	if (data.isAuthorSignature())
+ 
+	if (X509_cmp_time(notBeforeTime, &nowTime) > 0  || X509_cmp_time(notAfterTime, &nowTime) < 0)
 	{
-		if (X509_cmp_time(notBeforeTime, &nowTime) > 0)
-		{
-			LogDebug("notBeforeTime is greater then current time");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
+	  struct tm *t;
+	  struct tm ta;
+	  char msg[1024];
+	  
+	  t = localtime(&nowTime);
 
-		if (X509_cmp_time(notAfterTime, &nowTime) < 0)
-		{
-			LogDebug("notAfterTime is less then current time");
-			return SignatureValidator::SIGNATURE_INVALID;
-		}
+	  sprintf(msg, "Year: %d, month: %d, day : %d", t->tm_year + 1900, t->tm_mon + 1,t->tm_mday );
+	  LogDebug("## System's current Year : " << msg);
+	  fprintf(stderr, "## System's current Year : %s\n", msg);
+	  
+	  ta = _ASN1_GetTimeT(notBeforeTime);
+	  sprintf(msg, "Year: %d, month: %d, day : %d", ta.tm_year + 1900, ta.tm_mon + 1,ta.tm_mday );
+	  LogDebug("## certificate's notBefore Year : " << msg);
+	  fprintf(stderr, "## certificate's notAfterTime Year : %s\n", msg);
+	  
+	  ta = _ASN1_GetTimeT(notAfterTime);
+	  sprintf(msg, "Year: %d, month: %d, day : %d", ta.tm_year + 1900, ta.tm_mon + 1,ta.tm_mday );
+	  LogDebug("## certificate's notAfterTime Year : " << msg);
+	  fprintf(stderr, "## certificate's notAfterTime Year : %s\n", msg);
+	 
+	  return SignatureValidator::SIGNATURE_INVALID;
 	}
+  
 #endif
 
 #if 0

@@ -55,21 +55,34 @@ static tm _ASN1_GetTimeT(ASN1_TIME* time)
 
     if (time->type == V_ASN1_UTCTIME) /* two digit year */
     {
-        t.tm_year = (str[i++] - '0') * 10 + (str[++i] - '0');
+	t.tm_year = (str[++i] - '0');
+	t.tm_year = (str[i++] - '0') * 10 + t.tm_year;
         if (t.tm_year < 70)
         t.tm_year += 100;
     }
     else if (time->type == V_ASN1_GENERALIZEDTIME) /* four digit year */
     {
-        t.tm_year = (str[i++] - '0') * 1000 + (str[++i] - '0') * 100 + (str[++i] - '0') * 10 + (str[++i] - '0');
+	t.tm_year = (str[++i] - '0');
+	t.tm_year = (str[++i] - '0') * 10 + t.tm_year;
+	t.tm_year = (str[++i] - '0') * 100 + t.tm_year;
+	t.tm_year = (str[i++] - '0') * 1000 + t.tm_year;
         t.tm_year -= 1900;
     }
-    t.tm_mon = ((str[i++] - '0') * 10 + (str[++i] - '0')) - 1; // -1 since January is 0 not 1.
-    t.tm_mday = (str[i++] - '0') * 10 + (str[++i] - '0');
-    t.tm_hour = (str[i++] - '0') * 10 + (str[++i] - '0');
-    t.tm_min  = (str[i++] - '0') * 10 + (str[++i] - '0');
-    t.tm_sec  = (str[i++] - '0') * 10 + (str[++i] - '0');
 
+    t.tm_mon = (str[++i] - '0'); // -1 since January is 0 not 1.
+    t.tm_mon = (str[i++] - '0') * 10 + t.tm_mon;
+
+    t.tm_mday = (str[++i] - '0');
+    t.tm_mday = (str[i++] - '0') * 10 + t.tm_mday;
+
+    t.tm_hour = (str[++i] - '0');
+    t.tm_hour = (str[i++] - '0') * 10 + t.tm_hour;
+
+    t.tm_min = (str[++i] - '0');
+    t.tm_min = (str[i++] - '0') * 10 + t.tm_min;
+
+    t.tm_sec = (str[++i] - '0');
+    t.tm_sec = (str[i++] - '0') * 10 + t.tm_sec;
     /* Note: we did not adjust the time based on time zone information */
     return t;
 }

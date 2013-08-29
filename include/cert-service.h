@@ -186,6 +186,7 @@ int cert_svc_verify_signature(CERT_CONTEXT* ctx, unsigned char* message, int msg
 int cert_svc_extract_certificate_data(CERT_CONTEXT* ctx);
 int cert_svc_search_certificate(CERT_CONTEXT* ctx, search_field fldName, char* fldData);
 int cert_svc_check_ocsp_status(CERT_CONTEXT* ctx, const char* uri);
+char* cert_svc_get_certificate_crt_file_path(void);
 #ifdef __cplusplus
 }
 #endif	// __cplusplus

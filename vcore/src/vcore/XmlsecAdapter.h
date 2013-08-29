@@ -105,7 +105,11 @@ class XmlSec : public DPL::Noncopyable
      * Context - input/output param.
      */
     Result validate(XmlSecContext *context);
-  protected:
+    Result validateNoHash(XmlSecContext *context);
+    Result validatePartialHash(XmlSecContext *context);
+    Result setPartialHashList(const std::list<std::string>& targetUri);
+ 
+ protected:
     XmlSec();
     ~XmlSec();
   private:
@@ -119,6 +123,9 @@ class XmlSec : public DPL::Noncopyable
             xmlSecKeysMngrPtr mngr);
 
     bool m_initialized;
+    bool m_noHash;
+    bool m_partialHash;
+    std::list<std::string>* m_pList;
 
     static std::string s_prefixPath;
     static int fileMatchCallback(const char *filename);

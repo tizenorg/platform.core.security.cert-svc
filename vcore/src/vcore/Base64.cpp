@@ -80,13 +80,13 @@ void Base64Encoder::reset()
     m_finalized = false;
     BIO_free_all(m_b64);
     m_b64 = BIO_new(BIO_f_base64());
-    BIO_set_flags(m_b64, BIO_FLAGS_BASE64_NO_NL);
     m_bmem = BIO_new(BIO_s_mem());
     if (!m_b64 || !m_bmem) {
         LogError("Error during allocation memory in BIO");
         ThrowMsg(Exception::InternalError,
                  "Error during allocation memory in BIO");
     }
+    BIO_set_flags(m_b64, BIO_FLAGS_BASE64_NO_NL);
     m_b64 = BIO_push(m_b64, m_bmem);
 }
 

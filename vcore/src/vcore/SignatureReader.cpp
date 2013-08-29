@@ -390,6 +390,7 @@ void SignatureReader::tokenEndX509Certificate(SignatureData &signatureData)
     CertificateLoader loader;
     if (CertificateLoader::NO_ERROR !=
         loader.loadCertificateFromRawData(m_parserSchema.getText())) {
+        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
         LogWarning("Certificate could not be loaded!");
         ThrowMsg(ParserSchemaException::CertificateLoaderError,
                  "Certificate could not be loaded.");
@@ -411,6 +412,7 @@ void SignatureReader::tokenEndRSAKeyValue(SignatureData &signatureData)
     if (CertificateLoader::NO_ERROR !=
         loader.loadCertificateBasedOnExponentAndModulus(m_modulus,
                                                         m_exponent)) {
+        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
         LogWarning("Certificate could not be loaded!");
         ThrowMsg(ParserSchemaException::CertificateLoaderError,
                  "Certificate could not be loaded.");
@@ -441,6 +443,7 @@ void SignatureReader::tokenEndECKeyValue(SignatureData &signatureData)
     CertificateLoader loader;
     if (CertificateLoader::NO_ERROR !=
         loader.loadCertificateWithECKEY(m_nameCurveURI, m_publicKey)) {
+        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
         ThrowMsg(ParserSchemaException::CertificateLoaderError,
                  "Certificate could not be loaded.");
     }
@@ -520,6 +523,7 @@ void SignatureReader::tokenEndDSAKeyValue(SignatureData& signatureData)
                                                    m_dsaKeyJComponent,
                                                    m_dsaKeySeedComponent,
                                                    m_dsaKeyPGenCounter)) {
+        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
         LogWarning("Certificate could not be loaded.");
         ThrowMsg(ParserSchemaException::CertificateLoaderError,
                  "Certificate could not be loaded.");
@@ -530,6 +534,7 @@ void SignatureReader::tokenEndDSAKeyValue(SignatureData& signatureData)
 void SignatureReader::tokenRole(SignatureData &signatureData)
 {
     if (!signatureData.m_roleURI.empty()) {
+        fprintf(stderr, "## [validate error]: Multiple definition of Role is not allowed\n");
         LogWarning("Multiple definition of Role is not allowed.");
         ThrowMsg(ParserSchemaException::UnsupportedValue,
                  "Multiple definition of Role is not allowed.");
@@ -540,6 +545,7 @@ void SignatureReader::tokenRole(SignatureData &signatureData)
 void SignatureReader::tokenProfile(SignatureData &signatureData)
 {
     if (!signatureData.m_profileURI.empty()) {
+        fprintf(stderr, "## [validate error]: Multiple definition of Profile is not allowed\n");
         LogWarning("Multiple definition of Profile is not allowed.");
         ThrowMsg(ParserSchemaException::UnsupportedValue,
                  "Multiple definition of Profile is not allowed.");
@@ -550,6 +556,7 @@ void SignatureReader::tokenProfile(SignatureData &signatureData)
 void SignatureReader::tokenEndIdentifier(SignatureData &signatureData)
 {
     if (!signatureData.m_identifier.empty()) {
+        fprintf(stderr, "## [validate error]: Multiple definition of Identifier is not allowed\n");
         LogWarning("Multiple definition of Identifier is not allowed.");
         ThrowMsg(ParserSchemaException::UnsupportedValue,
                  "Multiple definition of Identifier is not allowed.");
@@ -562,6 +569,7 @@ void SignatureReader::tokenObject(SignatureData &signatureData)
     std::string id = m_parserSchema.getReader().attribute(TOKEN_ID);
 
     if (id.empty()) {
+        fprintf(stderr, "## [validate error]: Unsupported value of Attribute Id in Object tag\n");
         LogWarning("Unsupported value of Attribute Id in Object tag.");
         ThrowMsg(ParserSchemaException::UnsupportedValue,
                  "Unsupported value of Attribute Id in Object tag.");
@@ -574,6 +582,7 @@ void SignatureReader::tokenSignatureProperties(SignatureData &signatureData)
 {
     (void)signatureData;
     if (++m_signaturePropertiesCounter > 1) {
+        fprintf(stderr, "## [validate error]: Only one SignatureProperties tag is allowed in Object\n");
         LogWarning("Only one SignatureProperties tag is allowed in Object");
         ThrowMsg(ParserSchemaException::UnsupportedValue,
                  "Only one SignatureProperties tag is allowed in Object");

@@ -36,6 +36,8 @@
 #include <dpl/optional_typedefs.h>
 #include <dpl/string.h>
 
+#include <openssl/x509.h>
+
 #include <cert-service.h>
 
 extern "C" {
@@ -129,6 +131,10 @@ class Certificate : public DPL::EnableSharedFromThis<Certificate>
     time_t getNotAfter() const;
 
     time_t getNotBefore() const;
+
+    ASN1_TIME* getNotAfterTime() const;
+
+    ASN1_TIME* getNotBeforeTime() const;
 
     /**
      * @brief This is convenient function.

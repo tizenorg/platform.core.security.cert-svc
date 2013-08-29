@@ -15,6 +15,10 @@ SET(TARGET_VCORE_LIB "cert-svc-vcore")
 SET(TARGET_SIGN_TOOL "dpkg-pki-sig")
 
 # compiler options
+SET(GC_SECTIONS_FLAGS "-fdata-sections -ffunction-sections -Wl,--gc-sections")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GC_SECTIONS_FLAGS}")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GC_SECTIONS_FLAGS}")
+
 SET(CMAKE_C_FLAGS_RELEASE "-fvisibility=hidden -Wall -O2")
 SET(CMAKE_CXX_FLAGS_RELEASE "-std=c++0x -Wall -O2")
 

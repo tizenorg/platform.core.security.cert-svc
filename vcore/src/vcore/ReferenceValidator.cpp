@@ -178,11 +178,11 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
                 return result;
             }
         } else if (dirp->d_type == DT_REG) {
-            LogDebug("Found     file: " << (directory + dirp->d_name));
-
             if (referenceSet.end() ==
                 referenceSet.find(directory + dirp->d_name))
             {
+                LogDebug("Found file: " << (directory + dirp->d_name));
+                LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
                 closedir(dp);
                 m_errorDescription = directory + dirp->d_name;
                 return ERROR_REFERENCE_NOT_FOUND;

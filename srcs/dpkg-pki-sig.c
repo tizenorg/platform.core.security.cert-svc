@@ -37,6 +37,7 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include <tzplatform_config.h>
 
 #include "cert-service.h"
 
@@ -284,7 +285,7 @@ err:
 
 int get_target_info(char* info)
 {
-#define TARGET_INFO	"/opt/share/cert-svc/targetinfo"
+	const char * TARGET_INFO = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/targetinfo");
 	FILE* fp_info = NULL;
 	char* token = NULL;
 	char seps[] = " \t\n\r";
@@ -323,6 +324,7 @@ int generate_sdk_cert(int argc, const char** argv)
 	const char* targetinfo = NULL;
 	char* defaultinfo = "SDK_simulator";
 	int pid = -1;
+	const char * make_cert_path = NULL;
 
 	/* this code is for testing */
 	if((argc < 4) || (argc > 5)) {
@@ -348,10 +350,11 @@ int generate_sdk_cert(int argc, const char** argv)
 	else if(argc == 5)	// target info is set
 		targetinfo = argv[4];
 
-	/* execute script '/usr/bin/make_cert.sh' */
+	/* execute script 'make_cert.sh' */
 	pid = fork();
 	if(pid == 0) {	// child
-		execl("/usr/bin/make_cert.sh", "/usr/bin/make_cert.sh", argv[0], argv[1], argv[2], argv[3], targetinfo, NULL);
+		make_cert_path = tzplatform_mkpath(TZ_SYS_BIN,"make_cert.sh");
+		execl(make_cert_path, make_cert_path, argv[0], argv[1], argv[2], argv[3], targetinfo, NULL);
 	}
 	else if(pid > 0) {	// parent
 		wait((int*)0);

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
+#include <tzplatform_config.h>
 
 #include "cert-service.h"
 #include "cert-service-util.h"
@@ -36,7 +37,7 @@
 #define CERT_SVC_API	__attribute__((visibility("default")))
 #endif
 
-#define CRT_FILE_PATH	"/opt/usr/share/certs/ca-certificate.crt"
+#define CRT_FILE_PATH	tzplatform_mkpath(TZ_USER_SHARE, "certs/ca-certificate.crt")
 
 CERT_SVC_API
 int cert_svc_add_certificate_to_store(const char* filePath, const char* location)

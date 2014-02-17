@@ -24,8 +24,10 @@ BuildRequires: pkgconfig(secure-storage)
 BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(libxslt)
+BuildRequires: pkgconfig(libtzplatform-config)
 
 Provides: libcert-svc-vcore.so.1
+Requires: libtzplatform-config
 
 %description
 Certification service
@@ -49,7 +51,9 @@ cp %{SOURCE1001} .
          -DEXEC_PREFIX=%{_exec_prefix} \
          -DBINDIR=%{_bindir} \
          -DINCLUDEDIR=%{_includedir} \
-         -DCMAKE_BUILD_TYPE=%{build_type}
+         -DCMAKE_BUILD_TYPE=%{build_type} \
+	 -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
+	 -DTZ_SYS_BIN=%TZ_SYS_BIN
 
 make %{?jobs:-j%jobs}
 
@@ -58,9 +62,9 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/license
 cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
 %make_install
-ln -sf /opt/etc/ssl/certs %{buildroot}/opt/share/cert-svc/certs/ssl
-touch %{buildroot}/opt/share/cert-svc/pkcs12/storage
-chmod 766 %{buildroot}/opt/share/cert-svc/pkcs12/storage
+ln -sf %{TZ_SYS_ETC}/ssl/certs %{buildroot}%{TZ_SYS_SHARE}/cert-svc/certs/ssl
+touch %{buildroot}%{TZ_SYS_SHARE}/cert-svc/pkcs12/storage
+chmod 766 %{buildroot}%{TZ_SYS_SHARE}/cert-svc/pkcs12/storage
 
 %clean
 rm -rf %{buildroot}
@@ -69,11 +73,11 @@ rm -rf %{buildroot}
 /sbin/ldconfig
 if [ -z ${2} ]; then
     echo "This is new install of wrt-security"
-    echo "Calling /usr/bin/cert_svc_create_clean_db.sh"
-    /usr/bin/cert_svc_create_clean_db.sh
+    echo "Calling %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh"
+    %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
 else
     # Find out old and new version of databases
-    VCORE_OLD_DB_VERSION=`sqlite3 /opt/dbspace/.cert_svc_vcore.db ".tables" | grep "DB_VERSION_"`
+    VCORE_OLD_DB_VERSION=`sqlite3 %{TZ_SYS_DB}/.cert_svc_vcore.db ".tables" | grep "DB_VERSION_"`
     VCORE_NEW_DB_VERSION=`cat /usr/share/cert-svc/cert_svc_vcore_db.sql | tr '[:blank:]' '\n' | grep DB_VERSION_`
     echo "OLD vcore database version ${VCORE_OLD_DB_VERSION}"
     echo "NEW vcore database version ${VCORE_NEW_DB_VERSION}"
@@ -82,12 +86,12 @@ else
         if [ ${VCORE_OLD_DB_VERSION} = ${VCORE_NEW_DB_VERSION} ]; then
             echo "Equal database detected so db installation ignored"
         else
-            echo "Calling /usr/bin/cert_svc_create_clean_db.sh"
-            /usr/bin/cert_svc_create_clean_db.sh
+            echo "Calling %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh"
+            %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
         fi
     else
-        echo "Calling /usr/bin/cert_svc_create_clean_db.sh"
-        /usr/bin/cert_svc_create_clean_db.sh
+        echo "Calling %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh"
+        %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
     fi
 fi
 
@@ -100,7 +104,7 @@ fi
 %attr(0755,root,root) %{_bindir}/cert_svc_create_clean_db.sh
 %{_libdir}/*.so.*
 %{_bindir}/dpkg-pki-sig
-/opt/share/cert-svc/targetinfo
+%{TZ_SYS_SHARE}/cert-svc/targetinfo
 %{_datadir}/cert-svc/cert_svc_vcore_db.sql
 %{_datadir}/license/%{name}
 %dir %attr(0755,root,use_cert) /usr/share/cert-svc
@@ -108,22 +112,22 @@ fi
 %dir %attr(0755,root,use_cert) /usr/share/cert-svc/ca-certs/code-signing
 %dir %attr(0755,root,use_cert) /usr/share/cert-svc/ca-certs/code-signing/native
 %dir %attr(0755,root,use_cert) /usr/share/cert-svc/ca-certs/code-signing/wac
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/code-signing
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/code-signing/wac
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/code-signing/tizen
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/sim
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/sim/operator
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/sim/thirdparty
-%dir %attr(0777,root,use_cert) /opt/share/cert-svc/certs/user
-%dir %attr(0777,root,use_cert) /opt/share/cert-svc/certs/trusteduser
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/mdm
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/mdm/security
-%dir %attr(0775,root,use_cert) /opt/share/cert-svc/certs/mdm/security/cert
-%dir %attr(0777,root,use_cert) /opt/share/cert-svc/pkcs12
-/opt/share/cert-svc/certs/ssl
-/opt/share/cert-svc/pkcs12/storage
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/wac
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/tizen
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/sim
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/sim/operator
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/sim/thirdparty
+%dir %attr(0777,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/user
+%dir %attr(0777,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/trusteduser
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/mdm
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/mdm/security
+%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/mdm/security/cert
+%dir %attr(0777,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/pkcs12
+%{TZ_SYS_SHARE}/cert-svc/certs/ssl
+%{TZ_SYS_SHARE}/cert-svc/pkcs12/storage
 
 %files devel
 %manifest %{name}.manifest

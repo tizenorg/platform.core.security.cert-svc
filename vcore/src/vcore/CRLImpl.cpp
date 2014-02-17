@@ -44,10 +44,11 @@
 #include <vcore/Certificate.h>
 #include <vcore/SoupMessageSendSync.h>
 #include <vcore/CRLCacheInterface.h>
+#include <tzplatform_config.h>
 
 namespace {
 const char *CRL_LOOKUP_DIR_1 = "/usr/share/cert-svc/ca-certs/code-signing/wac";
-const char *CRL_LOOKUP_DIR_2 = "/opt/share/cert-svc/certs/code-signing/wac";
+const char *CRL_LOOKUP_DIR_2 = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/certs/code-signing/wac");
 } //anonymous namespace
 
 namespace ValidationCore {

@@ -38,12 +38,13 @@
 #include <ss_manager.h>
 #include <dlfcn.h>
 #include <cert-service-debug.h>
+#include <tzplatform_config.h>
 
 #define SYSCALL(call) while(((call) == -1) && (errno == EINTR))
 
-#define CERTSVC_PKCS12_STORAGE_DIR  "/opt/share/cert-svc/pkcs12"
+#define CERTSVC_PKCS12_STORAGE_DIR tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12")
 #define CERTSVC_PKCS12_STORAGE_FILE "storage"
-#define CERTSVC_PKCS12_STORAGE_PATH CERTSVC_PKCS12_STORAGE_DIR "/" CERTSVC_PKCS12_STORAGE_FILE
+#define CERTSVC_PKCS12_STORAGE_PATH tzplatform_mkpath3(TZ_SYS_SHARE,"cert-svc/pkcs12", CERTSVC_PKCS12_STORAGE_FILE)
 
 static const char  CERTSVC_PKCS12_STORAGE_KEY_PKEY[]  = "pkey";
 static const char  CERTSVC_PKCS12_STORAGE_KEY_CERTS[] = "certs";
@@ -293,7 +294,7 @@ int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar 
 				goto free_keyfile;
 			}
 
-			res = X509_STORE_load_locations(cert_store, NULL, "/opt/etc/ssl/certs/");
+			res = X509_STORE_load_locations(cert_store, NULL, tzplatform_mkpath(TZ_SYS_ETC, "ssl/certs/"));
 			if (res != 1)
 			{
 				LOGD("P12 load certificate store failed");
@@ -372,7 +373,7 @@ int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar 
 			goto free_keyfile;
 		}
 
-		res = X509_STORE_load_locations(cert_store, NULL, "/opt/share/cert-svc/certs/ssl/");
+		res = X509_STORE_load_locations(cert_store, NULL, tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/certs/ssl/"));
 		if (res != 1)
 		{
 			LOGD("P12 load certificate store failed");

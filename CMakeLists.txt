@@ -31,6 +31,8 @@ SET(CMAKE_CXX_FLAGS_CCOV "-std=c++0x -Wall -O2 --coverage")
 SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed")
 SET(CMAKE_SKIP_RPATH "TRUE")
+SET(TZ_SYS_SHARE "${TZ_SYS_SHARE}")
+SET(TZ_SYS_BIN "${TZ_SYS_BIN}")
 
 ################################################################################
 # for libcert-svc.so
@@ -40,6 +42,7 @@ PKG_CHECK_MODULES(CERT_SVC_DEPS
     openssl
     dlog
     glib-2.0
+	libtzplatform-config
     REQUIRED
 )
 
@@ -101,7 +104,7 @@ INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/cert-svc-vcore.pc
     DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
 )
-INSTALL(FILES ${PROJECT_SOURCE_DIR}/targetinfo DESTINATION /opt/share/cert-svc/)
+INSTALL(FILES ${PROJECT_SOURCE_DIR}/targetinfo DESTINATION ${TZ_SYS_SHARE}/cert-svc/)
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/cert-service.h DESTINATION ${INCLUDEDIR})
 
 # Now we must create empty directory for certificates.
@@ -115,39 +118,39 @@ INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/code-signing/wac
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/code-signing/wac
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/code-signing/tizen
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/code-signing/tizen
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/sim/operator
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/sim/operator
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/sim/thirdparty
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/sim/thirdparty
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/user
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/user
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/trusteduser
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/trusteduser
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/mdm/security
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/mdm/security
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/certs/mdm/security/cert
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/mdm/security/cert
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /opt/share/cert-svc/pkcs12
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/pkcs12
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
 

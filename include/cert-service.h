@@ -23,6 +23,8 @@
 #ifndef CERT_SERVICE_H
 #define CERT_SERVICE_H
 
+#include <tzplatform_config.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif	// __cplusplus
@@ -54,10 +56,10 @@ extern "C" {
 #define CERT_SVC_ERR_PERMISSION_DENIED	-16
 #define CERT_SVC_ERR_IS_EXPIRED	-17
 /* default certificate file path */
-#define CERT_SVC_STORE_PATH         "/opt/share/cert-svc/certs/"
-#define CERT_SVC_STORE_PATH_DEFAULT "/opt/share/cert-svc/certs/ssl/"
+#define CERT_SVC_STORE_PATH         tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/certs/")
+#define CERT_SVC_STORE_PATH_DEFAULT tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/certs/ssl/")
 #define CERT_SVC_SEARCH_PATH_RO     "/usr/share/cert-svc/ca-certs/"
-#define CERT_SVC_SEARCH_PATH_RW     "/opt/share/cert-svc/certs/"
+#define CERT_SVC_SEARCH_PATH_RW     tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/certs/")
 
 /*********************************************************************************/
 /* Type definitions                                                              */

@@ -95,7 +95,7 @@ else
     fi
 fi
 
-chsmack -a 'User' /opt/dbspace/.cert_svc_vcore.db*
+chsmack -a 'User' %TZ_SYS_DB/.cert_svc_vcore.db*
 
 %postun
 /sbin/ldconfig

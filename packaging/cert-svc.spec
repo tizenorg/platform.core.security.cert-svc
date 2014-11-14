@@ -4,13 +4,9 @@ Summary: Certification service
 Version: 1.0.1
 Release: 45
 Group:   System/Libraries
-License: SAMSUNG
+License: Apache-2.0
 Source0: %{name}-%{version}.tar.gz
 Source1001: %{name}.manifest
-
-Requires(post):   /sbin/ldconfig
-Requires(postun): /sbin/ldconfig
-
 BuildRequires: cmake
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
@@ -25,13 +21,13 @@ BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(libxslt)
 BuildRequires: pkgconfig(libtzplatform-config)
-
-Provides: libcert-svc-vcore.so.1
+Requires(post):   /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 Requires: libtzplatform-config
+Provides: libcert-svc-vcore.so.1
 
 %description
 Certification service
-
 
 %package devel
 Summary:    Certification service (development files)

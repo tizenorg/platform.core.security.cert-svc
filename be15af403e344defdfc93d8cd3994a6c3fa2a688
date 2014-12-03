@@ -1,0 +1,9 @@
+Code-Review+2: John Whiteman <john.l.whiteman@intel.com>
+Verified+1: Nicolas Zingilé <nicolas.zingile@open.eurogiciel.org>
+Code-Review+1: Kévin THIERRY <kevin.thierry@open.eurogiciel.org>
+Code-Review+1: Corentin Lecouvey <corentin.lecouvey@open.eurogiciel.org>
+Submitted-by: John Whiteman <john.l.whiteman@intel.com>
+Submitted-at: Wed, 03 Dec 2014 13:42:06 -0800
+Reviewed-on: https://review.tizen.org/gerrit/30324
+Project: platform/core/security/cert-svc
+Branch: refs/heads/tizen

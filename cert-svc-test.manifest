@@ -1,0 +1,12 @@
+<manifest>
+	<define>
+		<domain name="cert-svc-storage" />
+	</define>
+	<assign>
+        <filesystem path="/opt/share/cert-svc/pkcs12" label="cert-svc::pkcs12" type="transmutable"/>
+        <filesystem path="/opt/share/cert-svc/pkcs12/storage" label="cert-svc::pkcs12::storage"/>
+	</assign>
+	<request>
+		<domain name="cert-svc-storage" />
+	</request>
+</manifest>

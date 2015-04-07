@@ -13,21 +13,24 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-source /etc/tizen-platform.conf
-
 for name in cert_svc_vcore
 do
-    rm -f ${TZ_SYS_DB}/.$name.db
-    rm -f ${TZ_SYS_DB}/.$name.db-journal
+    rm -f /opt/dbspace/.$name.db
+    rm -f /opt/dbspace/.$name.db-journal
     SQL="PRAGMA journal_mode = PERSIST;"
-    sqlite3 ${TZ_SYS_DB}/.$name.db "$SQL"
+    sqlite3 /opt/dbspace/.$name.db "$SQL"
     SQL=".read /usr/share/cert-svc/"$name"_db.sql"
-    sqlite3 ${TZ_SYS_DB}/.$name.db "$SQL"
-    touch ${TZ_SYS_DB}/.$name.db-journal
-    chown root:6026 ${TZ_SYS_DB}/.$name.db
-    chown root:6026 ${TZ_SYS_DB}/.$name.db-journal
-    chmod 660 ${TZ_SYS_DB}/.$name.db
-    chmod 660 ${TZ_SYS_DB}/.$name.db-journal
+    sqlite3 /opt/dbspace/.$name.db "$SQL"
+    touch /opt/dbspace/.$name.db-journal
+    chown root:6026 /opt/dbspace/.$name.db
+    chown root:6026 /opt/dbspace/.$name.db-journal
+    chmod 660 /opt/dbspace/.$name.db
+    chmod 660 /opt/dbspace/.$name.db-journal
+    if [ -f /usr/lib/rpm-plugins/msm.so ]
+    then
+        chsmack -a "cert-svc::db" /opt/dbspace/.$name.db
+        chsmack -a "cert-svc::db" /opt/dbspace/.$name.db-journal
+    fi    
 done
 
 

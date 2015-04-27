@@ -35,8 +35,6 @@
 #include <dpl/log/log.h>
 #include <dpl/assert.h>
 #include <dpl/exception.h>
-#include <dpl/scoped_ptr.h>
-#include <dpl/scoped_array.h>
 #include <dpl/db/orm.h>
 #include <dpl/foreach.h>
 
@@ -47,7 +45,7 @@
 #include <tzplatform_config.h>
 
 namespace {
-const char *CRL_LOOKUP_DIR_1 = "/usr/share/cert-svc/ca-certs/code-signing/wac";
+const char *CRL_LOOKUP_DIR_1 = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/ca-certs/code-signing/wac");
 const char *CRL_LOOKUP_DIR_2 = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/certs/code-signing/wac");
 } //anonymous namespace
 
@@ -473,9 +471,9 @@ CRLImpl::CRLDataPtr CRLImpl::getCRL(const std::string &uri) const
     }
     std::string crlBody = decoder.get();
 
-    DPL::ScopedArray<char> bodyBuffer(new char[crlBody.length()]);
-    crlBody.copy(bodyBuffer.Get(), crlBody.length());
-    return CRLDataPtr(new CRLData(bodyBuffer.Release(), crlBody.length(),
+    std::unique_ptr<char[]> bodyBuffer(new char[crlBody.length()]);
+    crlBody.copy(bodyBuffer.get(), crlBody.length());
+    return CRLDataPtr(new CRLData(bodyBuffer.release(), crlBody.length(),
                                   uri));
 }
 

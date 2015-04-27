@@ -28,6 +28,11 @@ do
     chown root:6026 ${TZ_SYS_DB}/.$name.db-journal
     chmod 660 ${TZ_SYS_DB}/.$name.db
     chmod 660 ${TZ_SYS_DB}/.$name.db-journal
+    if [ -f /usr/lib/rpm-plugins/msm.so ]
+    then
+        chsmack -a "cert-svc::db" ${TZ_SYS_DB}/.$name.db
+        chsmack -a "cert-svc::db" ${TZ_SYS_DB}/.$name.db-journal
+    fi
 done
 
 

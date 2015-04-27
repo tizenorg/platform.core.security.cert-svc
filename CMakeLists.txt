@@ -12,7 +12,7 @@ SET(DEBUG_OUTPUT "-DCERT_SVC_LOG")             # for debug
 
 SET(TARGET_CERT_SVC_LIB "cert-svc")
 SET(TARGET_VCORE_LIB "cert-svc-vcore")
-SET(TARGET_SIGN_TOOL "dpkg-pki-sig")
+#SET(TARGET_SIGN_TOOL "dpkg-pki-sig")
 
 # compiler options
 SET(GC_SECTIONS_FLAGS "-fdata-sections -ffunction-sections -Wl,--gc-sections")
@@ -33,6 +33,8 @@ SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed")
 SET(CMAKE_SKIP_RPATH "TRUE")
 SET(TZ_SYS_SHARE "${TZ_SYS_SHARE}")
 SET(TZ_SYS_BIN "${TZ_SYS_BIN}")
+SET(TZ_SYS_ETC "${TZ_SYS_ETC}")
+#SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wmissing-declarations")
 
 ################################################################################
 # for libcert-svc.so
@@ -42,6 +44,7 @@ PKG_CHECK_MODULES(CERT_SVC_DEPS
     openssl
     dlog
     glib-2.0
+    libxml-2.0
     libtzplatform-config
     REQUIRED
 )
@@ -63,6 +66,11 @@ INCLUDE_DIRECTORIES(
     ${CERT_SVC_DEPS_INCLUDE_DIRS}
 )
 
+ADD_DEFINITIONS("-DDPL_LOGS_ENABLED")
+IF(TIZEN_FEAT_PROFILE_CERT_SVC_OCSP_CRL)
+ADD_DEFINITIONS("-DTIZEN_FEATURE_CERT_SVC_OCSP_CRL")
+ENDIF()
+
 ADD_LIBRARY(${TARGET_CERT_SVC_LIB} SHARED ${CERT_SVC_SOURCES})
 
 SET_TARGET_PROPERTIES(${TARGET_CERT_SVC_LIB} PROPERTIES
@@ -75,22 +83,6 @@ TARGET_LINK_LIBRARIES(${TARGET_CERT_SVC_LIB}
     ${CERT_SVC_DEPS_LIBRARIES}
 )
 
-################################################################################
-# for dpkg-pki-sig
-################################################################################
-
-SET(SIGN_TOOL_SOURCES
-    ${PROJECT_SOURCE_DIR}/srcs/dpkg-pki-sig.c
-    ${PROJECT_SOURCE_DIR}/srcs/cert-service-process.c
-    ${PROJECT_SOURCE_DIR}/srcs/cert-service-util.c
-)
-
-ADD_EXECUTABLE(${TARGET_SIGN_TOOL} ${SIGN_TOOL_SOURCES})
-
-TARGET_LINK_LIBRARIES(${TARGET_SIGN_TOOL}
-    ${TARGET_CERT_SVC_LIB}
-    ${CERT_SVC_DEPS_LIBRARIES}
-)
 
 ################################################################################
 
@@ -105,18 +97,19 @@ INSTALL(FILES
     DESTINATION ${LIB_INSTALL_DIR}/pkgconfig
 )
 INSTALL(FILES ${PROJECT_SOURCE_DIR}/targetinfo DESTINATION ${TZ_SYS_SHARE}/cert-svc/)
+#INSTALL(FILES ${PROJECT_SOURCE_DIR}/res/pin/.pin DESTINATION ${TZ_SYS_SHARE}/cert-svc/pin/)
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/cert-service.h DESTINATION ${INCLUDEDIR})
 
 # Now we must create empty directory for certificates.
 # Without this directories rpm package will fail during build.
-INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /usr/share/cert-svc/ca-certs/code-signing/native
-    FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
-)
-INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
-    DESTINATION /usr/share/cert-svc/ca-certs/code-signing/wac
-    FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
-)
+#INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
+#    DESTINATION ${TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing/native
+#    FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
+#)
+#INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
+#    DESTINATION ${TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing/wac
+#    FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
+#)
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/code-signing/wac
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
@@ -125,6 +118,11 @@ INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/code-signing/tizen
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH
 )
+IF(TIZEN_FEAT_PROFILE_CERT_SVC_OCSP_CRL)
+INSTALL(FILES ${PROJECT_SOURCE_DIR}/res/fota/FOTA_ROOT.cer
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/fota
+)
+ENDIF()
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/etc/empty
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs/sim/operator
     FILES_MATCHING PATTERN THISPATTERNMUSTNOTMATCH

@@ -72,7 +72,9 @@ Certificate::Certificate(const std::string &der,
         Base64Decoder base64;
         base64.reset();
         base64.append(der);
-        base64.finalize();
+        if (!base64.finalize()) {
+            LogWarning("Error during decoding");
+        }
         tmp = base64.get();
         ptr = reinterpret_cast<const unsigned char*>(tmp.c_str());
         size = static_cast<int>(tmp.size());
@@ -136,7 +138,7 @@ bool Certificate::isSignedBy(const CertificatePtr &parent) const
 Certificate::Fingerprint Certificate::getFingerprint(
         Certificate::FingerprintType type) const
 {
-    unsigned int fingerprintlength = EVP_MAX_MD_SIZE; //EVP_MAX_MD_SIZE is smaller than  2^64
+    size_t fingerprintlength = EVP_MAX_MD_SIZE;
     unsigned char fingerprint[EVP_MAX_MD_SIZE];
     Fingerprint raw;
 
@@ -197,12 +199,12 @@ DPL::String Certificate::getOneLine(FieldType type) const
     return DPL::FromUTF8String(buffer);
 }
 
-DPL::OptionalString Certificate::getField(FieldType type,
+boost::optional<DPL::String> Certificate::getField(FieldType type,
                                      int fieldNid) const
 {
     X509_NAME *subjectName = getX509Name(type);
     X509_NAME_ENTRY *subjectEntry = NULL;
-    DPL::Optional < DPL::String > output;
+    boost::optional < DPL::String > output;
     int entryCount = X509_NAME_entry_count(subjectName);
 
     for (int i = 0; i < entryCount; ++i) {
@@ -241,45 +243,45 @@ DPL::OptionalString Certificate::getField(FieldType type,
     return output;
 }
 
-DPL::OptionalString Certificate::getCommonName(FieldType type) const
+boost::optional<DPL::String> Certificate::getCommonName(FieldType type) const
 {
     return getField(type, NID_commonName);
 }
 
-DPL::OptionalString Certificate::getCountryName(FieldType type) const
+boost::optional<DPL::String> Certificate::getCountryName(FieldType type) const
 {
     return getField(type, NID_countryName);
 }
 
-DPL::OptionalString Certificate::getStateOrProvinceName(FieldType type) const
+boost::optional<DPL::String> Certificate::getStateOrProvinceName(FieldType type) const
 {
     return getField(type, NID_stateOrProvinceName);
 }
 
-DPL::OptionalString Certificate::getLocalityName(FieldType type) const
+boost::optional<DPL::String> Certificate::getLocalityName(FieldType type) const
 {
     return getField(type, NID_localityName);
 }
 
-DPL::OptionalString Certificate::getOrganizationName(FieldType type) const
+boost::optional<DPL::String> Certificate::getOrganizationName(FieldType type) const
 {
     return getField(type, NID_organizationName);
 }
 
-DPL::OptionalString Certificate::getOrganizationalUnitName(FieldType type) const
+boost::optional<DPL::String> Certificate::getOrganizationalUnitName(FieldType type) const
 {
     return getField(type, NID_organizationalUnitName);
 }
 
-DPL::OptionalString Certificate::getEmailAddres(FieldType type) const
+boost::optional<DPL::String> Certificate::getEmailAddres(FieldType type) const
 {
     return getField(type, NID_pkcs9_emailAddress);
 }
 
-DPL::OptionalString Certificate::getOCSPURL() const
+boost::optional<DPL::String> Certificate::getOCSPURL() const
 {
     // TODO verify this code
-    DPL::OptionalString retValue;
+    boost::optional<DPL::String> retValue;
     AUTHORITY_INFO_ACCESS *aia = static_cast<AUTHORITY_INFO_ACCESS*>(
             X509_get_ext_d2i(m_x509,
                              NID_info_access,
@@ -300,7 +302,7 @@ DPL::OptionalString Certificate::getOCSPURL() const
             ad->location->type == GEN_URI)
         {
             void* data = ASN1_STRING_data(ad->location->d.ia5);
-            retValue = DPL::OptionalString(DPL::FromUTF8String(
+            retValue = boost::optional<DPL::String>(DPL::FromUTF8String(
                     static_cast<char*>(data)));
 
             break;
@@ -309,6 +311,8 @@ DPL::OptionalString Certificate::getOCSPURL() const
     sk_ACCESS_DESCRIPTION_free(aia);
     return retValue;
 }
+
+
 
 Certificate::AltNameSet Certificate::getAlternativeNameDNS() const
 {
@@ -391,9 +395,10 @@ ASN1_TIME* Certificate::getNotBeforeTime() const
 bool Certificate::isRootCert()
 {
     // based on that root certificate has the same subject as issuer name
-    return isSignedBy(this->SharedFromThis());
+    return isSignedBy(this->shared_from_this());
 }
 
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
 std::list<std::string>
 Certificate::getCrlUris() const
 {
@@ -441,6 +446,7 @@ Certificate::getCrlUris() const
     sk_DIST_POINT_pop_free(distPoints, DIST_POINT_free);
     return result;
 }
+#endif
 
 long Certificate::getVersion() const
 {

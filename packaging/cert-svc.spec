@@ -8,6 +8,7 @@ License: Apache-2.0
 Source0: %{name}-%{version}.tar.gz
 Source1001: %{name}.manifest
 BuildRequires: cmake
+BuildRequires: boost-devel
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
 BuildRequires: pkgconfig(evas)
@@ -55,8 +56,8 @@ make %{?jobs:-j%jobs}
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/share/license
-cp LICENSE.APLv2 %{buildroot}/usr/share/license/%{name}
+mkdir -p %{buildroot}%{TZ_SYS_SHARE}/license
+cp LICENSE.APLv2 %{buildroot}%{TZ_SYS_SHARE}/license/%{name}
 %make_install
 ln -sf %{TZ_SYS_ETC}/ssl/certs %{buildroot}%{TZ_SYS_SHARE}/cert-svc/certs/ssl
 touch %{buildroot}%{TZ_SYS_SHARE}/cert-svc/pkcs12/storage
@@ -67,6 +68,7 @@ rm -rf %{buildroot}
 
 %post
 /sbin/ldconfig
+%if 0%{?tizen_feature_certsvc_ocsp_crl}
 if [ -z ${2} ]; then
     echo "This is new install of wrt-security"
     echo "Calling %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh"
@@ -74,7 +76,7 @@ if [ -z ${2} ]; then
 else
     # Find out old and new version of databases
     VCORE_OLD_DB_VERSION=`sqlite3 %{TZ_SYS_DB}/.cert_svc_vcore.db ".tables" | grep "DB_VERSION_"`
-    VCORE_NEW_DB_VERSION=`cat /usr/share/cert-svc/cert_svc_vcore_db.sql | tr '[:blank:]' '\n' | grep DB_VERSION_`
+    VCORE_NEW_DB_VERSION=`cat %{TZ_SYS_SHARE}/cert-svc/cert_svc_vcore_db.sql | tr '[:blank:]' '\n' | grep DB_VERSION_`
     echo "OLD vcore database version ${VCORE_OLD_DB_VERSION}"
     echo "NEW vcore database version ${VCORE_NEW_DB_VERSION}"
 
@@ -92,29 +94,33 @@ else
 fi
 
 chsmack -a 'User' %TZ_SYS_DB/.cert_svc_vcore.db*
-
+%endif #tizen_feature_certsvc_ocsp_crl
 %postun
 /sbin/ldconfig
 
 %files
-%manifest %{name}.manifest
+
 %defattr(-,root,root,-)
+%manifest %{name}.manifest
 %attr(0755,root,root) %{_bindir}/cert_svc_create_clean_db.sh
 %{_libdir}/*.so.*
-%{_bindir}/dpkg-pki-sig
+#%{_bindir}/dpkg-pki-sig
 %{TZ_SYS_SHARE}/cert-svc/targetinfo
+%if 0%{?tizen_feature_certsvc_ocsp_crl}
 %{_datadir}/cert-svc/cert_svc_vcore_db.sql
+%endif
 %{_datadir}/license/%{name}
-%dir %attr(0755,root,use_cert) /usr/share/cert-svc
-%dir %attr(0755,root,use_cert) /usr/share/cert-svc/ca-certs
-%dir %attr(0755,root,use_cert) /usr/share/cert-svc/ca-certs/code-signing
-%dir %attr(0755,root,use_cert) /usr/share/cert-svc/ca-certs/code-signing/native
-%dir %attr(0755,root,use_cert) /usr/share/cert-svc/ca-certs/code-signing/wac
+%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc
+#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs
+#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing
+#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing/native
+#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing/wac
+
+#%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing
+#%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/wac
+#%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/tizen
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs
-%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing
-%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/wac
-%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/tizen
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/sim
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/sim/operator
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/sim/thirdparty
@@ -124,6 +130,14 @@ chsmack -a 'User' %TZ_SYS_DB/.cert_svc_vcore.db*
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/mdm/security
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/mdm/security/cert
 %dir %attr(0777,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/pkcs12
+#%{TZ_SYS_SHARE}/cert-svc/pin/.pin
+%{TZ_SYS_SHARE}/cert-svc/certs/ssl
+%{TZ_SYS_SHARE}/cert-svc/pkcs12/storage
+#%dir %attr(0700, root, root) %{TZ_SYS_SHARE}/cert-svc/pin
+%if 0%{?tizen_feature_certsvc_ocsp_crl}
+%attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/fota/*
+%endif
+#%{TZ_SYS_SHARE}/cert-svc/pin/.pin
 %{TZ_SYS_SHARE}/cert-svc/certs/ssl
 %{TZ_SYS_SHARE}/cert-svc/pkcs12/storage
 

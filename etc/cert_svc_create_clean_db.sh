@@ -21,13 +21,18 @@ do
     rm -f ${TZ_SYS_DB}/.$name.db-journal
     SQL="PRAGMA journal_mode = PERSIST;"
     sqlite3 ${TZ_SYS_DB}/.$name.db "$SQL"
-    SQL=".read /usr/share/cert-svc/"$name"_db.sql"
+    SQL=".read ${TZ_SYS_SHARE}/cert-svc/"$name"_db.sql"
     sqlite3 ${TZ_SYS_DB}/.$name.db "$SQL"
     touch ${TZ_SYS_DB}/.$name.db-journal
     chown root:6026 ${TZ_SYS_DB}/.$name.db
     chown root:6026 ${TZ_SYS_DB}/.$name.db-journal
     chmod 660 ${TZ_SYS_DB}/.$name.db
     chmod 660 ${TZ_SYS_DB}/.$name.db-journal
+    if [ -f /usr/lib/rpm-plugins/msm.so ]
+    then
+        chsmack -a "cert-svc::db" ${TZ_SYS_DB}/.$name.db
+        chsmack -a "cert-svc::db" ${TZ_SYS_DB}/.$name.db-journal
+    fi
 done
 
 

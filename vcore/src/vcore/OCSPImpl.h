@@ -38,8 +38,6 @@
 
 #include <dpl/assert.h>
 #include <dpl/exception.h>
-#include <boost/optional.hpp>
-
 
 #include <vcore/scoped_gpointer.h>
 #include <vcore/OCSPCertMgrUtil.h>
@@ -166,8 +164,8 @@ class OCSPImpl
     typedef std::pair<char*, size_t> HttpResponseBuffer;
 
     SoupWrapper::SoupMessageSendBase::RequestStatus sendOcspRequest(
-   	OCSP_REQUEST* argRequest,
-    	const boost::optional<DPL::String>& argUri);
+        OCSP_REQUEST* argRequest,
+        const DPL::String& argUri);
 
 
 

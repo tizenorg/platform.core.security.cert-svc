@@ -25,7 +25,6 @@
 #define _VALIDATION_CORE_CERTSTORETYPE_H_
 
 #include <string.h>
-#include <boost/optional.hpp>
 
 namespace ValidationCore {
 namespace CertStoreId {

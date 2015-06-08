@@ -244,13 +244,13 @@ public:
 
         auto certPtr = iter->second;
 
-		boost::optional<DPL::String> result;
+		DPL::String result;
         switch(field) {
             case CERTSVC_SUBJECT:
-                result = boost::optional<DPL::String>(certPtr->getOneLine());
+                result = certPtr->getOneLine();
                 break;
             case CERTSVC_ISSUER:
-                result = boost::optional<DPL::String>(certPtr->getOneLine(Certificate::FIELD_ISSUER));
+                result = certPtr->getOneLine(Certificate::FIELD_ISSUER);
                 break;
             case CERTSVC_SUBJECT_COMMON_NAME:
                 result = certPtr->getCommonName();
@@ -286,32 +286,32 @@ public:
                 {
                     std::stringstream stream;
                     stream << (certPtr->getVersion()+1);
-                    result = boost::optional<DPL::String>(DPL::FromUTF8String(stream.str()));
+                    result = DPL::FromUTF8String(stream.str());
                     break;
                 }
             case CERTSVC_SERIAL_NUMBER:
-                result = boost::optional<DPL::String>(certPtr->getSerialNumberString());
+                result = certPtr->getSerialNumberString();
                 break;
             case CERTSVC_KEY_USAGE:
-                result = boost::optional<DPL::String>(certPtr->getKeyUsageString());
+                result = certPtr->getKeyUsageString();
                 break;
             case CERTSVC_KEY:
-                result = boost::optional<DPL::String>(certPtr->getPublicKeyString());
+                result = certPtr->getPublicKeyString();
                 break;
             case CERTSVC_SIGNATURE_ALGORITHM:
-                result = boost::optional<DPL::String>(certPtr->getSignatureAlgorithmString());
+                result = certPtr->getSignatureAlgorithmString();
                 break;
             default:
                 break;
         }
 
-        if (!result) {
+        if (result.empty()) {
             buffer->privateHandler = NULL;
             buffer->privateLength = 0;
             buffer->privateInstance = cert.privateInstance;
             return CERTSVC_SUCCESS;
         }
-        std::string output = DPL::ToUTF8String(*result);
+        std::string output = DPL::ToUTF8String(result);
 
         char *cstring = new char[output.size()+1];
         if (cstring == NULL) {

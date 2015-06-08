@@ -8,7 +8,6 @@ License: Apache-2.0
 Source0: %{name}-%{version}.tar.gz
 Source1001: %{name}.manifest
 BuildRequires: cmake
-BuildRequires: boost-devel
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
 BuildRequires: pkgconfig(evas)
@@ -22,10 +21,8 @@ BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(libxslt)
 BuildRequires: pkgconfig(libtzplatform-config)
-Requires(post):   /sbin/ldconfig
-Requires(postun): /sbin/ldconfig
+Requires: ca-certificates
 Requires: libtzplatform-config
-Provides: libcert-svc-vcore.so.1
 
 %description
 Certification service
@@ -36,7 +33,7 @@ Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 
 %description devel
-Certification service (developement files)
+Certification service (development files)
 
 %prep
 %setup -q

@@ -199,12 +199,12 @@ DPL::String Certificate::getOneLine(FieldType type) const
     return DPL::FromUTF8String(buffer);
 }
 
-boost::optional<DPL::String> Certificate::getField(FieldType type,
+DPL::String Certificate::getField(FieldType type,
                                      int fieldNid) const
 {
     X509_NAME *subjectName = getX509Name(type);
     X509_NAME_ENTRY *subjectEntry = NULL;
-    boost::optional < DPL::String > output;
+    DPL::String output;
     int entryCount = X509_NAME_entry_count(subjectName);
 
     for (int i = 0; i < entryCount; ++i) {
@@ -243,45 +243,45 @@ boost::optional<DPL::String> Certificate::getField(FieldType type,
     return output;
 }
 
-boost::optional<DPL::String> Certificate::getCommonName(FieldType type) const
+DPL::String Certificate::getCommonName(FieldType type) const
 {
     return getField(type, NID_commonName);
 }
 
-boost::optional<DPL::String> Certificate::getCountryName(FieldType type) const
+DPL::String Certificate::getCountryName(FieldType type) const
 {
     return getField(type, NID_countryName);
 }
 
-boost::optional<DPL::String> Certificate::getStateOrProvinceName(FieldType type) const
+DPL::String Certificate::getStateOrProvinceName(FieldType type) const
 {
     return getField(type, NID_stateOrProvinceName);
 }
 
-boost::optional<DPL::String> Certificate::getLocalityName(FieldType type) const
+DPL::String Certificate::getLocalityName(FieldType type) const
 {
     return getField(type, NID_localityName);
 }
 
-boost::optional<DPL::String> Certificate::getOrganizationName(FieldType type) const
+DPL::String Certificate::getOrganizationName(FieldType type) const
 {
     return getField(type, NID_organizationName);
 }
 
-boost::optional<DPL::String> Certificate::getOrganizationalUnitName(FieldType type) const
+DPL::String Certificate::getOrganizationalUnitName(FieldType type) const
 {
     return getField(type, NID_organizationalUnitName);
 }
 
-boost::optional<DPL::String> Certificate::getEmailAddres(FieldType type) const
+DPL::String Certificate::getEmailAddres(FieldType type) const
 {
     return getField(type, NID_pkcs9_emailAddress);
 }
 
-boost::optional<DPL::String> Certificate::getOCSPURL() const
+DPL::String Certificate::getOCSPURL() const
 {
     // TODO verify this code
-    boost::optional<DPL::String> retValue;
+    DPL::String retValue;
     AUTHORITY_INFO_ACCESS *aia = static_cast<AUTHORITY_INFO_ACCESS*>(
             X509_get_ext_d2i(m_x509,
                              NID_info_access,
@@ -302,7 +302,7 @@ boost::optional<DPL::String> Certificate::getOCSPURL() const
             ad->location->type == GEN_URI)
         {
             void* data = ASN1_STRING_data(ad->location->d.ia5);
-            retValue = boost::optional<DPL::String>(DPL::FromUTF8String(
+            retValue = DPL::String(DPL::FromUTF8String(
                     static_cast<char*>(data)));
 
             break;

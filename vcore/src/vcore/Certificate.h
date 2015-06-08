@@ -32,8 +32,6 @@
 #include <dpl/noncopyable.h>
 #include <memory>
 #include <dpl/string.h>
-#include <boost/optional.hpp>
-
 
 #include <openssl/x509.h>
 
@@ -111,17 +109,17 @@ class Certificate : public std::enable_shared_from_this<Certificate>
     // getName uses deprecated functions. Usage is strongly discouraged.
     DPL::String getOneLine(FieldType type = FIELD_SUBJECT) const;
 
-    boost::optional<DPL::String> getCommonName(FieldType type = FIELD_SUBJECT) const;
-    boost::optional<DPL::String> getCountryName(FieldType type = FIELD_SUBJECT) const;
-    boost::optional<DPL::String> getStateOrProvinceName(
+    DPL::String getCommonName(FieldType type = FIELD_SUBJECT) const;
+    DPL::String getCountryName(FieldType type = FIELD_SUBJECT) const;
+    DPL::String getStateOrProvinceName(
             FieldType type = FIELD_SUBJECT) const;
-    boost::optional<DPL::String> getLocalityName(FieldType type = FIELD_SUBJECT) const;
-    boost::optional<DPL::String> getOrganizationName(
+    DPL::String getLocalityName(FieldType type = FIELD_SUBJECT) const;
+    DPL::String getOrganizationName(
             FieldType type = FIELD_SUBJECT) const;
-    boost::optional<DPL::String> getOrganizationalUnitName(
+    DPL::String getOrganizationalUnitName(
             FieldType type = FIELD_SUBJECT) const;
-    boost::optional<DPL::String> getEmailAddres(FieldType type = FIELD_SUBJECT) const;
-    boost::optional<DPL::String> getOCSPURL() const;
+    DPL::String getEmailAddres(FieldType type = FIELD_SUBJECT) const;
+    DPL::String getOCSPURL() const;
 
 
     // Openssl supports 9 types of alternative name filed.
@@ -176,7 +174,7 @@ class Certificate : public std::enable_shared_from_this<Certificate>
   protected:
     X509_NAME *getX509Name(FieldType type) const;
 
-    boost::optional<DPL::String> getField(FieldType type,
+    DPL::String getField(FieldType type,
                             int fieldNid) const;
 
     X509 *m_x509;

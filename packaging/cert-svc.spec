@@ -106,6 +106,7 @@ chsmack -a 'User' %TZ_SYS_DB/.cert_svc_vcore.db*
 %{_datadir}/cert-svc/cert_svc_vcore_db.sql
 %endif
 %{_datadir}/license/%{name}
+%{TZ_SYS_SHARE}/cert-svc/schema/schema.xsd
 %dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc
 #%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs
 #%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing

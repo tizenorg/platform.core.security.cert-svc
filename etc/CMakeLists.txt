@@ -1,6 +1,12 @@
 SET(ETC_DIR ${PROJECT_SOURCE_DIR}/etc)
 
 INSTALL(FILES
+    ${ETC_DIR}/schema.xsd
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/schema
+    )
+
+INSTALL(FILES
     ${ETC_DIR}/cert_svc_create_clean_db.sh
     DESTINATION ${TZ_SYS_BIN}
     )
+

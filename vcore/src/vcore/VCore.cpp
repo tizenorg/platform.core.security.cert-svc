@@ -32,11 +32,17 @@
 #include <dpl/assert.h>
 #include <dpl/log/log.h>
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
 namespace {
+
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
 DPL::DB::ThreadDatabaseSupport *threadInterface = NULL;
-} // namespace anonymous
+const std::string DatabasePath              = "/opt/dbspace/.cert_svc_vcore.db";
 #endif
+
+const std::string FingerprintListPath       = "/usr/share/ca-certificates/fingerprint/fingerprint_list.xml";
+const std::string FingerprintListSchemaPath = "/usr/share/ca-certificates/fingerprint/fingerprint_list.xsd";
+
+} // namespace anonymous
 
 namespace ValidationCore {
 
@@ -86,30 +92,26 @@ DPL::DB::ThreadDatabaseSupport& ThreadInterface(void) {
     return *threadInterface;
 }
 #endif
-bool VCoreInit(const std::string& configFilePath,
-               const std::string& configSchemaPath,
-               const std::string& databasePath)
+void VCoreInit()
 {
 #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-	if(threadInterface) {
+	if (threadInterface) {
         LogDebug("Already Initialized");
-        return true;
+        return;
     }
 
     threadInterface = new DPL::DB::ThreadDatabaseSupport(
-        databasePath.c_str(),
+        DatabasePath.c_str(),
         DPL::DB::SqlConnection::Flag::UseLucene);
 #endif
+
     SSL_library_init();
-//    g_thread_init(NULL);
     g_type_init();
 
-    LogDebug("Initializing VCore");
     Config &globalConfig = ConfigSingleton::Instance();
-    globalConfig.setXMLConfigPath(configFilePath) &&
-        globalConfig.setXMLSchemaPath(configSchemaPath);
 
-    return true;
+    globalConfig.setXMLConfigPath(FingerprintListPath);
+    globalConfig.setXMLSchemaPath(FingerprintListSchemaPath);
 }
 
 void VCoreDeinit()

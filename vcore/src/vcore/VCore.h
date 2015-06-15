@@ -26,20 +26,12 @@
 
 namespace ValidationCore {
 /*
- * configFilePath - path to XML config file with certificates configuration
- *
- * configSchemaPath - XMLschema of config file
- *
- * databasePath - path to database with OCSP/CRL cache.
- *
  * This function could be run only once. If you call it twice it will
  * return false and non data will be set.
  *
  * This function must be call before AttachToThread function.
  */
-bool VCoreInit(const std::string& configFilePath,
-               const std::string& configSchemaPath,
-               const std::string& databasePath);
+void VCoreInit(void);
 
 /*
  * This function will free internal structures responsible for db connection.

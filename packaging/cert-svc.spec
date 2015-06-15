@@ -1,4 +1,3 @@
-#sbs-git:slp/pkgs/c/cert-svc cert-svc 1.0.1 ad7eb7efcefb37b06017c69cb2fc44e6f7b6cab7
 Name:    cert-svc
 Summary: Certification service
 Version: 1.0.1

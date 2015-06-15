@@ -32,15 +32,17 @@
 #include <dpl/assert.h>
 #include <dpl/log/log.h>
 
+#include <tzplatform_config.h>
+
 namespace {
 
 #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
 DPL::DB::ThreadDatabaseSupport *threadInterface = NULL;
-const std::string DatabasePath              = "/opt/dbspace/.cert_svc_vcore.db";
+const std::string DatabasePath              = tzplatform_mkpath(TZ_SYS_DB, ".cert_svc_vcore.db");
 #endif
 
-const std::string FingerprintListPath       = "/usr/share/ca-certificates/fingerprint/fingerprint_list.xml";
-const std::string FingerprintListSchemaPath = "/usr/share/ca-certificates/fingerprint/fingerprint_list.xsd";
+const std::string FingerprintListPath       = tzplatform_mkpath(TZ_SYS_SHARE, "ca-certificates/fingerprint/fingerprint_list.xml");
+const std::string FingerprintListSchemaPath = tzplatform_mkpath(TZ_SYS_SHARE, "ca-certificates/fingerprint/fingerprint_list.xsd");
 
 } // namespace anonymous
 

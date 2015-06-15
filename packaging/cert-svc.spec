@@ -9,7 +9,6 @@ Source1001: %{name}.manifest
 BuildRequires: cmake
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
-BuildRequires: pkgconfig(evas)
 BuildRequires: pkgconfig(dpl-efl)
 BuildRequires: pkgconfig(libsoup-2.4)
 BuildRequires: pkgconfig(libpcre)
@@ -41,12 +40,12 @@ cp %{SOURCE1001} .
 %build
 %{!?build_type:%define build_type "Release"}
 %cmake . -DPREFIX=%{_prefix} \
-         -DEXEC_PREFIX=%{_exec_prefix} \
-         -DBINDIR=%{_bindir} \
-         -DINCLUDEDIR=%{_includedir} \
-         -DCMAKE_BUILD_TYPE=%{build_type} \
-	 -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
-	 -DTZ_SYS_BIN=%TZ_SYS_BIN
+        -DEXEC_PREFIX=%{_exec_prefix} \
+        -DBINDIR=%{_bindir} \
+        -DINCLUDEDIR=%{_includedir} \
+        -DCMAKE_BUILD_TYPE=%{build_type} \
+        -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
+        -DTZ_SYS_BIN=%TZ_SYS_BIN
 
 make %{?jobs:-j%jobs}
 
@@ -89,7 +88,7 @@ else
     fi
 fi
 
-chsmack -a 'User' %TZ_SYS_DB/.cert_svc_vcore.db*
+chsmack -a 'User' %{TZ_SYS_DB}/.cert_svc_vcore.db*
 %endif #tizen_feature_certsvc_ocsp_crl
 %postun
 /sbin/ldconfig
@@ -98,24 +97,16 @@ chsmack -a 'User' %TZ_SYS_DB/.cert_svc_vcore.db*
 
 %defattr(-,root,root,-)
 %manifest %{name}.manifest
-%attr(0755,root,root) %{_bindir}/cert_svc_create_clean_db.sh
+%attr(0755,root,root) %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
 %{_libdir}/*.so.*
 #%{_bindir}/dpkg-pki-sig
 %{TZ_SYS_SHARE}/cert-svc/targetinfo
 %if 0%{?tizen_feature_certsvc_ocsp_crl}
-%{_datadir}/cert-svc/cert_svc_vcore_db.sql
+%{TZ_SYS_SHARE}/cert-svc/cert_svc_vcore_db.sql
 %endif
-%{_datadir}/license/%{name}
+%{TZ_SYS_SHARE}/license/%{name}
 %{TZ_SYS_SHARE}/cert-svc/schema/schema.xsd
 %dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc
-#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs
-#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing
-#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing/native
-#%dir %attr(0755,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/ca-certs/code-signing/wac
-
-#%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing
-#%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/wac
-#%dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/code-signing/tizen
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs
 %dir %attr(0775,root,use_cert) %{TZ_SYS_SHARE}/cert-svc/certs/sim

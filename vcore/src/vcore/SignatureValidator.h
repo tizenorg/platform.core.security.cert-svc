@@ -22,15 +22,18 @@
 #ifndef _VALIDATION_CORE_SIGNATUREVALIDATOR_H_
 #define _VALIDATION_CORE_SIGNATUREVALIDATOR_H_
 
-#include <string>
+#ifndef LOG_TAG
+#undef LOG_TAG
+#define LOG_TAG "OSP"
+#endif
 
-#include <dpl/noncopyable.h>
+#include <string>
 
 #include <vcore/SignatureData.h>
 
 namespace ValidationCore {
 
-class SignatureValidator : public DPL::Noncopyable {
+class SignatureValidator {
 public:
     class ImplSignatureValidator;
 
@@ -46,8 +49,21 @@ public:
         SIGNATURE_INVALID,
         SIGNATURE_VERIFIED,
         SIGNATURE_DISREGARD,    // no ocsp response or ocsp return unknown status
-        SIGNATURE_REVOKED
+        SIGNATURE_REVOKED,
+		SIGNATURE_INVALID_CERT_CHAIN, //5, from here, new error enum	 	
+		SIGNATURE_INVALID_DISTRIBUTOR_CERT,
+		SIGNATURE_INVALID_SDK_DEFAULT_AUTHOR_CERT,
+		SIGNATURE_IN_DISTRIBUTOR_CASE_AUTHOR_CERT,
+		SIGNATURE_INVALID_CERT_TIME,	
+		SIGNATURE_NO_DEVICE_PROFILE,
+		SIGNATURE_INVALID_DEVICE_UNIQUE_ID,
+		SIGNATURE_INVALID_NO_HASH_FILE,
+		SIGNATURE_INVALID_HASH_SIGNATURE
     };
+
+    SignatureValidator() = delete;
+    SignatureValidator(const SignatureValidator &) = delete;
+    const SignatureValidator &operator=(const SignatureValidator &) = delete;
 
     explicit SignatureValidator(
         AppType appType,

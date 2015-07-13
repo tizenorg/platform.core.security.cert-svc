@@ -24,15 +24,12 @@ do
     SQL=".read ${TZ_SYS_SHARE}/cert-svc/"$name"_db.sql"
     sqlite3 ${TZ_SYS_DB}/.$name.db "$SQL"
     touch ${TZ_SYS_DB}/.$name.db-journal
-    chown root:6026 ${TZ_SYS_DB}/.$name.db
-    chown root:6026 ${TZ_SYS_DB}/.$name.db-journal
-    chmod 660 ${TZ_SYS_DB}/.$name.db
-    chmod 660 ${TZ_SYS_DB}/.$name.db-journal
-    if [ -f /usr/lib/rpm-plugins/msm.so ]
-    then
-        chsmack -a "cert-svc::db" ${TZ_SYS_DB}/.$name.db
-        chsmack -a "cert-svc::db" ${TZ_SYS_DB}/.$name.db-journal
-    fi
+
+    chown system:system ${TZ_SYS_DB}/.$name
+    chown system:system ${TZ_SYS_DB}/.$name-journal
+
+    chmod 664 ${TZ_SYS_DB}/.$name
+    chmod 664 ${TZ_SYS_DB}/.$name-journal
 done
 
-
+echo "cert_svc_create_clean_db.sh done"

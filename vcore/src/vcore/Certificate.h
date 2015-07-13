@@ -27,13 +27,11 @@
 #include <string>
 #include <vector>
 #include <ctime>
-
-#include <dpl/exception.h>
-#include <dpl/noncopyable.h>
 #include <memory>
-#include <dpl/string.h>
 
 #include <openssl/x509.h>
+
+#include <vcore/exception.h>
 
 #include <cert-service.h>
 
@@ -51,11 +49,18 @@ class Certificate;
 typedef std::shared_ptr<Certificate> CertificatePtr;
 typedef std::list<CertificatePtr> CertificateList;
 
-class Certificate : public std::enable_shared_from_this<Certificate>
-{
-  public:
+class Certificate : public std::enable_shared_from_this<Certificate> {
+public:
+    class Exception {
+    public:
+        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError);
+    };
+
     typedef std::vector<unsigned char> Fingerprint;
-    typedef DPL::String AltName;
+
+    // ascii string
+    typedef std::string AltName;
     typedef std::set<AltName> AltNameSet;
 
     enum FingerprintType
@@ -73,13 +78,6 @@ class Certificate : public std::enable_shared_from_this<Certificate>
     {
         FORM_DER,
         FORM_BASE64
-    };
-
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError)
     };
 
     explicit Certificate(X509 *cert);
@@ -107,19 +105,16 @@ class Certificate : public std::enable_shared_from_this<Certificate>
     Fingerprint getFingerprint(FingerprintType type) const;
 
     // getName uses deprecated functions. Usage is strongly discouraged.
-    DPL::String getOneLine(FieldType type = FIELD_SUBJECT) const;
-
-    DPL::String getCommonName(FieldType type = FIELD_SUBJECT) const;
-    DPL::String getCountryName(FieldType type = FIELD_SUBJECT) const;
-    DPL::String getStateOrProvinceName(
-            FieldType type = FIELD_SUBJECT) const;
-    DPL::String getLocalityName(FieldType type = FIELD_SUBJECT) const;
-    DPL::String getOrganizationName(
-            FieldType type = FIELD_SUBJECT) const;
-    DPL::String getOrganizationalUnitName(
-            FieldType type = FIELD_SUBJECT) const;
-    DPL::String getEmailAddres(FieldType type = FIELD_SUBJECT) const;
-    DPL::String getOCSPURL() const;
+    // utf8 string
+    std::string getOneLine(FieldType type = FIELD_SUBJECT) const;
+    std::string getCommonName(FieldType type = FIELD_SUBJECT) const;
+    std::string getCountryName(FieldType type = FIELD_SUBJECT) const;
+    std::string getStateOrProvinceName(FieldType type = FIELD_SUBJECT) const;
+    std::string getLocalityName(FieldType type = FIELD_SUBJECT) const;
+    std::string getOrganizationName(FieldType type = FIELD_SUBJECT) const;
+    std::string getOrganizationalUnitName(FieldType type = FIELD_SUBJECT) const;
+    std::string getEmailAddres(FieldType type = FIELD_SUBJECT) const;
+    std::string getOCSPURL() const;
 
 
     // Openssl supports 9 types of alternative name filed.
@@ -150,13 +145,11 @@ class Certificate : public std::enable_shared_from_this<Certificate>
 
     long getVersion() const;
 
-    DPL::String getSerialNumberString() const;
-
-    DPL::String getKeyUsageString() const;
-
-    DPL::String getSignatureAlgorithmString() const;
-
-    DPL::String getPublicKeyString() const;
+    // utf8 string
+    std::string getSerialNumberString() const;
+    std::string getKeyUsageString() const;
+    std::string getSignatureAlgorithmString() const;
+    std::string getPublicKeyString() const;
 
     /*
      * 0 - not CA
@@ -171,11 +164,11 @@ class Certificate : public std::enable_shared_from_this<Certificate>
     static std::string FingerprintToColonHex(
             const Fingerprint &fingerprint);
 
-  protected:
+protected:
     X509_NAME *getX509Name(FieldType type) const;
 
-    DPL::String getField(FieldType type,
-                            int fieldNid) const;
+    // utf8 string
+    std::string getField(FieldType type, int fieldNid) const;
 
     X509 *m_x509;
 };

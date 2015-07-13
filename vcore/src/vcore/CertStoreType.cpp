@@ -23,46 +23,57 @@
  */
 #include <vcore/CertStoreType.h>
 
+#include <string.h>
+
 namespace ValidationCore {
 namespace CertStoreId {
 
 Set::Set()
   : m_certificateStorage(0)
-	#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
   , m_ocspUrl(NULL)
-	#endif
+#endif
 {}
 
-void Set::add(Type second) {
+Set::~Set()
+{
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
+    delete[] m_ocspUrl;
+#endif
+}
+
+void Set::add(Type second)
+{
     m_certificateStorage |= second;
 }
 
 #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-void Set::add(std::string ocspUrl) {
+void Set::add(std::string ocspUrl)
+{
 
-	if (strlen(ocspUrl.c_str()) == 0)
-	{
-		return;
-	}
+    if (ocspUrl.length() == 0)
+        return;
 
-	m_ocspUrl = new char[ocspUrl.size() + 1];
-	if (m_ocspUrl != NULL) {
-		strncpy(m_ocspUrl, ocspUrl.c_str(), ocspUrl.size() + 1);
-	}
+    m_ocspUrl = new char[ocspUrl.length() + 1];
+    if (m_ocspUrl)
+        strncpy(m_ocspUrl, ocspUrl.c_str(), ocspUrl.length() + 1);
 }
 #endif
 
-bool Set::contains(Type second) const {
+bool Set::contains(Type second) const
+{
     return static_cast<bool>(m_certificateStorage & second);
 }
 
-bool Set::isEmpty() const {
+bool Set::isEmpty() const
+{
     return m_certificateStorage == 0;
 }
 
 #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-char* Set::getOcspUrl() {
-	return m_ocspUrl;
+char* Set::getOcspUrl()
+{
+    return m_ocspUrl;
 }
 #endif
 

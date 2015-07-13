@@ -23,46 +23,33 @@
 #define _VALIDATION_CORE_CERTIFICATE_CONFIG_READER_H_
 
 #include <string>
-#include <dpl/exception.h>
 
 #include <vcore/CertificateIdentifier.h>
 #include <vcore/CertStoreType.h>
 #include <vcore/ParserSchema.h>
+#include <vcore/exception.h>
 
 namespace ValidationCore {
-class CertificateConfigReader
-{
-  public:
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, InvalidFile)
+class CertificateConfigReader {
+public:
+    class Exception {
+    public:
+        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, InvalidFile);
     };
+
     CertificateConfigReader();
 
-    void initialize(const std::string &file,
-            const std::string &scheme)
-    {
-        m_parserSchema.initialize(file, true, SaxReader::VALIDATION_XMLSCHEME,
-                                  scheme);
-    }
+    void initialize(const std::string &file, const std::string &scheme);
+    void read(CertificateIdentifier &identificator);
 
-    void read(CertificateIdentifier &identificator)
-    {
-        m_parserSchema.read(identificator);
-    }
-
-  private:
-    void blankFunction(CertificateIdentifier &)
-    {
-    }
+private:
+    void blankFunction(CertificateIdentifier &);
     void tokenCertificateDomain(CertificateIdentifier &identificator);
     void tokenEndFingerprintSHA1(CertificateIdentifier &identificator);
 
     CertStoreId::Type m_certificateDomain;
-    ParserSchema<CertificateConfigReader, CertificateIdentifier>
-    m_parserSchema;
+    ParserSchema<CertificateConfigReader, CertificateIdentifier> m_parserSchema;
 };
 } // namespace ValidationCore
 

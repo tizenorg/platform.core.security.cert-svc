@@ -19,11 +19,12 @@
  * @version     1.0
  * @brief
  */
-#include "CertificateConfigReader.h"
 
-#include <cstdlib>
+#include <vcore/CertificateConfigReader.h>
 
 #include <dpl/assert.h>
+
+#include <cstdlib>
 
 namespace {
 const std::string XML_EMPTY_NAMESPACE = "";
@@ -39,6 +40,7 @@ const std::string TOKEN_ATTR_URL_NAME = "ocspUrl";
 const std::string TOKEN_VALUE_TIZEN_DEVELOPER = "tizen-developer";
 const std::string TOKEN_VALUE_TIZEN_TEST = "tizen-test";
 const std::string TOKEN_VALUE_TIZEN_VERIFY = "tizen-verify";
+const std::string TOKEN_VALUE_TIZEN_STORE = "tizen-store";
 const std::string TOKEN_VALUE_VISIBILITY_PUBLIC = "tizen-public";
 const std::string TOKEN_VALUE_VISIBILITY_PARTNER = "tizen-partner";
 const std::string TOKEN_VALUE_VISIBILITY_PARTNER_OPERATOR = "tizen-partner-operator";
@@ -61,9 +63,9 @@ int hexCharToInt(char c)
 } // anonymous namespace
 
 namespace ValidationCore {
-CertificateConfigReader::CertificateConfigReader() :
-    m_certificateDomain(0),
-    m_parserSchema(this)
+CertificateConfigReader::CertificateConfigReader()
+  : m_certificateDomain(0)
+  , m_parserSchema(this)
 {
     m_parserSchema.addBeginTagCallback(
         TOKEN_CERTIFICATE_SET,
@@ -96,21 +98,37 @@ CertificateConfigReader::CertificateConfigReader() :
         &CertificateConfigReader::tokenEndFingerprintSHA1);
 }
 
+void CertificateConfigReader::initialize(
+    const std::string &file,
+    const std::string &scheme)
+{
+    m_parserSchema.initialize(file, true, SaxReader::VALIDATION_XMLSCHEME, scheme);
+}
+
+void CertificateConfigReader::read(CertificateIdentifier &identificator)
+{
+    m_parserSchema.read(identificator);
+}
+
+void CertificateConfigReader::blankFunction(CertificateIdentifier &)
+{
+}
+
 void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
 {
-    std::string name = m_parserSchema.getReader().
-    attribute(TOKEN_ATTR_NAME, SaxReader::THROW_DISABLE);
+    std::string name = m_parserSchema.getReader().attribute(TOKEN_ATTR_NAME);
 
     if (name.empty()) {
-        LogWarning("Invalid fingerprint file. Domain name is mandatory");
-        ThrowMsg(Exception::InvalidFile,
-                 "Invalid fingerprint file. Domain name is mandatory");
+        VcoreThrowMsg(CertificateConfigReader::Exception::InvalidFile,
+                      "Invalid fingerprint file. Domain name is mandatory");
     } else if (name == TOKEN_VALUE_TIZEN_DEVELOPER) {
         m_certificateDomain = CertStoreId::TIZEN_DEVELOPER;
     } else if (name == TOKEN_VALUE_TIZEN_TEST) {
         m_certificateDomain = CertStoreId::TIZEN_TEST;
     } else if (name == TOKEN_VALUE_TIZEN_VERIFY) {
         m_certificateDomain = CertStoreId::TIZEN_VERIFY;
+    } else if (name == TOKEN_VALUE_TIZEN_STORE) {
+        m_certificateDomain = CertStoreId::TIZEN_STORE;
     } else if (name == TOKEN_VALUE_VISIBILITY_PUBLIC) {
         m_certificateDomain = CertStoreId::VIS_PUBLIC;
     } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER) {
@@ -121,8 +139,7 @@ void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
         m_certificateDomain = CertStoreId::VIS_PARTNER_MANUFACTURER;
     } else if (name == TOKEN_VALUE_VISIBILITY_PLATFORM) {
         m_certificateDomain = CertStoreId::VIS_PLATFORM;
-	} else {
-        LogWarning("This domain will be ignored : " << name);
+    } else {
         m_certificateDomain = 0;
     }
 }
@@ -130,9 +147,9 @@ void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
 void CertificateConfigReader::tokenEndFingerprintSHA1(
         CertificateIdentifier &identificator)
 {
-    #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    std::string url = m_parserSchema.getReader().attribute(TOKEN_ATTR_URL_NAME, SaxReader::THROW_DISABLE);
-    #endif
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
+    std::string url = m_parserSchema.getReader().attribute(TOKEN_ATTR_URL_NAME);
+#endif
 
     std::string text = m_parserSchema.getText();
     text += ":"; // add guard at the end of fingerprint
@@ -157,8 +174,8 @@ void CertificateConfigReader::tokenEndFingerprintSHA1(
     }
 
     identificator.add(fingerprint, m_certificateDomain);
-    #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
     identificator.add(fingerprint, url);
-    #endif
+#endif
 }
 } // namespace ValidationCore

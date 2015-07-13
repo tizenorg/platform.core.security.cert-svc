@@ -22,11 +22,12 @@
 #ifndef _CRYPTO_HASH_H_
 #define _CRYPTO_HASH_H_
 
-#include <dpl/exception.h>
 #include <openssl/evp.h>
 #include <istream>
 #include <string>
 #include <vector>
+
+#include <vcore/exception.h>
 
 namespace ValidationCore
 {
@@ -34,20 +35,10 @@ namespace Crypto
 {
 namespace Hash
 {
-/**
- * Raw hash buffer
- */
 typedef std::vector<unsigned char> Raw;
 
-/**
- * Append called out of sequence
- */
-DECLARE_EXCEPTION_TYPE(DPL::Exception, OutOfSequence)
-
-/**
- * Append failed internally
- */
-DECLARE_EXCEPTION_TYPE(DPL::Exception, AppendFailed)
+VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, OutOfSequence)
+VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, AppendFailed)
 
 class Base
 {

@@ -20,14 +20,15 @@
  * @brief       Search for author-signature.xml and signatureN.xml files.
  */
 #include <vcore/SignatureFinder.h>
+#include <dpl/log/wrt_log.h>
 
 #include <dirent.h>
 #include <errno.h>
 #include <istream>
+#include <sstream>
 
 #include <pcrecpp.h>
 
-#include <dpl/log/log.h>
 
 namespace ValidationCore {
 static const char *SIGNATURE_AUTHOR = "author-signature.xml";
@@ -35,7 +36,7 @@ static const char *REGEXP_DISTRIBUTOR_SIGNATURE =
     "^(signature)([1-9][0-9]*)(\\.xml)";
 
 class SignatureFinder::Impl {
-  public:
+public:
     Impl(const std::string& dir)
       : m_dir(dir)
       , m_signatureRegexp(REGEXP_DISTRIBUTOR_SIGNATURE)
@@ -45,7 +46,7 @@ class SignatureFinder::Impl {
 
     Result find(SignatureFileInfoSet &set);
 
-  private:
+private:
     std::string m_dir;
     pcrecpp::RE m_signatureRegexp;
 };
@@ -59,7 +60,7 @@ SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
      * find a dir
      */
     if ((dp = opendir(m_dir.c_str())) == NULL) {
-        LogError("Error opening directory:" << m_dir);
+        WrtLogE("Error opening directory: %s", m_dir.c_str());
         return ERROR_OPENING_DIR;
     }
 
@@ -88,7 +89,7 @@ SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
     }
 
     if (errno != 0) {
-        LogError("Error in readdir");
+        WrtLogE("Error in readdir");
         closedir(dp);
         return ERROR_READING_DIR;
     }
@@ -101,7 +102,8 @@ SignatureFinder::SignatureFinder(const std::string& dir)
   : m_impl(new Impl(dir))
 {}
 
-SignatureFinder::~SignatureFinder(){
+SignatureFinder::~SignatureFinder()
+{
     delete m_impl;
 }
 

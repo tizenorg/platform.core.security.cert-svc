@@ -24,11 +24,12 @@
 
 namespace ValidationCore {
 
-OCSP::OCSP() :
-    m_impl(new OCSPImpl())
+OCSP::OCSP()
+  : m_impl(new OCSPImpl())
 {}
 
-OCSP::~OCSP(){
+OCSP::~OCSP()
+{
     delete m_impl;
 }
 

@@ -24,14 +24,13 @@
 
 #include <string>
 
-#include <dpl/noncopyable.h>
-
 #include <vcore/SignatureData.h>
 
 namespace ValidationCore {
 
-class WrtSignatureValidator : public DPL::Noncopyable {
+class WrtSignatureValidator {
 public:
+
     class Impl;
 
     enum AppType
@@ -46,8 +45,21 @@ public:
         SIGNATURE_INVALID,
         SIGNATURE_VERIFIED,
         SIGNATURE_DISREGARD,    // no ocsp response or ocsp return unknown status
-        SIGNATURE_REVOKED
+        SIGNATURE_REVOKED,
+		SIGNATURE_INVALID_CERT_CHAIN, //5, from here, new error enum	 	
+		SIGNATURE_INVALID_DISTRIBUTOR_CERT,
+		SIGNATURE_INVALID_SDK_DEFAULT_AUTHOR_CERT,
+		SIGNATURE_IN_DISTRIBUTOR_CASE_AUTHOR_CERT,
+		SIGNATURE_INVALID_CERT_TIME,	
+		SIGNATURE_NO_DEVICE_PROFILE,
+		SIGNATURE_INVALID_DEVICE_UNIQUE_ID,
+		SIGNATURE_INVALID_NO_HASH_FILE,
+		SIGNATURE_INVALID_HASH_SIGNATURE
     };
+
+    WrtSignatureValidator() = delete;
+    WrtSignatureValidator(const WrtSignatureValidator &) = delete;
+    const WrtSignatureValidator &operator=(const WrtSignatureValidator &) = delete;
 
     explicit WrtSignatureValidator(
         AppType appType,
@@ -63,6 +75,7 @@ public:
 
 private:
     Impl *m_impl;
+
 };
 
 } // namespace ValidationCore

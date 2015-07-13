@@ -26,13 +26,13 @@
 #include <vcore/VCorePrivate.h>
 
 #include <dpl/foreach.h>
-#include <dpl/log/log.h>
+#include <dpl/log/wrt_log.h>
 #include <dpl/db/orm.h>
 #include <orm_generator_vcore.h>
 #include <vcore/Database.h>
 
-using namespace DPL::DB::ORM;
-using namespace DPL::DB::ORM::vcore;
+using namespace VcoreDPL::DB::ORM;
+using namespace VcoreDPL::DB::ORM::vcore;
 
 namespace ValidationCore {
 
@@ -49,7 +49,7 @@ void CertificateCacheDAO::setOCSPStatus(const std::string& cert_chain,
         if (getOCSPStatus(&status)) {
             // only need to update data in DB
             Equals<OCSPResponseStorage::cert_chain> e1(
-                            DPL::FromUTF8String(cert_chain));
+                            VcoreDPL::FromUTF8String(cert_chain));
             Equals<OCSPResponseStorage::end_entity_check> e2(
                             end_entity_check ? 1 : 0);
 
@@ -66,7 +66,7 @@ void CertificateCacheDAO::setOCSPStatus(const std::string& cert_chain,
             // need to insert data
             OCSPResponseStorage::Row row;
 
-            row.Set_cert_chain(DPL::FromUTF8String(cert_chain));
+            row.Set_cert_chain(VcoreDPL::FromUTF8String(cert_chain));
             row.Set_ocsp_status(ocsp_status);
             row.Set_next_update_time(next_update_time);
             row.Set_end_entity_check(end_entity_check ? 1 : 0);
@@ -76,7 +76,7 @@ void CertificateCacheDAO::setOCSPStatus(const std::string& cert_chain,
             insert->Execute();
         }
         transaction.Commit();
-    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+    } Catch(VcoreDPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to setOCSPStatus");
     }
 }
@@ -84,12 +84,12 @@ void CertificateCacheDAO::setOCSPStatus(const std::string& cert_chain,
 bool CertificateCacheDAO::getOCSPStatus(OCSPCachedStatus* cached_status)
 {
     if (NULL == cached_status) {
-        LogError("NULL pointer");
+        WrtLogE("NULL pointer");
         return false;
     }
     Try {
         Equals<OCSPResponseStorage::cert_chain> e1(
-                DPL::FromUTF8String(cached_status->cert_chain));
+                VcoreDPL::FromUTF8String(cached_status->cert_chain));
         Equals<OCSPResponseStorage::end_entity_check> e2(
                 cached_status->end_entity_check ? 1 : 0);
 
@@ -105,10 +105,10 @@ bool CertificateCacheDAO::getOCSPStatus(OCSPCachedStatus* cached_status)
             return true;
         }
 
-        LogDebug("Cached OCSP status not found");
+        WrtLogD("Cached OCSP status not found");
         return false;
     }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
+    Catch(VcoreDPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to getOCSPStatus");
     }
 }
@@ -117,7 +117,7 @@ void CertificateCacheDAO::getOCSPStatusList(
         OCSPCachedStatusList* cached_status_list)
 {
     if (NULL == cached_status_list) {
-        LogError("NULL pointer");
+        WrtLogE("NULL pointer");
         return;
     }
     Try {
@@ -127,7 +127,7 @@ void CertificateCacheDAO::getOCSPStatusList(
 
         FOREACH(i, list) {
             OCSPCachedStatus status;
-            status.cert_chain = DPL::ToUTF8String(i->Get_cert_chain());
+            status.cert_chain = VcoreDPL::ToUTF8String(i->Get_cert_chain());
             status.ocsp_status = intToVerificationStatus(
                     *(i->Get_ocsp_status()));
             status.end_entity_check =
@@ -137,7 +137,7 @@ void CertificateCacheDAO::getOCSPStatusList(
         }
 
     }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
+    Catch(VcoreDPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to getOCSPStatusList");
     }
 }
@@ -155,11 +155,11 @@ void CertificateCacheDAO::setCRLResponse(const std::string& distribution_point,
             // only need to update data in DB
             VCORE_DB_UPDATE(update, CRLResponseStorage, &ThreadInterface())
             Equals<CRLResponseStorage::distribution_point> e1(
-                            DPL::FromUTF8String(distribution_point));
+                            VcoreDPL::FromUTF8String(distribution_point));
             CRLResponseStorage::Row row;
 
             update->Where(e1);
-            row.Set_crl_body(DPL::FromUTF8String(crl_body));
+            row.Set_crl_body(VcoreDPL::FromUTF8String(crl_body));
             row.Set_next_update_time(next_update_time);
             update->Values(row);
             update->Execute();
@@ -168,14 +168,14 @@ void CertificateCacheDAO::setCRLResponse(const std::string& distribution_point,
             VCORE_DB_INSERT(insert, CRLResponseStorage, &ThreadInterface())
             CRLResponseStorage::Row row;
 
-            row.Set_distribution_point(DPL::FromUTF8String(distribution_point));
-            row.Set_crl_body(DPL::FromUTF8String(crl_body));
+            row.Set_distribution_point(VcoreDPL::FromUTF8String(distribution_point));
+            row.Set_crl_body(VcoreDPL::FromUTF8String(crl_body));
             row.Set_next_update_time(next_update_time);
             insert->Values(row);
             insert->Execute();
         }
         transaction.Commit();
-    } Catch(DPL::DB::SqlConnection::Exception::Base) {
+    } Catch(VcoreDPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to setOCSPStatus");
     }
 }
@@ -183,27 +183,27 @@ void CertificateCacheDAO::setCRLResponse(const std::string& distribution_point,
 bool CertificateCacheDAO::getCRLResponse(CRLCachedData* cached_data)
 {
     if (NULL == cached_data) {
-        LogError("NULL pointer");
+        WrtLogE("NULL pointer");
         return false;
     }
     Try {
         VCORE_DB_SELECT(select, CRLResponseStorage, &ThreadInterface())
         Equals<CRLResponseStorage::distribution_point> e1(
-                DPL::FromUTF8String(cached_data->distribution_point));
+                VcoreDPL::FromUTF8String(cached_data->distribution_point));
 
         select->Where(e1);
         std::list<CRLResponseStorage::Row> rows = select->GetRowList();
         if (1 == rows.size()) {
             CRLResponseStorage::Row row = rows.front();
-            cached_data->crl_body = DPL::ToUTF8String(row.Get_crl_body());
+            cached_data->crl_body = VcoreDPL::ToUTF8String(row.Get_crl_body());
             cached_data->next_update_time = *(row.Get_next_update_time());
             return true;
         }
 
-        LogDebug("Cached CRL not found");
+        WrtLogD("Cached CRL not found");
         return false;
     }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
+    Catch(VcoreDPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to getCRLResponse");
     }
 }
@@ -212,7 +212,7 @@ void CertificateCacheDAO::getCRLResponseList(
         CRLCachedDataList* cached_data_list)
 {
     if (NULL == cached_data_list) {
-        LogError("NULL pointer");
+        WrtLogE("NULL pointer");
         return;
     }
     Try {
@@ -222,15 +222,15 @@ void CertificateCacheDAO::getCRLResponseList(
 
         FOREACH(i, list) {
             CRLCachedData response;
-            response.distribution_point = DPL::ToUTF8String(
+            response.distribution_point = VcoreDPL::ToUTF8String(
                     i->Get_distribution_point());
-            response.crl_body = DPL::ToUTF8String(i->Get_crl_body());
+            response.crl_body = VcoreDPL::ToUTF8String(i->Get_crl_body());
             response.next_update_time = *(i->Get_next_update_time());
             cached_data_list->push_back(response);
         }
 
     }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
+    Catch(VcoreDPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to getCRLResponses");
     }
 }
@@ -245,7 +245,7 @@ void CertificateCacheDAO::clearCertificateCache()
         del2->Execute();
         transaction.Commit();
     }
-    Catch(DPL::DB::SqlConnection::Exception::Base) {
+    Catch(VcoreDPL::DB::SqlConnection::Exception::Base) {
         ReThrowMsg(Exception::DatabaseError, "Failed to clearUserSettings");
     }
 }

@@ -32,7 +32,7 @@
 #include <vcore/SignatureData.h>
 
 namespace ValidationCore {
-class XmlSec : public DPL::Noncopyable
+class XmlSec : public VcoreDPL::Noncopyable
 {
   public:
 
@@ -97,7 +97,7 @@ class XmlSec : public DPL::Noncopyable
     class Exception
     {
       public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
+        DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, InternalError)
     };
 
@@ -137,7 +137,7 @@ class XmlSec : public DPL::Noncopyable
     static void fileExtractPrefix(XmlSecContext *context);
 };
 
-typedef DPL::Singleton<XmlSec> XmlSecSingleton;
+typedef VcoreDPL::Singleton<XmlSec> XmlSecSingleton;
 
 } // namespace ValidationCore
 

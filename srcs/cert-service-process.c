@@ -19,7 +19,6 @@
  *
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -40,6 +39,7 @@
 #define get_ASN1_OBJECT(x)	OBJ_nid2ln(OBJ_obj2nid((x)))
 #define get_X509_NAME(x)	X509_NAME_oneline((x), NULL, 0)
 
+
 struct verify_context {
 	int depth;
 };
@@ -50,7 +50,6 @@ typedef struct {
 	int len;
 } name_field;
 
-int _check_certificate_author(cert_svc_mem_buff* first, cert_svc_mem_buff* second);
 static unsigned char** __get_field_by_tag(unsigned char* str, int *tag_len, cert_svc_name_fld_data* fld)
 {
 	const struct {
@@ -107,110 +106,6 @@ int parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld)
 			prev_field = field;
 		}
 	}
-//	SLOGD("! %s, %s, %s, %s, %s, %s, %s\n", fld->countryName, fld->stateOrProvinceName, fld->localityName, fld->organizationName, fld->organizationUnitName, fld->commonName, fld->emailAddress);
-	return ret;
-}
-
-int _parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	int i = 0, j = 0, last = -1;
-	char* tmpAddr = NULL;
-	name_field tmpFld[7] = {
-		{"/C=", NULL, 0},
-		{"/ST=", NULL, 0},
-		{"/L=", NULL, 0},
-		{"/O=", NULL, 0},
-		{"/OU=", NULL, 0},
-		{"/CN=", NULL, 0},
-		{"/emailAddress=", NULL, 0}
-	};
-
-	for(i = 0; i < 7; i++) {
-		if((tmpAddr = strstr((const char*)str, (const char*)(tmpFld[i].unitName))) != NULL)
-			tmpFld[i].address = tmpAddr;
-		else
-			tmpFld[i].address = NULL;
-	}
-
-	for(i = 0; i < 6; i++) {
-		if(tmpFld[i].address != NULL) {
-			for(j = i + 1; j < 7; j++) {
-				if(tmpFld[j].address != NULL) {
-					last = j;
-					tmpFld[i].len = (int)(tmpFld[j].address) - (int)(tmpFld[i].address) - strlen((const char*)(tmpFld[i].unitName));
-					break;
-				}
-			}
-		}
-	}
-	tmpFld[last].len = strlen((const char*)str) - ((int)(tmpFld[last].address) - (int)str) - strlen((const char*)(tmpFld[last].unitName));
-
-	if(tmpFld[0].address != NULL) {
-		(*fld).countryName = (unsigned char*)malloc(sizeof(unsigned char) * (tmpFld[0].len + 1));
-		if ((*fld).countryName != NULL)
-		{
-			memset((*fld).countryName, 0x00, (tmpFld[0].len + 1));
-			memcpy((*fld).countryName, (tmpFld[0].address + strlen((const char*)(tmpFld[0].unitName))), tmpFld[0].len);
-		}
-	}
-	else
-		(*fld).countryName = NULL;
-	if(tmpFld[1].address != NULL) {
-		(*fld).stateOrProvinceName = (unsigned char*)malloc(sizeof(unsigned char) * (tmpFld[1].len + 1));
-		if ((*fld).stateOrProvinceName != NULL) {
-			memset((*fld).stateOrProvinceName, 0x00, (tmpFld[1].len + 1));
-			memcpy((*fld).stateOrProvinceName, (tmpFld[1].address + strlen((const char*)(tmpFld[1].unitName))), tmpFld[1].len);
-		}
-	}
-	else
-		(*fld).stateOrProvinceName = NULL;
-	if(tmpFld[2].address != NULL) {
-		(*fld).localityName = (unsigned char*)malloc(sizeof(unsigned char) * (tmpFld[2].len + 1));
-		if ((*fld).localityName != NULL) {
-			memset((*fld).localityName, 0x00, (tmpFld[2].len + 1));
-			memcpy((*fld).localityName, (tmpFld[2].address + strlen((const char*)(tmpFld[2].unitName))), tmpFld[2].len);
-		}
-	}
-	else
-		(*fld).localityName = NULL;
-	if(tmpFld[3].address != NULL) {
-		(*fld).organizationName = (unsigned char*)malloc(sizeof(unsigned char) * (tmpFld[3].len + 1));
-		if ((*fld).organizationName != NULL) {
-			memset((*fld).organizationName, 0x00, (tmpFld[3].len + 1));
-			memcpy((*fld).organizationName, (tmpFld[3].address + strlen((const char*)(tmpFld[3].unitName))), tmpFld[3].len);
-		}
-	}
-	else
-		(*fld).organizationName = NULL;
-	if(tmpFld[4].address != NULL) {
-		(*fld).organizationUnitName = (unsigned char*)malloc(sizeof(unsigned char) * (tmpFld[4].len + 1));
-		if ((*fld).organizationUnitName != NULL) {
-			memset((*fld).organizationUnitName, 0x00, (tmpFld[4].len + 1));
-			memcpy((*fld).organizationUnitName, (tmpFld[4].address + strlen((const char*)(tmpFld[4].unitName))), tmpFld[4].len);
-		}
-	}
-	else
-		(*fld).organizationUnitName = NULL;
-	if(tmpFld[5].address != NULL) {
-		(*fld).commonName = (unsigned char*)malloc(sizeof(unsigned char) * (tmpFld[5].len + 1));
-		if ((*fld).commonName != NULL) {
-			memset((*fld).commonName, 0x00, (tmpFld[5].len + 1));
-			memcpy((*fld).commonName, (tmpFld[5].address + strlen((const char*)(tmpFld[5].unitName))), tmpFld[5].len);
-		}
-	}
-	else
-		(*fld).commonName = NULL;
-	if(tmpFld[6].address != NULL) {
-		(*fld).emailAddress = (unsigned char*)malloc(sizeof(unsigned char) * (tmpFld[6].len + 1));
-		if ((*fld).emailAddress != NULL) {
-			memset((*fld).emailAddress, 0x00, (tmpFld[6].len + 1));
-			memcpy((*fld).emailAddress, (tmpFld[6].address + strlen((const char*)(tmpFld[6].unitName))), tmpFld[6].len);
-		}
-	}
-	else
-		(*fld).emailAddress = NULL;
-
 	return ret;
 }
 
@@ -226,7 +121,7 @@ int parse_time_fld_data(unsigned char* before, unsigned char* after, cert_svc_va
 	char second[3] = {0, };
 
 	if((strlen((char*)before) < 15) || (strlen((char*)after) < 15)) {
-		SLOGE("[ERR][%s] Fail to parse time fld.\n", __func__);
+		SLOGE("[ERR][%s] Fail to parse time fld.", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
@@ -274,21 +169,21 @@ cert_svc_linked_list* find_issuer_from_list(cert_svc_linked_list* list, cert_svc
 
 	tmp1 = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 	if (tmp1 == NULL) {
-		SLOGE("[ERR][%s] Fail to allocate certificate descriptor.\n", __func__);
+		SLOGE("[ERR][%s] Fail to allocate certificate descriptor.", __func__);
 		return NULL;
 	}
 
 	memset(tmp1, 0x00, sizeof(cert_svc_cert_descriptor));
 
 	if(_extract_certificate_data(p->certificate, tmp1) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to extract certificate data.\n", __func__);
+		SLOGE("[ERR][%s] Fail to extract certificate data.", __func__);
 		goto err;
 	}
 
 	for(q = list; q != NULL; q = q->next) {
 		tmp2 = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 		if (tmp2 == NULL) {
-			SLOGE("[ERR][%s] Fail to allocate certificate descriptor.\n", __func__);
+			SLOGE("[ERR][%s] Fail to allocate certificate descriptor.", __func__);
 			goto err;
 		}
 
@@ -324,14 +219,14 @@ int sort_cert_chain(cert_svc_linked_list** unsorted, cert_svc_linked_list** sort
 		for(p = (*sorted); p->next != NULL; p = p->next) {
 			tmp1 = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 			if(tmp1 == NULL) {
-				SLOGE("[ERR][%s] Fail to allocate certificate descriptor.\n", __func__);
+				SLOGE("[ERR][%s] Fail to allocate certificate descriptor.", __func__);
 				return CERT_SVC_ERR_MEMORY_ALLOCATION;
 			}
 			memset(tmp1, 0x00, sizeof(cert_svc_cert_descriptor));
 			tmp2 = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 			if(tmp2 == NULL) {
 				release_certificate_data(tmp1);
-				SLOGE("[ERR][%s] Fail to allocate certificate descriptor.\n", __func__);
+				SLOGE("[ERR][%s] Fail to allocate certificate descriptor.", __func__);
 				return CERT_SVC_ERR_MEMORY_ALLOCATION;
 			}
 			memset(tmp2, 0x00, sizeof(cert_svc_cert_descriptor));
@@ -340,7 +235,7 @@ int sort_cert_chain(cert_svc_linked_list** unsorted, cert_svc_linked_list** sort
 			_extract_certificate_data(p->next->certificate, tmp2);
 
 			if(strncmp((const char*)(tmp1->info.issuerStr), (const char*)(tmp2->info.subjectStr), strlen((const char*)(tmp2->info.subjectStr)))) {
-				SLOGE("[ERR][%s] Certificate chain is broken.\n", __func__);
+				SLOGE("[ERR][%s] Certificate chain is broken.", __func__);
 				release_certificate_data(tmp1);
 				release_certificate_data(tmp2);
 				return CERT_SVC_ERR_BROKEN_CHAIN;
@@ -371,7 +266,7 @@ int sort_cert_chain(cert_svc_linked_list** unsorted, cert_svc_linked_list** sort
 		}
 
 		if(q != NULL) {
-			SLOGE("[ERR][%s] Certificate chain is broken.\n", __func__);
+			SLOGE("[ERR][%s] Certificate chain is broken.", __func__);
 			return CERT_SVC_ERR_BROKEN_CHAIN;
 		}
 
@@ -406,7 +301,7 @@ int is_CACert(cert_svc_mem_buff* cert, int* isCA)
 	d2i_X509(&x, &p, cert->size);
 
 	if(x == NULL) {
-		SLOGE("[ERR][%s] Certificate cannot be parsed.\n", __func__);
+		SLOGE("[ERR][%s] Certificate cannot be parsed.", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
@@ -423,150 +318,68 @@ err:
 	return ret;
 }
 
-int compare_period(int year, int month, int day, int hour, int min, int sec, struct tm* tm)
-{
-	int ret = 0;
-	// if return 0 --> same
-	// else if return 1 --> tm is bigger
-	// else if return -1 --> tm is smaller
-
-	if(tm->tm_year > year) ret = 1;
-	else if(tm->tm_year < year) ret = -1;
-	else {	// year is same
-		if(tm->tm_mon > month) ret = 1;
-		else if(tm->tm_mon < month) ret = -1;
-		else {	// month is same
-			if(tm->tm_mday > day) ret = 1;
-			else if(tm->tm_mday < day) ret = -1;
-			else {	// day is same
-				if(tm->tm_hour > hour) ret = 1;
-				else if(tm->tm_hour < hour) ret = -1;
-				else {	// hour is same
-					if(tm->tm_min > min) ret = 1;
-					else if(tm->tm_min < min) ret = -1;
-					else {	// minute is same
-						if(tm->tm_sec > sec) ret = 1;
-						else if(tm->tm_sec < sec) ret = -1;
-						else // second is same
-							ret = 0;
-					}
-				}
-			}
-		}
-	}
-
-	return ret;
-}
-
-int is_expired(cert_svc_mem_buff* cert, int* isExpired)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	cert_svc_cert_descriptor* certDesc = NULL;
-	int visibility = 0;
-	time_t t;
-	struct tm* tm;
-	unsigned char * certdata = NULL;
-	int certSize = 0;
-	unsigned char *fingerprint = NULL;
-
-	// get current time
-	t = time(NULL);
-	tm = gmtime(&t);
-
-	// get descriptor
-	certDesc = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
-	if(certDesc == NULL) {
-		SLOGE("[ERR][%s] Fail to allocate certificate descriptor.\n", __func__);
-		return CERT_SVC_ERR_MEMORY_ALLOCATION;
-	}
-	memset(certDesc, 0x00, sizeof(cert_svc_cert_descriptor));
-
-	if((ret = _extract_certificate_data(cert, certDesc)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to extract certificate.\n", __func__);
-		(*isExpired) = 1;
-		goto err;
-	}
-
-        certdata = cert->data;
-	certSize = cert->size;
-
-	if(certdata == NULL || !certSize)
-	{
-		SLOGE("cert is or invalid!");
-		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
-		(*isExpired) = 1;
-		goto err;
-	}
-
-	ret = get_certificate_fingerprint(certdata, certSize, &fingerprint);
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-	{
-		SLOGE("Failed to get fingerprint data! %d", ret);
-		(*isExpired) = 1;
-		goto err;
-	}
-
-	ret = get_visibility_by_fingerprint(fingerprint, &visibility);
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-	{
-		SLOGE("Failed to get visibility! %d", ret);
-		(*isExpired) = 1;
-		goto err;
-	}
-
-	if(visibility == CERT_SVC_VISIBILITY_TEST || visibility == CERT_SVC_VISIBILITY_VERIFY)
-	{
-		// compare with not before - MUST bigger than this
-		if(compare_period(((int)certDesc->info.validPeriod.firstYear - 1900),
-						  ((int)certDesc->info.validPeriod.firstMonth - 1),
-						  (int)certDesc->info.validPeriod.firstDay,
-						  (int)certDesc->info.validPeriod.firstHour,
-						  (int)certDesc->info.validPeriod.firstMinute,
-						  (int)certDesc->info.validPeriod.firstSecond,
-						  tm) != 1) {
-			SLOGE("[ERR][%s] Certificate is expired.\n", __func__);
-			ret = CERT_SVC_ERR_IS_EXPIRED;
-			(*isExpired) = 1;
-			goto err;
-		}
-
-		// compare with not after - MUST smaller than this
-		if(compare_period(((int)certDesc->info.validPeriod.secondYear - 1900),
-						  ((int)certDesc->info.validPeriod.secondMonth - 1),
-						  (int)certDesc->info.validPeriod.secondDay,
-						  (int)certDesc->info.validPeriod.secondHour,
-						  (int)certDesc->info.validPeriod.secondMinute,
-						  (int)certDesc->info.validPeriod.secondSecond,
-						  tm) != -1) {
-			SLOGE("[ERR][%s] Certificate is expired.\n", __func__);
-			ret = CERT_SVC_ERR_IS_EXPIRED;
-			(*isExpired) = 1;
-			goto err;
-		}
-	}
-	else// ignore check cert time with local time (internal concept)
-	{
-		(*isExpired) = 0;	// not expired
-	}
-
-err:
-	release_certificate_data(certDesc);
-
-	return ret;
-}
-
 int VerifyCallbackfunc(int ok, X509_STORE_CTX* store)
 {
 	char buf[256] = {0, };
 	struct verify_context* verify_context = (struct verify_context*)X509_STORE_CTX_get_app_data(store);
-	verify_context->depth += 1;
+
+	if(verify_context != NULL) {
+		verify_context->depth += 1;
+	}
+
 	if(store->current_cert != NULL)
 		X509_NAME_oneline(X509_get_subject_name(store->current_cert), buf, 256);
 	else
 		strncpy(buf, "test", 4);
-	SECURE_SLOGD("[%s] Certificate %i: %s\n", __func__, verify_context->depth, buf);
+
+	if(verify_context != NULL) {
+		SLOGD("[%s] Certificate %i: %s", __func__, verify_context->depth, buf);
+	}
 
 	return ok;
+}
+
+int _is_default_sdk_author(cert_svc_mem_buff* signer_cert, int *is_default)
+{
+	static const char* _sdk_default_author_cert =
+		"MIIClTCCAX2gAwIBAgIGAUX+iaC6MA0GCSqGSIb3DQEBBQUAMFYxGjAYBgNVBAoMEVRpemVuIEFz"
+		"c29jaWF0aW9uMRowGAYDVQQLDBFUaXplbiBBc3NvY2lhdGlvbjEcMBoGA1UEAwwTVGl6ZW4gRGV2"
+		"ZWxvcGVycyBDQTAeFw0xMjExMDEwMDAwMDBaFw0xOTAxMDEwMDAwMDBaMBExDzANBgNVBAMMBmF1"
+		"dGhvcjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAgKCL2LL2sZ9wpS9IMO5GKXCSPAz5oKD0"
+		"o5HMsGMQThCKmSTFPm9J4qj+MYomrufm2RMA8xp1KyJ79KK2BKg4/DE/5vvWLf1Fh8Jwut9JpkfW"
+		"1b8vNul87ft5NJ7ji5cu7wtQYvxC55BcaXAu3yv0AB0/oXVCRuvluSK5X7lvLHsCAwEAAaMyMDAw"
+		"DAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUHAwMwDQYJKoZIhvcN"
+		"AQEFBQADggEBADVYof211H9txSG7Bkmcv0erP4gu7uJt61A+4BYu7g2Gv0sVme8NTvu4289Kpdb8"
+		"pR5nosBnEL81eHJBuiCopWl1Yf12gc1hx/+nhlD8vdE3idXQUewCACLdaWNxJ5FO6RYZa3Stp6nO"
+		"y5U/hTktDpUMlq+ByR7DhjfIFd4D9O4IbQmp7VbsoGrMh8Jqm+q+mSQh6hth0qK2//Z5kHZLQGfi"
+		"m1q/W0L6BlE1+zPo8RdeLxEbsoRMYnvOzTYg2dgq5yPT64SCBEamRYeUdIOjbF+y86/1h6NMhmFu"
+		"12NOMj/hg9MfgsXIksRvusRX16blD7uOUz3DwsASa5YnlBdts48=";
+
+	int encodeLen = (((signer_cert->size + 2) / 3) * 4) + 1;
+	int encodedLen = 0;
+	unsigned char *encodedBuffer = (unsigned char *)malloc(sizeof(unsigned char) * encodeLen);
+    if (encodedBuffer == NULL)
+        return CERT_SVC_ERR_MEMORY_ALLOCATION;
+
+	int ret = cert_svc_util_base64_encode(signer_cert->data, signer_cert->size, encodedBuffer, &encodedLen);
+	if(ret != CERT_SVC_ERR_NO_ERROR)
+	{
+		SLOGE("Failed to encode certificate");
+		free(encodedBuffer);
+		return CERT_SVC_ERR_INVALID_CERTIFICATE;
+	}
+
+	if(!memcmp(_sdk_default_author_cert, encodedBuffer, encodedLen))
+	{
+		SLOGE("Error! Author signature signed by SDK default certificate.");
+		*is_default = 1;
+		free(encodedBuffer);
+		return CERT_SVC_ERR_INVALID_SDK_DEFAULT_AUTHOR_CERT;
+	}
+
+	free(encodedBuffer);
+	*is_default = 0;
+	return CERT_SVC_ERR_NO_ERROR;
 }
 
 int _remove_selfsigned_cert_in_chain(cert_svc_linked_list** certList)
@@ -587,13 +400,13 @@ int _remove_selfsigned_cert_in_chain(cert_svc_linked_list** certList)
 
 		certdesc = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 		if(certdesc == NULL) {
-			SLOGE("[ERR][%s] Fail to allocate certificate descriptor.\n", __func__);
+			SLOGE("[ERR][%s] Fail to allocate certificate descriptor.", __func__);
 			return CERT_SVC_ERR_MEMORY_ALLOCATION;
 		}
 		memset(certdesc, 0x00, sizeof(cert_svc_cert_descriptor));
 
 		if((ret = _extract_certificate_data(current->certificate, certdesc)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to extract certificate data.\n", __func__);
+			SLOGE("[ERR][%s] Fail to extract certificate data.", __func__);
 			goto err;
 		}
 
@@ -635,12 +448,6 @@ err:
 	return ret;
 }
 
-int _verify_certificate(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certList, cert_svc_filename_list* rootPath, int* validity){
-	int ca_cflag_check_false = 0;
-
-	return _verify_certificate_with_caflag(certBuf, certList, ca_cflag_check_false, rootPath, validity);
-}
-
 int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certList, int checkCaFlag, cert_svc_filename_list* rootPath, int* validity)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
@@ -650,7 +457,7 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 	cert_svc_cert_descriptor* findRoot = NULL;
 	cert_svc_filename_list* fileNames = NULL;
 	cert_svc_mem_buff* CACert = NULL;
-	int isCA = -1, isExpired = -1;
+	int isCA = -1;
 	// variables for verification
 	int certNum = 0;
 	int certIndex = 0, i = 0;
@@ -663,14 +470,22 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 	STACK_OF(X509) *resultChain;
 	X509* tmpCert = NULL;
 	int caFlagValidity;
+	int is_default_author = 0;
 
 	OpenSSL_add_all_algorithms();
 	tchain = sk_X509_new_null();
 	uchain = sk_X509_new_null();
+	
+	ret = _is_default_sdk_author(certBuf, &is_default_author);
+	if(ret == CERT_SVC_ERR_INVALID_SDK_DEFAULT_AUTHOR_CERT && is_default_author)
+		return CERT_SVC_ERR_INVALID_SDK_DEFAULT_AUTHOR_CERT;
+
+	if(ret != CERT_SVC_ERR_NO_ERROR)
+		return CERT_SVC_ERR_INVALID_CERTIFICATE;	
 
 	findRoot = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 	if(findRoot == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory for certificate descriptor.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory for certificate descriptor.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -680,12 +495,12 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 	if((*certList) != NULL) {
 		/* remove self-signed certificate in certList */
 		if((ret = _remove_selfsigned_cert_in_chain(certList)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to remove self-signed certificate in chain.\n", __func__);
+			SLOGE("[ERR][%s] Fail to remove self-signed certificate in chain.", __func__);
 			goto err;
 		}
 		/* sort certList */
 		if((ret = sort_cert_chain(certList, &sorted)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to sort certificate chain.\n", __func__);
+			SLOGE("[ERR][%s] Fail to sort certificate chain.", __func__);
 			goto err;
 		}
 
@@ -703,24 +518,24 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 		ret = _extract_certificate_data(certBuf, findRoot);
 
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to extract certificate data\n", __func__);
+		SLOGE("[ERR][%s] Fail to extract certificate data", __func__);
 		goto err;
 	}
 
 	if((ret = _search_certificate(&fileNames, SUBJECT_STR, (char*)findRoot->info.issuerStr)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to search root certificate\n", __func__);
+		SLOGE("[ERR][%s] Fail to search root certificate", __func__);
 		goto err;
 	}
 
 	if(fileNames->filename == NULL) {
-		SLOGE("[ERR][%s] There is no CA certificate.\n", __func__);
+		SLOGE("[ERR][%s] There is no CA certificate.", __func__);
 		ret = CERT_SVC_ERR_NO_ROOT_CERT;
 		goto err;
 	}
 
 	CACert = (cert_svc_mem_buff*)malloc(sizeof(cert_svc_mem_buff));
 	if(CACert == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory for ca cert.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory for ca cert.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -729,7 +544,7 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 
 	// use the first found CA cert - ignore other certificate(s). assume that there is JUST one CA cert
 	if((ret = cert_svc_util_load_file_to_buffer(fileNames->filename, CACert)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to load CA cert to buffer.\n", __func__);
+		SLOGE("[ERR][%s] Fail to load CA cert to buffer.", __func__);
 		goto err;
 	}
 
@@ -737,24 +552,14 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 	strncpy(rootPath->filename, fileNames->filename, CERT_SVC_MAX_FILE_NAME_SIZE - 1);
 	rootPath->filename[CERT_SVC_MAX_FILE_NAME_SIZE - 1] = '\0';
 
-	/* check validity - is CA?, is expired? */
 	if((ret = is_CACert(CACert, &isCA)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] CA certificate is invalid.\n", __func__);
-		goto err;
-	}
-	if(isCA != 1) {	// NOT CA certificate
-		SLOGE("[ERR][%s] Found certificate is NOT CA certificate.\n", __func__);
-		ret = CERT_SVC_ERR_NO_ROOT_CERT;
+		SLOGE("[ERR][%s] CA certificate is invalid.", __func__);
 		goto err;
 	}
 
-	if((ret = is_expired(CACert, &isExpired)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] CA certificate is invalid.\n", __func__);
-		goto err;
-	}
-	if(isExpired != 0) {	// expired
-		SLOGE("[ERR][%s] CA certificate is expired.\n", __func__);
-		ret = CERT_SVC_ERR_IS_EXPIRED;
+	if(isCA != 1) {	// NOT CA certificate
+		SLOGE("[ERR][%s] Found certificate is NOT CA certificate.", __func__);
+		ret = CERT_SVC_ERR_NO_ROOT_CERT;
 		goto err;
 	}
 
@@ -763,7 +568,7 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 	certContent = CACert->data;
 	d2i_X509(&rootCert, &certContent, CACert->size);
 	if(!(sk_X509_push(tchain, rootCert))) {
-		SLOGE("[ERR][%s] Fail to push certificate into stack.\n", __func__);
+		SLOGE("[ERR][%s] Fail to push certificate into stack.", __func__);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}
@@ -778,7 +583,7 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 		certIndex = 0;
 		interCert = (X509**)malloc(sizeof(X509*) * certNum);
 		if(interCert == NULL) {
-			SLOGE("[ERR][%s] Failed to allocate memory for interim certificate.\n", __func__);
+			SLOGE("[ERR][%s] Failed to allocate memory for interim certificate.", __func__);
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
@@ -787,12 +592,12 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 		while(1) {
 			certContent = q->certificate->data;
 			if(!d2i_X509(&interCert[certIndex], &certContent, q->certificate->size)) {
-				SLOGE("[ERR][%s] Fail to load certificate into memory.\n", __func__);
+				SLOGE("[ERR][%s] Fail to load certificate into memory.", __func__);
 				ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 				goto err;
 			}
 			if(!(sk_X509_push(uchain, interCert[certIndex]))) {
-				SLOGE("[ERR][%s] Fail to push certificate into stack.\n", __func__);
+				SLOGE("[ERR][%s] Fail to push certificate into stack.", __func__);
 				ret = CERT_SVC_ERR_INVALID_OPERATION;
 				goto err;
 			}
@@ -806,12 +611,10 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 		}
 	}
 
-	// initialize store and store context
 	storeCtx = X509_STORE_CTX_new();
 
-	// construct store context
 	if(!X509_STORE_CTX_init(storeCtx, 0, targetCert, uchain)) {
-		SLOGE("[ERR][%s] Fail to initialize X509 store context.\n", __func__);
+		SLOGE("[ERR][%s] Fail to initialize X509 store context.", __func__);
 		goto err;
 	}
 	struct verify_context verify_context = { 0 };
@@ -819,20 +622,66 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 	X509_STORE_CTX_set_verify_cb(storeCtx, VerifyCallbackfunc);
 	X509_STORE_CTX_trusted_stack(storeCtx, tchain);
 
-	// verify
+	SLOGD("verify signer certificate");
 	if(((*validity) = X509_verify_cert(storeCtx)) != 1) {
-		SLOGE("[ERR][%s] Fail to verify certificate chain, validity: [%d]\n", __func__, (*validity));
-		SLOGE("err str: [%s]\n", X509_verify_cert_error_string(X509_STORE_CTX_get_error(storeCtx)));
-		goto err;
+		int error = X509_STORE_CTX_get_error(storeCtx);
+
+		SLOGE("[ERR][%s] Fail to verify certificate chain, validity: [%d]", __func__, (*validity));
+		SLOGE("err str: [%s]", X509_verify_cert_error_string(error));
+
+		// check level
+		int cert_type=0;
+		char *fingerprint = NULL;
+		unsigned char *certdata = NULL;
+		int certSize = 0;
+
+		certdata = CACert->data;
+		certSize = CACert->size;
+
+		ret = get_certificate_fingerprint(certdata, certSize, &fingerprint);
+		if(ret != CERT_SVC_ERR_NO_ERROR)
+		{
+			SLOGE("Failed to get fingerprint data! %d", ret);
+			goto err;
+		}
+
+		ret = get_type_by_fingerprint(fingerprint, &cert_type);
+		if(ret != CERT_SVC_ERR_NO_ERROR)
+		{
+			SLOGE("Failed to get level! %d", ret);
+			goto err;
+		}
+
+		SLOGD("cert_type = %d", cert_type);
+		if(cert_type != CERT_SVC_TYPE_TEST && cert_type != CERT_SVC_TYPE_VERIFY){
+
+			SLOGD("Level is not Test or Verity");
+			if( error == X509_V_ERR_CERT_NOT_YET_VALID               ||
+		        error == X509_V_ERR_CERT_HAS_EXPIRED                 ||
+		        error == X509_V_ERR_CRL_NOT_YET_VALID                ||
+		        error == X509_V_ERR_CRL_HAS_EXPIRED                  ||
+		        error == X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD   ||
+		        error == X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD    ||
+		        error == X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD   ||
+		        error == X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD)	{
+
+				SLOGD("Skip checking valid time of signer cert");
+				(*validity) = 1;
+		    }
+		}
+		else{
+			ret = CERT_SVC_ERR_IS_EXPIRED;
+			goto err;
+		}
 	}
 
 	if(checkCaFlag) { // check strictly
 		resultChain = X509_STORE_CTX_get1_chain(storeCtx);
 		while((tmpCert = sk_X509_pop(resultChain))) {
 			caFlagValidity = X509_check_ca(tmpCert);
-			if(caFlagValidity != 1 && (tmpCert = sk_X509_pop(resultChain)) != NULL) { // the last one is not a CA.
+			if(caFlagValidity != 1 && (sk_X509_pop(resultChain)) != NULL) { // the last one is not a CA.
 				(*validity) = 0;
-				SLOGE("[ERR][%s] Invalid CA Flag for CA Certificate, validity: [%d]\n", __func__, (*validity));
+				SLOGE("[ERR][%s] Invalid CA Flag for CA Certificate, validity: [%d]", __func__, (*validity));
 				break;
 			}
 		}
@@ -858,7 +707,7 @@ err:
 		free(interCert);
 	}
 
-	EVP_cleanup();
+	//EVP_cleanup();
 	release_certificate_buf(CACert);
 	release_certificate_data(findRoot);
 	release_filename_list(fileNames);
@@ -888,7 +737,7 @@ int _verify_signature(cert_svc_mem_buff* certBuf, unsigned char* message, int ms
 	p = certBuf->data;
 	d2i_X509(&x, &p, certBuf->size);
 	if(x == NULL) {
-		SLOGE("[ERR][%s] Fail to allocate X509 structure.\n", __func__);
+		SLOGE("[ERR][%s] Fail to allocate X509 structure.", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
@@ -898,13 +747,13 @@ int _verify_signature(cert_svc_mem_buff* certBuf, unsigned char* message, int ms
 	decodedSigLen = ((sigLen / 4) * 3) + 1;
 
 	if(!(decodedSig = (unsigned char*)malloc(sizeof(unsigned char) * decodedSigLen))) {
-		SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
 	memset(decodedSig, 0x00, decodedSigLen);
-	if((ret = cert_svc_util_base64_decode((char*)signature, sigLen, (char*)decodedSig, &decodedSigLen)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to base64 decode.\n", __func__);
+	if((ret = cert_svc_util_base64_decode(signature, sigLen, decodedSig, &decodedSigLen)) != CERT_SVC_ERR_NO_ERROR) {
+		SLOGE("[ERR][%s] Fail to base64 decode.", __func__);
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}
@@ -913,17 +762,21 @@ int _verify_signature(cert_svc_mem_buff* certBuf, unsigned char* message, int ms
 	pkey = X509_get_pubkey(x);
 
 	/* make EVP_MD_CTX */
-	mdctx = EVP_MD_CTX_create();
+	if(!(mdctx = EVP_MD_CTX_create())) {
+		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+		goto err;
+	}
+
 	if(algo == NULL) {	// if hash algorithm is not defined,
 		if(!(md = EVP_get_digestbyobj(x->cert_info->signature->algorithm))) {	// get hash algorithm
-			SLOGE("[ERR][%s] Fail to get hash algorithm.\n", __func__);
+			SLOGE("[ERR][%s] Fail to get hash algorithm.", __func__);
 			ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 			goto err;
 		}
 	}
 	else {	// if hash algorithm is defined,
 		if(!(md = EVP_get_digestbyname(algo))) {	// get hash algorithm
-			SLOGE("[ERR][%s] Fail to get hash algorithm.\n", __func__);
+			SLOGE("[ERR][%s] Fail to get hash algorithm.", __func__);
 			ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 			goto err;
 		}
@@ -931,17 +784,17 @@ int _verify_signature(cert_svc_mem_buff* certBuf, unsigned char* message, int ms
 
 	/* initialization */
 	if(EVP_VerifyInit_ex(mdctx, md, NULL) != 1) {
-		SLOGE("[ERR][%s] Fail to execute EVP_VerifyInit_ex().\n", __func__);
+		SLOGE("[ERR][%s] Fail to execute EVP_VerifyInit_ex().", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
 	if(EVP_VerifyUpdate(mdctx, message, msgLen) != 1) {
-		SLOGE("[ERR][%s] Fail to execute EVP_VerifyUpdate().\n", __func__);
+		SLOGE("[ERR][%s] Fail to execute EVP_VerifyUpdate().", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
 	if(((*validity) = EVP_VerifyFinal(mdctx, decodedSig, decodedSigLen, pkey)) != 1) {
-		SLOGE("[ERR][%s] Fail to verify signature.\n", __func__);
+		SLOGE("[ERR][%s] Fail to verify signature.", __func__);
 		ret = CERT_SVC_ERR_INVALID_SIGNATURE;
 		goto err;
 	}
@@ -955,7 +808,7 @@ err:
 		EVP_PKEY_free(pkey);
 	if(mdctx != NULL)
 		EVP_MD_CTX_destroy(mdctx);
-	EVP_cleanup();
+	//EVP_cleanup();
 
 	return ret;
 }
@@ -1002,7 +855,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	p = cert->data;
 	d2i_X509(&x, &p, cert->size);
 	if(x == NULL) {
-		SLOGE("[ERR][%s] Fail to allocate X509 structure.\n", __func__);
+		SLOGE("[ERR][%s] Fail to allocate X509 structure.", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
@@ -1015,10 +868,15 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	certDesc->info.serialNumber = get_ASN1_INTEGER(x->cert_info->serialNumber);
 	/* get signature algorithm */
 	signatureAlgo = (char*)get_ASN1_OBJECT(x->cert_info->signature->algorithm);
+	if(signatureAlgo == NULL) {
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
+		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+		goto err;
+	}
 	sigLen = strlen((const char*)signatureAlgo);
 	certDesc->info.sigAlgo = (unsigned char*)malloc(sizeof(unsigned char) * (sigLen + 1));
 	if(certDesc->info.sigAlgo == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1029,7 +887,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	issuerStrLen = strlen((const char*)tmpIssuerStr);
 	certDesc->info.issuerStr = (unsigned char*)malloc(sizeof(unsigned char) * (issuerStrLen + 1));
 	if(certDesc->info.issuerStr == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1037,14 +895,14 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	memcpy(certDesc->info.issuerStr, tmpIssuerStr, issuerStrLen);
 
 	if((ret = parse_name_fld_data(tmpIssuerStr, &(certDesc->info.issuer))) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to parse cert_svc_name_fld_data.\n", __func__);
+		SLOGE("[ERR][%s] Fail to parse cert_svc_name_fld_data.", __func__);
 		goto err;
 	}
 	/* get time */
 	ASN1_TIME_to_generalizedtime(x->cert_info->validity->notBefore, &timeNotBefore);
 	ASN1_TIME_to_generalizedtime(x->cert_info->validity->notAfter, &timeNotAfter);
 	if((ret = parse_time_fld_data(timeNotBefore->data, timeNotAfter->data, &(certDesc->info.validPeriod))) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to parse cert_svc_validity_fld_data.\n", __func__);
+		SLOGE("[ERR][%s] Fail to parse cert_svc_validity_fld_data.", __func__);
 		goto err;
 	}
 	/* get subject */
@@ -1052,7 +910,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	subjectStrLen = strlen((const char*)tmpSubjectStr);
 	certDesc->info.subjectStr = (unsigned char*)malloc(sizeof(unsigned char) * (subjectStrLen + 1));
 	if(certDesc->info.subjectStr == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1060,15 +918,21 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	memcpy(certDesc->info.subjectStr, tmpSubjectStr, subjectStrLen);
 
 	if((ret = parse_name_fld_data(tmpSubjectStr, &(certDesc->info.subject))) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to parse cert_svc_name_fld_data.\n", __func__);
+		SLOGE("[ERR][%s] Fail to parse cert_svc_name_fld_data.", __func__);
 		goto err;
 	}
 	/* get public key algorithm */
 	publicKeyAlgo = (char*)get_ASN1_OBJECT(x->cert_info->key->algor->algorithm);
+	if(publicKeyAlgo == NULL) {
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
+		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+		goto err;
+	}
+
 	publicKeyAlgoLen = strlen((const char*)publicKeyAlgo);
 	certDesc->info.pubKeyAlgo = (unsigned char*)malloc(sizeof(unsigned char) * (publicKeyAlgoLen + 1));
 	if(certDesc->info.pubKeyAlgo == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1076,14 +940,14 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	memcpy(certDesc->info.pubKeyAlgo, publicKeyAlgo, publicKeyAlgoLen);
 	/* get public key */
 	if((evp = X509_get_pubkey(x)) == NULL) {
-		SLOGE("[ERR][%s] Public key is null.\n", __func__);
+		SLOGE("[ERR][%s] Public key is null.", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 		goto err;
 	}
 	pkeyLen = i2d_PublicKey(x->cert_info->key->pkey, NULL);
 	certDesc->info.pubKey = (unsigned char*)malloc(sizeof(unsigned char) * (pkeyLen + 1));
 	if(certDesc->info.pubKey == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1095,7 +959,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 		issuerUidLen = x->cert_info->issuerUID->length;
 		certDesc->info.issuerUID = (unsigned char*)malloc(sizeof(unsigned char) * (issuerUidLen + 1));
 		if(certDesc->info.issuerUID == NULL) {
-			SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+			SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
@@ -1110,7 +974,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 		subjectUidLen = x->cert_info->subjectUID->length;
 		certDesc->info.subjectUID = (unsigned char*)malloc(sizeof(unsigned char) * (subjectUidLen + 1));
 		if(certDesc->info.subjectUID == NULL) {
-			SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+			SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
@@ -1125,7 +989,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 		certDesc->ext.numOfFields = sk_X509_EXTENSION_num(x->cert_info->extensions);
 		certDesc->ext.fields = (cert_svc_cert_fld_desc*)malloc(sizeof(cert_svc_cert_fld_desc) * certDesc->ext.numOfFields);
 		if(certDesc->ext.fields == NULL) {
-			SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+			SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
@@ -1134,10 +998,15 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 			ext = sk_X509_EXTENSION_value(x->cert_info->extensions, i);
 			if(ext != NULL) {
 				extObject = (char*)get_ASN1_OBJECT(ext->object);
+			    if(extObject == NULL) {
+					SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
+			        ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+			        goto err;
+			    }
 				extObjLen = strlen((const char*)extObject);
 				certDesc->ext.fields[i].name = (unsigned char*)malloc(sizeof(unsigned char) * (extObjLen + 1));
 				if(certDesc->ext.fields[i].name == NULL) {
-					SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+					SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 					ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 					goto err;
 				}
@@ -1148,7 +1017,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 				extValLen = ext->value->length;
 				certDesc->ext.fields[i].data = (unsigned char*)malloc(sizeof(unsigned char) * (extValLen + 1));
 				if(certDesc->ext.fields[i].data == NULL) {
-					SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+					SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 					ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 					goto err;
 				}
@@ -1161,10 +1030,15 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	}
 	/* get signature algorithm and signature */
 	sigAlgo = (char*)get_ASN1_OBJECT(x->sig_alg->algorithm);
+	if(sigAlgo == NULL) {
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
+		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
+		goto err;
+	}
 	sigAlgoLen = strlen((const char*)sigAlgo);
 	certDesc->signatureAlgo = (unsigned char*)malloc(sizeof(unsigned char) * (sigAlgoLen + 1));
 	if(certDesc->signatureAlgo == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1175,7 +1049,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 	certDesc->signatureLen = sigDataLen;
 	certDesc->signatureData = (unsigned char*)malloc(sizeof(unsigned char) * (sigDataLen + 1));
 	if(certDesc->signatureData == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1384,7 +1258,7 @@ int search_data_field(search_field fldName, char* fldData, cert_svc_cert_descrip
 	return ret;
 }
 
-int _get_all_certificates(char* const *paths, cert_svc_filename_list **lst) {
+int _get_all_certificates(char *const *paths, cert_svc_filename_list **lst) {
     int ret = CERT_SVC_ERR_NO_ERROR;
     FTS *fts = NULL;
     FTSENT *ftsent;
@@ -1396,7 +1270,7 @@ int _get_all_certificates(char* const *paths, cert_svc_filename_list **lst) {
 
     if (NULL == (fts = fts_open(paths, FTS_LOGICAL, NULL))) {
         ret = CERT_SVC_ERR_FILE_IO;
-        SLOGE("[ERR][%s] Fail to open directories.\n", __func__);
+        SLOGE("[ERR][%s] Fail to open directories.", __func__);
         goto out;
     }
 
@@ -1404,7 +1278,7 @@ int _get_all_certificates(char* const *paths, cert_svc_filename_list **lst) {
 
         if (ftsent->fts_info == FTS_ERR || ftsent->fts_info == FTS_NS) {
             ret = CERT_SVC_ERR_FILE_IO;
-            SLOGE("[ERR][%s] Fail to read directories.\n", __func__);
+            SLOGE("[ERR][%s] Fail to read directories.", __func__);
             goto out;
         }
 
@@ -1414,20 +1288,23 @@ int _get_all_certificates(char* const *paths, cert_svc_filename_list **lst) {
         if (-1 != readlink(ftsent->fts_path, tmp, 10))
             continue;
 
+        len = strlen((const char *)(ftsent->fts_path));
+        if (strcmp((ftsent->fts_path + len - strlen(".pem")), ".pem") != 0)
+            continue;
+
         el = (cert_svc_filename_list*)malloc(sizeof(cert_svc_filename_list));
         if (!el) {
             ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
-            SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+            SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
             goto out;
         }
         el->next = local;
         local = el;
 
-        len = strlen((const char*)(ftsent->fts_path));
         local->filename = (char*)malloc(len+1);
         if (!local->filename) {
             ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
-            SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+            SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
             goto out;
         }
         strncpy(local->filename, ftsent->fts_path, len+1);
@@ -1452,15 +1329,18 @@ out:
 int get_all_certificates(cert_svc_filename_list** allCerts)
 {
     int ret;
-    char ** buffer[] = {(char **)CERT_SVC_SEARCH_PATH_RO, (char **)CERT_SVC_SEARCH_PATH_RW, NULL};
+    char *buffer[2];
+
+    buffer[0] = ROOT_CA_CERTS_DIR;
+    buffer[1] = NULL;
 
     if (!allCerts) {
-        SLOGE("[ERR][%s] Invalid argument.\n", __func__);
+        SLOGE("[ERR][%s] Invalid argument.", __func__);
         return CERT_SVC_ERR_INVALID_PARAMETER;
     }
 
-    if ((ret = _get_all_certificates((char* const *) buffer, allCerts)) != CERT_SVC_ERR_NO_ERROR) {
-        SLOGE("[ERR][%s] Fail to get filelist.\n", __func__);
+    if ((ret = _get_all_certificates(buffer, allCerts)) != CERT_SVC_ERR_NO_ERROR) {
+        SLOGE("[ERR][%s] Fail to get filelist.", __func__);
         return ret;
     }
 
@@ -1480,7 +1360,7 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 	struct stat file_info;
 
 	if((ret = get_all_certificates(&allCerts)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to get all certificate file list, ret: [%d]\n", __func__, ret);
+		SLOGE("[ERR][%s] Fail to get all certificate file list, ret: [%d]", __func__, ret);
 		goto err;
 	}
 
@@ -1489,25 +1369,25 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 
 	while(1) {
 		if((lstat(p->filename, &file_info)) < 0) {	// get file information
-			SECURE_SLOGE("[ERR][%s] Fail to get file(%s) information.\n", __func__, p->filename);
+			SLOGE("[ERR][%s] Fail to get file(%s) information.", __func__, p->filename);
 			ret = CERT_SVC_ERR_INVALID_OPERATION;
 			goto err;
 		}
 		if((file_info.st_mode & S_IFLNK) == S_IFLNK) {	// if symbolic link, continue
-//			SLOGD("[LOG][%s] %s is symbolic link, ignored.\n", __func__, p->filename);
+			SLOGD("[LOG][%s] %s is symbolic link, ignored.", __func__, p->filename);
 			goto fail_to_load_file;
 		}
 
 		// allocate memory
 		if(!(certBuf = (cert_svc_mem_buff*)malloc(sizeof(cert_svc_mem_buff)))) {
-			SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+			SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
 
 		// load content into buffer
 		if((ret = cert_svc_util_load_file_to_buffer(p->filename, certBuf)) != CERT_SVC_ERR_NO_ERROR) {
-			SECURE_SLOGE("[ERR][%s] Fail to load file to buffer, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
+			SLOGE("[ERR][%s] Fail to load file to buffer, filename: [%s], ret: [%d]", __func__, p->filename, ret);
 			free(certBuf);
 			certBuf = NULL;
 			goto fail_to_load_file;
@@ -1515,14 +1395,14 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 
 		// allocate memory
 		if(!(certDesc = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor)))) {
-			SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+			SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
 
 		// load content into descriptor buffer
 		if((ret = _extract_certificate_data(certBuf, certDesc)) != CERT_SVC_ERR_NO_ERROR) {
-			SECURE_SLOGE("[ERR][%s] Fail to extract certificate data, filename: [%s], ret: [%d]\n", __func__, p->filename, ret);
+			SLOGE("[ERR][%s] Fail to extract certificate data, filename: [%s], ret: [%d]", __func__, p->filename, ret);
 			goto fail_to_extract_file;
 		}
 
@@ -1531,12 +1411,12 @@ int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName
 			matched = 1;
 
 			if(!(newNode = (cert_svc_filename_list*)malloc(sizeof(cert_svc_filename_list)))) {
-				SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+				SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
 				ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 				goto err;
 			}
 			if(!(newNode->filename = (char*)malloc(sizeof(char) * CERT_SVC_MAX_FILE_NAME_SIZE))) {
-				SLOGE("[ERR][%s] Fail to allocate memory.\n", __func__);
+				SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
 				ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 				free(newNode);
 				goto err;
@@ -1573,7 +1453,7 @@ fail_to_load_file:
 	}
 
 	if(matched != 1) {	// not founded
-		SLOGE("[ERR][%s] Cannot find any certificate you want.\n", __func__);
+		SLOGE("[ERR][%s] Cannot find any certificate you want.", __func__);
 		ret = CERT_SVC_ERR_NO_MORE_CERTIFICATE;
 	}
 	else
@@ -1586,7 +1466,9 @@ err:
 
 	return ret;
 }
-X509 *__loadCert(const char *file) {
+
+X509 *__loadCert(const char *file)
+{
 	FILE *fp = fopen(file, "r");
 	if(fp == NULL)
 		return NULL;
@@ -1599,7 +1481,8 @@ X509 *__loadCert(const char *file) {
 	return cert;
 }
 
-int __loadSystemCerts(STACK_OF(X509) *systemCerts) {
+int __loadSystemCerts(STACK_OF(X509) *systemCerts)
+{
 	int ret = CERT_SVC_ERR_NO_ERROR;
 	cert_svc_filename_list* allCerts = NULL;
 	cert_svc_filename_list* p = NULL;
@@ -1607,19 +1490,19 @@ int __loadSystemCerts(STACK_OF(X509) *systemCerts) {
 	X509 *cert;
 
 	if((ret = get_all_certificates(&allCerts)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to get all certificate file list, ret: [%d]\n", __func__, ret);
+		SLOGE("[ERR][%s] Fail to get all certificate file list, ret: [%d]", __func__, ret);
 		goto err;
 	}
 
 	p = allCerts;
 	while(1) {
 		if((lstat(p->filename, &file_info)) < 0) {	// get file information
-			SECURE_SLOGE("[ERR][%s] Fail to get file(%s) information.\n", __func__, p->filename);
+			SLOGE("[ERR][%s] Fail to get file(%s) information.", __func__, p->filename);
 			ret = CERT_SVC_ERR_INVALID_OPERATION;
 			goto err;
 		}
 		if((file_info.st_mode & S_IFLNK) == S_IFLNK) {	// if symbolic link, continue
-//			SLOGD("[LOG][%s] %s is symbolic link, ignored.\n", __func__, p->filename);
+//			SLOGD("[LOG][%s] %s is symbolic link, ignored.", __func__, p->filename);
 			goto fail_to_load_file;
 		}
 
@@ -1796,11 +1679,10 @@ int __ocsp_verify(X509 *cert, X509 *issuer, STACK_OF(X509) *systemCerts, char *u
 		OCSP_RESPONSE_free(resp);
 		OCSP_BASICRESP_free(bs);
         X509_STORE_free(trustedStore);
-
+        
 //        int err = ERR_get_error();
 //        char errStr[100];
 //        ERR_error_string(err,errStr);
-//        printf("OCSP_basic_verify fail.error = %s\n", errStr);
 		return CERT_SVC_ERR_OCSP_VERIFICATION_ERROR;
 	}
 
@@ -1867,8 +1749,8 @@ int __ocsp_verify(X509 *cert, X509 *issuer, STACK_OF(X509) *systemCerts, char *u
     }
 
     if(trustedStore) {
-        X509_STORE_free(trustedStore);
-        trustedStore = NULL;
+    	X509_STORE_free(trustedStore);
+    	trustedStore = NULL;
     }
 
     if (reason != -1) {
@@ -1897,7 +1779,7 @@ int _check_ocsp_status(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certLi
 
 	findRoot = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
 	if(findRoot == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory for certificate descriptor.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory for certificate descriptor.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
@@ -1906,12 +1788,12 @@ int _check_ocsp_status(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certLi
 	if(certList != NULL && (*certList) != NULL) {
 		/* remove self-signed certificate in certList */
 		if((ret = _remove_selfsigned_cert_in_chain(certList)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to remove self-signed certificate in chain.\n", __func__);
+			SLOGE("[ERR][%s] Fail to remove self-signed certificate in chain.", __func__);
 			goto err;
 		}
 		/* sort certList */
 		if((ret = sort_cert_chain(certList, &sorted)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to sort certificate chain.\n", __func__);
+			SLOGE("[ERR][%s] Fail to sort certificate chain.", __func__);
 			goto err;
 		}
 
@@ -1929,30 +1811,30 @@ int _check_ocsp_status(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certLi
 	}
 
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to extract certificate data\n", __func__);
+		SLOGE("[ERR][%s] Fail to extract certificate data", __func__);
 		goto err;
 	}
 	if((ret = _search_certificate(&fileNames, SUBJECT_STR, findRoot->info.issuerStr)) != CERT_SVC_ERR_NO_ERROR) {
 		ret = CERT_SVC_ERR_NO_ROOT_CERT;
-		SLOGE("[ERR][%s] Fail to search root certificate\n", __func__);
+		SLOGE("[ERR][%s] Fail to search root certificate", __func__);
 		goto err;
 	}
 	if(fileNames->filename == NULL) {
-		SLOGE("[ERR][%s] There is no CA certificate.\n", __func__);
+		SLOGE("[ERR][%s] There is no CA certificate.", __func__);
 		ret = CERT_SVC_ERR_NO_ROOT_CERT;
 		goto err;
 	}
 
 	CACert = (cert_svc_mem_buff*)malloc(sizeof(cert_svc_mem_buff));
 	if(CACert == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory for ca cert.\n", __func__);
+		SLOGE("[ERR][%s] Failed to allocate memory for ca cert.", __func__);
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
 	memset(CACert, 0x00, sizeof(cert_svc_mem_buff));
 	// use the first found CA cert - ignore other certificate(s). assume that there is JUST one CA cert
 	if((ret = cert_svc_util_load_file_to_buffer(fileNames->filename, CACert)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to load CA cert to buffer.\n", __func__);
+		SLOGE("[ERR][%s] Fail to load CA cert to buffer.", __func__);
 		goto err;
 	}
 	// =============================
@@ -1965,11 +1847,11 @@ int _check_ocsp_status(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certLi
 			parentCert = q->certificate;
 			// OCSP Check
 			if(CERT_SVC_ERR_NO_ERROR != (ret = _verify_ocsp(childCert, parentCert, uri, &ocspStatus))) {
-				SLOGE("[ERR][%s] Error Occurred during OCSP Checking.\n", __func__);
+				SLOGE("[ERR][%s] Error Occurred during OCSP Checking.", __func__);
 				goto err;
 			}
 			if(ocspStatus != 0) { // CERT_SVC_OCSP_GOOD
-				SLOGE("[ERR][%s] Invalid Certificate OCSP Status. ocspStatus=%d.\n", __func__, ocspStatus);
+				SLOGE("[ERR][%s] Invalid Certificate OCSP Status. ocspStatus=%d.", __func__, ocspStatus);
 
 				switch(ocspStatus) {
 				case 0 : //OCSP_GOOD
@@ -1996,7 +1878,7 @@ int _check_ocsp_status(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certLi
 	// Final OCSP Check
 	parentCert = CACert;
 	if(CERT_SVC_ERR_NO_ERROR != (ret = _verify_ocsp(childCert, parentCert, uri, &ocspStatus))) {
-		SLOGE("[ERR][%s] Error Occurred during OCSP Checking.\n", __func__);
+		SLOGE("[ERR][%s] Error Occurred during OCSP Checking.", __func__);
 		goto err;
 	}
 	switch(ocspStatus) {
@@ -2014,7 +1896,7 @@ int _check_ocsp_status(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certLi
 		break;
 	}
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Invalid Certificate OCSP Status. ocspStatus=%d.\n", __func__, ocspStatus);
+		SLOGE("[ERR][%s] Invalid Certificate OCSP Status. ocspStatus=%d.", __func__, ocspStatus);
 		goto err;
 	}
 	// =============================
@@ -2061,7 +1943,7 @@ int _verify_ocsp(cert_svc_mem_buff* child, cert_svc_mem_buff* parent, const char
 		targetUrl = certAiaUrl;
 	}
 	if(targetUrl == NULL) {
-		SLOGE("[ERR][%s] No URI for OCSP.\n", __func__);
+		SLOGE("[ERR][%s] No URI for OCSP.", __func__);
 		ret = CERT_SVC_ERR_OCSP_NO_SUPPORT;
 		goto err;
 	}
@@ -2070,13 +1952,13 @@ int _verify_ocsp(cert_svc_mem_buff* child, cert_svc_mem_buff* parent, const char
 	systemCerts = sk_X509_new_null();
 	ret = __loadSystemCerts(systemCerts) ;
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to extract certificate data\n", __func__);
+		SLOGE("[ERR][%s] Fail to extract certificate data", __func__);
 		goto err;
 	}
 
 	// Do OCSP Check
 	ret = __ocsp_verify(childCert, parentCert, systemCerts, targetUrl, ocspStatus);
-	SLOGD("[%s] OCSP Response. ocspstaus=%d, ret=%d.\n", __func__, *ocspStatus, ret);
+	SLOGD("[%s] OCSP Response. ocspstaus=%d, ret=%d.", __func__, *ocspStatus, ret);
 
 err:
 	if(childData != NULL && *childData != NULL)
@@ -2178,7 +2060,7 @@ int release_cert_list(cert_svc_linked_list* certList)
 	while(1) {
 		curCert = startCert;
 		startCert = startCert->next;
-
+	
 		if(curCert->certificate != NULL) {
 			if(curCert->certificate->data != NULL) {
 				free(curCert->certificate->data);
@@ -2234,33 +2116,21 @@ int release_filename_list(cert_svc_filename_list* fileNames)
 	return ret;
 }
 
-
-void __print_finger_print(const unsigned char *fingerPrint, unsigned int length)
-{
-	int i=0;
-	char buffer[21] = {0,};
-
-	for(; i<20; i++)
-		snprintf(buffer+i, 20, "%0X", fingerPrint[i]);
-
-	SLOGE("FingerPrint : %s", buffer);
-}
-
 int get_visibility(CERT_CONTEXT* context, int* visibility)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
 	unsigned char * cert = NULL;
 	int certSize = 0;
-	unsigned char *fingerprint = NULL;
+	char *fingerprint = NULL;
 
 	if(!context->certBuf)
 	{
-		LOGE("certBuf is NULL!");
+		SLOGE("certBuf is NULL!");
 		return CERT_SVC_ERR_INVALID_PARAMETER;
 	}
 	if(!context->certBuf->size)
 	{
-		LOGE("certBuf size is wrong");
+		SLOGE("certBuf size is wrong");
 		return CERT_SVC_ERR_INVALID_PARAMETER;
 	}
 
@@ -2269,7 +2139,7 @@ int get_visibility(CERT_CONTEXT* context, int* visibility)
 
 	if(cert == NULL || !certSize)
 	{
-		LOGE("cert is or invalid!");
+		SLOGE("cert is or invalid!");
 		return CERT_SVC_ERR_INVALID_CERTIFICATE;
 	}
 
@@ -2289,3 +2159,48 @@ int get_visibility(CERT_CONTEXT* context, int* visibility)
 
 	return CERT_SVC_ERR_NO_ERROR;
 }
+
+int get_certificate_type(CERT_CONTEXT* context, int* cert_type)
+{
+	int ret = CERT_SVC_ERR_NO_ERROR;
+	unsigned char * cert = NULL;
+	int certSize = 0;
+	char *fingerprint = NULL;
+
+	if(!context->certBuf)
+	{
+		SLOGE("certBuf is NULL!");
+		return CERT_SVC_ERR_INVALID_PARAMETER;
+	}
+	if(!context->certBuf->size)
+	{
+		SLOGE("certBuf size is wrong");
+		return CERT_SVC_ERR_INVALID_PARAMETER;
+	}
+
+	cert = context->certBuf->data;
+	certSize = context->certBuf->size;
+
+	if(cert == NULL || !certSize)
+	{
+		SLOGE("cert is or invalid!");
+		return CERT_SVC_ERR_INVALID_CERTIFICATE;
+	}
+
+	ret = get_certificate_fingerprint(cert, certSize, &fingerprint);
+	if(ret != CERT_SVC_ERR_NO_ERROR)
+	{
+		SLOGE("Failed to get fingerprint data! %d", ret);
+		return ret;
+	}
+	
+	ret = get_type_by_fingerprint(fingerprint, cert_type);
+	if(ret != CERT_SVC_ERR_NO_ERROR)
+	{
+		SLOGE("Failed to get visibility! %d", ret);
+		return ret;
+	}
+
+	return CERT_SVC_ERR_NO_ERROR;
+}
+

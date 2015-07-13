@@ -24,7 +24,7 @@
 #ifndef _VALIDATION_CORE_CERTSTORETYPE_H_
 #define _VALIDATION_CORE_CERTSTORETYPE_H_
 
-#include <string.h>
+#include <string>
 
 namespace ValidationCore {
 namespace CertStoreId {
@@ -35,6 +35,7 @@ const Type TIZEN_DEVELOPER = 1;
 // RootCA certificates for author signatures.
 const Type TIZEN_TEST = 1 << 1;
 const Type TIZEN_VERIFY = 1 << 2;
+const Type TIZEN_STORE = 1 << 3;
 // RootCA's visibility level : public
 const Type VIS_PUBLIC = 1 << 6;
 // RootCA's visibility level : partner
@@ -46,26 +47,26 @@ const Type VIS_PARTNER_MANUFACTURER = 1 << 9;
 // RootCA's visibility level : platform
 const Type VIS_PLATFORM = 1 << 10;
 
-class Set
-{
-  public:
+class Set {
+public:
     Set();
+    virtual ~Set();
 
     void add(Type second);
 
-	#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
     void add(std::string ocspUrl);
     char* getOcspUrl();
-	#endif
+#endif
 
-	bool contains(Type second) const;
+    bool contains(Type second) const;
     bool isEmpty() const;
 
   private:
     Type m_certificateStorage;
-	#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
+#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
     char* m_ocspUrl;
-	#endif
+#endif
 };
 
 } // namespace CertStoreId

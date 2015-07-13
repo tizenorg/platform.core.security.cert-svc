@@ -21,13 +21,12 @@
  */
 #include <vcore/CertificateCollection.h>
 
-#include <algorithm>
-
+#include <vcore/Base64.h>
 #include <dpl/binary_queue.h>
 #include <dpl/foreach.h>
-#include <dpl/log/log.h>
+#include <dpl/log/wrt_log.h>
 
-#include <vcore/Base64.h>
+#include <algorithm>
 
 namespace {
 
@@ -68,18 +67,19 @@ bool CertificateCollection::load(const std::string &buffer)
     base64.reset();
     base64.append(buffer);
     if (!base64.finalize()) {
-        LogWarning("Error during chain decoding");
+        WrtLogW("Error during chain decoding");
         return false;
     }
     std::string binaryData = base64.get();
 
-    DPL::BinaryQueue queue;
+    VcoreDPL::BinaryQueue queue;
     queue.AppendCopy(binaryData.c_str(), binaryData.size());
 
     int certNum;
     queue.FlattenConsume(&certNum, sizeof(int));
 
     CertificateList list;
+    CertificatePtr certPtr;
 
     for (int i = 0; i < certNum; ++i) {
         int certSize;
@@ -87,16 +87,16 @@ bool CertificateCollection::load(const std::string &buffer)
         std::vector<char> rawDERCert;
         rawDERCert.resize(certSize);
         queue.FlattenConsume(&rawDERCert[0], certSize);
-        Try {
-            list.push_back(CertificatePtr(
-                               new Certificate(std::string(rawDERCert.begin(),
-                                                           rawDERCert.end()))));
-        } Catch(Certificate::Exception::Base) {
-            LogWarning("Error during certificate creation.");
+        VcoreTry {
+            list.push_back(CertificatePtr(new Certificate(std::string(
+                rawDERCert.begin(),
+                rawDERCert.end()))));
+        } VcoreCatch (Certificate::Exception::Base) {
+            WrtLogW("Error during certificate creation.");
             return false;
         }
-        LogDebug("Loading certificate. Certificate common name: " <<
-                 list.back()->getCommonName());
+
+        WrtLogD("Loading certificate. Certificate common name: %s", list.back()->getCommonName().c_str());
     }
     load(list);
     return true;
@@ -126,11 +126,10 @@ CertificateList CertificateCollection::getCertificateList() const
 
 bool CertificateCollection::isChain() const
 {
-    if (COLLECTION_SORTED != m_collectionStatus) {
-        LogError("You must sort certificates first");
-        ThrowMsg(Exception::WrongUsage,
-                 "You must sort certificates first");
-    }
+    if (COLLECTION_SORTED != m_collectionStatus)
+        VcoreThrowMsg(CertificateCollection::Exception::WrongUsage,
+                      "You must sort certificate first");
+
     return (COLLECTION_SORTED == m_collectionStatus) ? true : false;
 }
 
@@ -144,11 +143,9 @@ bool CertificateCollection::sort()
 
 CertificateList CertificateCollection::getChain() const
 {
-    if (COLLECTION_SORTED != m_collectionStatus) {
-        LogError("You must sort certificates first");
-        ThrowMsg(Exception::WrongUsage,
-                 "You must sort certificates first");
-    }
+    if (COLLECTION_SORTED != m_collectionStatus)
+        VcoreThrowMsg(CertificateCollection::Exception::WrongUsage,
+                      "You must sort certificates first");
     return m_certList;
 }
 
@@ -166,7 +163,7 @@ void CertificateCollection::sortCollection()
 
     // Sort all certificate by subject
     for (auto it = m_certList.begin(); it != m_certList.end(); ++it) {
-        subTransl.insert(std::make_pair(DPL::ToUTF8String((*it)->getOneLine()),(*it)));
+        subTransl.insert(std::make_pair((*it)->getOneLine(), (*it)));
     }
     // We need one start certificate
     sorted.push_back(subTransl.begin()->second);
@@ -175,7 +172,7 @@ void CertificateCollection::sortCollection()
     // Get the issuer from front certificate and find certificate with this subject in subTransl.
     // Add this certificate to the front.
     while (!subTransl.empty()) {
-        std::string issuer = DPL::ToUTF8String(sorted.back()->getOneLine(Certificate::FIELD_ISSUER));
+        std::string issuer = sorted.back()->getOneLine(Certificate::FIELD_ISSUER);
         auto it = subTransl.find(issuer);
         if (it == subTransl.end()) {
             break;
@@ -186,13 +183,13 @@ void CertificateCollection::sortCollection()
 
     // Sort all certificates by issuer
     for (auto it = subTransl.begin(); it != subTransl.end(); ++it) {
-        issTransl.insert(std::make_pair(DPL::ToUTF8String((it->second->getOneLine(Certificate::FIELD_ISSUER))),it->second));
+        issTransl.insert(std::make_pair(it->second->getOneLine(Certificate::FIELD_ISSUER), it->second));
     }
 
     // Get the subject from last certificate and find certificate with such issuer in issTransl.
     // Add this certificate at end.
     while (!issTransl.empty()) {
-        std::string sub = DPL::ToUTF8String(sorted.front()->getOneLine());
+        std::string sub = sorted.front()->getOneLine();
         auto it = issTransl.find(sub);
         if (it == issTransl.end()) {
             break;
@@ -202,7 +199,7 @@ void CertificateCollection::sortCollection()
     }
 
     if (!issTransl.empty()) {
-        LogWarning("Certificates don't form a valid chain.");
+        WrtLogW("Certificates don't form a valid chain.");
         m_collectionStatus = COLLECTION_CHAIN_BROKEN;
         return;
     }

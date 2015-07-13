@@ -28,7 +28,7 @@
 
 namespace ValidationCore {
 
-class ReferenceValidator : DPL::Noncopyable
+class ReferenceValidator : VcoreDPL::Noncopyable
 {
   public:
     enum Result

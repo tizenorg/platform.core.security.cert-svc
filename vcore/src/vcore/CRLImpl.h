@@ -23,14 +23,12 @@
 #ifndef _VALIDATION_CORE_ENGINE_CRLIMPL_H_
 #define _VALIDATION_CORE_ENGINE_CRLIMPL_H_
 
-#include <dpl/exception.h>
+#include <string.h>
 #include <memory>
-#include <dpl/noncopyable.h>
-#include <dpl/log/log.h>
-
 #include <openssl/x509.h>
 
-#include <vcore/CRL.h>
+#include <dpl/noncopyable.h>
+
 #include <vcore/Certificate.h>
 #include <vcore/CertificateCollection.h>
 #include <vcore/SoupMessageSendBase.h>
@@ -38,18 +36,18 @@
 #include <vcore/CRLCacheInterface.h>
 #include <vcore/TimeConversion.h>
 
+#include <vcore/CRL.h>
+
 namespace ValidationCore {
 
-class CRLImpl : DPL::Noncopyable
-{
-  protected:
+class CRLImpl : VcoreDPL::Noncopyable {
+protected:
     X509_STORE *m_store;
     X509_LOOKUP *m_lookup;
     CRLCacheInterface *m_crlCache;
 
-    class CRLData : DPL::Noncopyable
-    {
-      public:
+    class CRLData : VcoreDPL::Noncopyable {
+    public:
         //TODO: change to SharedArray when available
         char *buffer;
         size_t length;
@@ -75,7 +73,6 @@ class CRLImpl : DPL::Noncopyable
 
         ~CRLData()
         {
-            LogInfo("Delete buffer");
             delete[] buffer;
         }
     };
@@ -94,7 +91,8 @@ class CRLImpl : DPL::Noncopyable
     bool isOutOfDate(const CRLDataPtr &crl) const;
 
     friend class CachedCRL;
-  public:
+
+public:
     CRLImpl(CRLCacheInterface *ptr);
     ~CRLImpl();
 

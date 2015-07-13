@@ -27,14 +27,13 @@
 #include <map>
 #include <dpl/noncopyable.h>
 
-#include "Certificate.h"
-#include "CertStoreType.h"
+#include <vcore/Certificate.h>
+#include <vcore/CertStoreType.h>
 
 namespace ValidationCore {
-class CertificateIdentifier : public DPL::Noncopyable
-{
+class CertificateIdentifier : public VcoreDPL::Noncopyable {
 public:
-    typedef std::map<Certificate::Fingerprint, CertStoreId::Set> FingerPrintMap;
+	typedef std::map<Certificate::Fingerprint, CertStoreId::Set> FingerPrintMap;
 
     CertificateIdentifier()
     {
@@ -49,13 +48,13 @@ public:
         fingerPrintMap[fingerprint].add(domain);
     }
 
-    #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
+	#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
     void add(const Certificate::Fingerprint &fingerprint,
-             std::string ocspUrl)
+			std::string ocspUrl)
     {
-         fingerPrintMap[fingerprint].add(ocspUrl);
+    	fingerPrintMap[fingerprint].add(ocspUrl);
     }
-    #endif
+	#endif
 
     CertStoreId::Set find(const Certificate::Fingerprint &fingerprint) const
     {
@@ -72,7 +71,7 @@ public:
             find(certificate->getFingerprint(Certificate::FINGERPRINT_SHA1));
     }
 
-  private:
+private:
     FingerPrintMap fingerPrintMap;
 };
 } // namespace ValidationCore

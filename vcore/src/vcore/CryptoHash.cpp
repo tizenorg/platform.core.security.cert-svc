@@ -37,42 +37,6 @@ namespace Hash
 namespace // anonymous
 {
 const size_t HASH_DIGEST_STREAM_FEED_SIZE = 1024;
-
-std::string Raw2Base64(const void *buffer, size_t bufferSize)
-{
-    BIO *bio64, *biomem;
-
-    if ((bio64 = BIO_new(BIO_f_base64())) == NULL)
-        ThrowMsg(AppendFailed, "BIO_new(BIO_f_base64()) failed!");
-
-    if ((biomem = BIO_new(BIO_s_mem())) == NULL)
-    {
-        BIO_free_all(bio64);
-        ThrowMsg(AppendFailed, "BIO_new(BIO_s_mem()) failed!");
-    }
-
-    bio64 = BIO_push(bio64, biomem);
-
-    if (BIO_write(bio64, buffer, static_cast<int>(bufferSize)) <= 0)
-    {
-        BIO_free_all(bio64);
-        ThrowMsg(AppendFailed, "BIO_write failed!");
-    }
-
-    if (BIO_flush(bio64) <= 0)
-    {
-        BIO_free_all(bio64);
-        ThrowMsg(AppendFailed, "BIO_flush failed!");
-    }
-
-    BUF_MEM *bioptr;
-    BIO_get_mem_ptr(bio64, &bioptr);
-
-    std::string base64 = std::string(static_cast<const char *>(bioptr->data), static_cast<const char *>(bioptr->data + bioptr->length));
-
-    BIO_free_all(bio64);
-    return base64;
-}
 } // namespace anonymous
 
 Base::Base()
@@ -87,7 +51,8 @@ Base::~Base()
 void Base::Append(const char *buffer)
 {
     if (m_hasFinal)
-        ThrowMsg(OutOfSequence, "Cannot append hash after final update!");
+        VcoreThrowMsg(Crypto::Hash::OutOfSequence,
+                      "Cannot append hash after final update!");
 
     HashUpdate(buffer, strlen(buffer));
 }
@@ -95,7 +60,8 @@ void Base::Append(const char *buffer)
 void Base::Append(const char *buffer, size_t bufferSize)
 {
     if (m_hasFinal)
-        ThrowMsg(OutOfSequence, "Cannot append hash after final update!");
+        VcoreThrowMsg(Crypto::Hash::OutOfSequence,
+                      "Cannot append hash after final update!");
 
     HashUpdate(buffer, bufferSize);
 }
@@ -103,7 +69,8 @@ void Base::Append(const char *buffer, size_t bufferSize)
 void Base::Append(const std::string &buffer)
 {
     if (m_hasFinal)
-        ThrowMsg(OutOfSequence, "Cannot append hash after final update!");
+        VcoreThrowMsg(Crypto::Hash::OutOfSequence,
+                 "Cannot append hash after final update!");
 
     HashUpdate(buffer.c_str(), buffer.size());
 }
@@ -111,7 +78,8 @@ void Base::Append(const std::string &buffer)
 void Base::Append(std::istream &stream)
 {
     if (m_hasFinal)
-        ThrowMsg(OutOfSequence, "Cannot append hash after final update!");
+        VcoreThrowMsg(Crypto::Hash::OutOfSequence,
+                 "Cannot append hash after final update!");
 
     char buffer[HASH_DIGEST_STREAM_FEED_SIZE];
 
@@ -128,7 +96,8 @@ void Base::Append(std::istream &stream)
 void Base::Append(const void *data, size_t dataSize)
 {
     if (m_hasFinal)
-        ThrowMsg(OutOfSequence, "Cannot append hash after final update!");
+        VcoreThrowMsg(Crypto::Hash::OutOfSequence,
+                 "Cannot append hash after final update!");
 
     HashUpdate(data, dataSize);
 }
@@ -167,7 +136,8 @@ OpenSSL::OpenSSL(const EVP_MD *evpMd)
     EVP_MD_CTX_init(&m_context);
 
     if (EVP_DigestInit(&m_context, evpMd) != 1)
-        ThrowMsg(AppendFailed, "EVP_DigestInit failed!");
+        VcoreThrowMsg(Crypto::Hash::AppendFailed,
+                      "EVP_DigestInit failed!");
 }
 
 OpenSSL::~OpenSSL()
@@ -183,23 +153,27 @@ OpenSSL::~OpenSSL()
 void OpenSSL::HashUpdate(const void *data, size_t dataSize)
 {
     if (m_finalized)
-        ThrowMsg(AppendFailed, "OpenSSLHash hash already finalized!");
+        VcoreThrowMsg(Crypto::Hash::AppendFailed,
+                      "OpenSSLHash hash already finalized!");
 
     if (EVP_DigestUpdate(&m_context, data, dataSize) != 1)
-        ThrowMsg(AppendFailed, "EVP_DigestUpdate failed!");
+        VcoreThrowMsg(Crypto::Hash::AppendFailed,
+                      "EVP_DigestUpdate failed!");
 }
 
 Hash::Raw OpenSSL::HashFinal()
 {
     if (m_finalized)
-        ThrowMsg(AppendFailed, "OpenSSLHash hash already finalized!");
+        VcoreThrowMsg(Crypto::Hash::AppendFailed,
+                 "OpenSSLHash hash already finalized!");
 
     unsigned char hash[EVP_MAX_MD_SIZE] = {};
     unsigned int hashLength;
 
     // Also cleans context
     if (EVP_DigestFinal(&m_context, hash, &hashLength) != 1)
-        ThrowMsg(AppendFailed, "EVP_DigestFinal failed!");
+        VcoreThrowMsg(Crypto::Hash::AppendFailed,
+                      "EVP_DigestFinal failed!");
 
     m_finalized = true;
     return Raw(hash, hash + hashLength);

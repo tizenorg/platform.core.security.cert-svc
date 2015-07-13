@@ -26,29 +26,24 @@
 #include <list>
 #include <string>
 
-#include <dpl/exception.h>
-#include <dpl/noncopyable.h>
-#include <dpl/log/log.h>
-
 #include <vcore/Certificate.h>
 #include <vcore/CertificateCollection.h>
 #include <vcore/VerificationStatus.h>
 #include <vcore/CRLCacheInterface.h>
+#include <vcore/exception.h>
 
 namespace ValidationCore {
-
 namespace CRLException {
-DECLARE_EXCEPTION_TYPE(DPL::Exception, CRLException)
-DECLARE_EXCEPTION_TYPE(CRLException, StorageError)
-DECLARE_EXCEPTION_TYPE(CRLException, DownloadFailed)
-DECLARE_EXCEPTION_TYPE(CRLException, InternalError)
-DECLARE_EXCEPTION_TYPE(CRLException, InvalidParameter)
+VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
+VCORE_DECLARE_EXCEPTION_TYPE(Base, StorageError)
+VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError)
+VCORE_DECLARE_EXCEPTION_TYPE(Base, InvalidParameter)
+
 } // namespace CRLException
 
 class CRLImpl;
 
-class CRL : DPL::Noncopyable
-{
+class CRL {
 public:
     typedef std::list<std::string> StringList;
 
@@ -67,6 +62,7 @@ public:
         bool isRevoked;     /**< True when certificate is revoked */
     };
 
+    CRL() = delete;
     CRL(CRLCacheInterface *ptr);
     virtual ~CRL();
 
@@ -152,6 +148,9 @@ public:
 private:
     friend class CachedCRL;
     CRLImpl *m_impl;
+
+    CRL(const CRL &);
+    const CRL &operator=(const CRL &);
 };
 
 } // namespace ValidationCore

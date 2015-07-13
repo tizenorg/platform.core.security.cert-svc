@@ -16,7 +16,7 @@
 /*!
  * @author      Piotr Marcinkiewicz(p.marcinkiew@samsung.com)
  * @version     0.2
- * @file        CRLImpl.h
+ * @file        CRLImpl.cpp
  * @brief       Routines for certificate validation over CRL
  */
 
@@ -32,9 +32,8 @@
 #include <openssl/pem.h>
 #include <openssl/x509v3.h>
 
-#include <dpl/log/log.h>
+#include <dpl/log/wrt_log.h>
 #include <dpl/assert.h>
-#include <dpl/exception.h>
 #include <dpl/db/orm.h>
 #include <dpl/foreach.h>
 
@@ -42,11 +41,9 @@
 #include <vcore/Certificate.h>
 #include <vcore/SoupMessageSendSync.h>
 #include <vcore/CRLCacheInterface.h>
-#include <tzplatform_config.h>
 
 namespace {
-const char *CRL_LOOKUP_DIR_1 = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/ca-certs/code-signing/wac");
-const char *CRL_LOOKUP_DIR_2 = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/certs/code-signing/wac");
+const char *CRL_LOOKUP_DIR = "/usr/share/ca-certificates/wac";
 } //anonymous namespace
 
 namespace ValidationCore {
@@ -58,7 +55,7 @@ CRL::StringList CRLImpl::getCrlUris(const CertificatePtr &argCert)
     if (!result.empty()) {
         return result;
     }
-    LogInfo("No distribution points found. Getting from CA cert.");
+    WrtLogI("No distribution points found. Getting from CA cert.");
     X509_STORE_CTX *ctx = createContext(argCert);
     X509_OBJECT obj;
 
@@ -69,7 +66,7 @@ CRL::StringList CRLImpl::getCrlUris(const CertificatePtr &argCert)
                                            &obj);
     X509_STORE_CTX_free(ctx);
     if (0 >= retVal) {
-        LogError("No dedicated CA certificate available");
+        WrtLogE("No dedicated CA certificate available");
         return result;
     }
     CertificatePtr caCert(new Certificate(obj.data.x509));
@@ -82,36 +79,27 @@ CRLImpl::CRLImpl(CRLCacheInterface *ptr)
 {
     Assert(m_crlCache != NULL);
 
-    LogInfo("CRL storage initialization.");
+    WrtLogI("CRL storage initialization.");
     m_store = X509_STORE_new();
-    if (!m_store) {
-        LogError("Failed to create new store.");
-        ThrowMsg(CRLException::StorageError,
-                 "Not possible to create new store.");
-    }
+    if (!m_store)
+        VcoreThrowMsg(CRLException::StorageError,
+                      "impossible to create new store");
+
     m_lookup = X509_STORE_add_lookup(m_store, X509_LOOKUP_hash_dir());
     if (!m_lookup) {
         cleanup();
-        LogError("Failed to add hash dir lookup");
-        ThrowMsg(CRLException::StorageError,
-                 "Not possible to add hash dir lookup.");
+        VcoreThrowMsg(CRLException::StorageError,
+                      "impossible to add hash dir lookup");
     }
     // Add hash dir pathname for CRL checks
-    bool retVal = X509_LOOKUP_add_dir(m_lookup,
-                                      CRL_LOOKUP_DIR_1, X509_FILETYPE_PEM) == 1;
-    retVal &= retVal && (X509_LOOKUP_add_dir(m_lookup, CRL_LOOKUP_DIR_1,
-                                             X509_FILETYPE_ASN1) == 1);
-    retVal &= retVal && (X509_LOOKUP_add_dir(m_lookup, CRL_LOOKUP_DIR_2,
-                                             X509_FILETYPE_PEM) == 1);
-    retVal &= retVal && (X509_LOOKUP_add_dir(m_lookup, CRL_LOOKUP_DIR_2,
-                                             X509_FILETYPE_ASN1) == 1);
+    bool retVal = X509_LOOKUP_add_dir(m_lookup, CRL_LOOKUP_DIR, X509_FILETYPE_PEM) == 1;
+    retVal &= X509_LOOKUP_add_dir(m_lookup, CRL_LOOKUP_DIR, X509_FILETYPE_ASN1) == 1;
     if (!retVal) {
-        LogError("Failed to add lookup dir for PEM files.");
         cleanup();
-        ThrowMsg(CRLException::StorageError,
-                 "Failed to add lookup dir for PEM files.");
+        VcoreThrowMsg(CRLException::StorageError,
+                      "Failed to add lookup dir for PEM files");
     }
-    LogInfo("CRL storage initialization complete.");
+    WrtLogI("CRL storage initialization complete.");
 }
 
 CRLImpl::~CRLImpl()
@@ -122,7 +110,7 @@ CRLImpl::~CRLImpl()
 
 void CRLImpl::cleanup()
 {
-    LogInfo("Free CRL storage");
+    WrtLogI("Free CRL storage");
     // STORE is responsible for LOOKUP release
     //    X509_LOOKUP_free(m_lookup);
     X509_STORE_free(m_store);
@@ -136,7 +124,7 @@ CRL::RevocationStatus CRLImpl::checkCertificate(const CertificatePtr &argCert)
     FOREACH(it, crlUris) {
         CRLDataPtr crl = getCRL(*it);
         if (!crl) {
-            LogDebug("CRL not found for URI: " << *it);
+            WrtLogD("CRL not found for URI: %s", (*it).c_str());
             continue;
         }
         X509_CRL *crlInternal = convertToInternal(crl);
@@ -150,17 +138,17 @@ CRL::RevocationStatus CRLImpl::checkCertificate(const CertificatePtr &argCert)
             // If nextUpdate is not set assume it is actual.
             retStatus.isCRLValid = true;
         }
-        LogInfo("CRL valid: " << retStatus.isCRLValid);
+        WrtLogI("CRL valid: %d", retStatus.isCRLValid);
         X509_REVOKED rev;
         rev.serialNumber = X509_get_serialNumber(argCert->getX509());
         // sk_X509_REVOKED_find returns index if serial number is found on list
         retVal = sk_X509_REVOKED_find(crlInternal->crl->revoked, &rev);
         X509_CRL_free(crlInternal);
         retStatus.isRevoked = retVal != -1;
-        LogInfo("CRL revoked: " << retStatus.isRevoked);
+        WrtLogI("CRL revoked: %d", retStatus.isRevoked);
 
         if (!retStatus.isRevoked && isOutOfDate(crl)) {
-            LogDebug("Certificate is not Revoked, but CRL is outOfDate.");
+            WrtLogD("Certificate is not Revoked, but CRL is outOfDate.");
             continue;
         }
 
@@ -171,14 +159,11 @@ CRL::RevocationStatus CRLImpl::checkCertificate(const CertificatePtr &argCert)
     return retStatus;
 }
 
-CRL::RevocationStatus CRLImpl::checkCertificateChain(CertificateCollection
-                                                 certChain)
+CRL::RevocationStatus CRLImpl::checkCertificateChain(CertificateCollection certChain)
 {
-    if (!certChain.sort()) {
-        LogError("Certificate list doesn't create chain.");
-        ThrowMsg(CRLException::InvalidParameter,
-                 "Certificate list doesn't create chain.");
-    }
+    if (!certChain.sort())
+        VcoreThrowMsg(CRLException::InvalidParameter,
+                      "Certificate list doesn't create chain.");
 
     CRL::RevocationStatus ret;
     ret.isCRLValid = true;
@@ -186,25 +171,27 @@ CRL::RevocationStatus CRLImpl::checkCertificateChain(CertificateCollection
     const CertificateList &certList = certChain.getChain();
     FOREACH(it, certList) {
         if (!(*it)->isRootCert()) {
-            LogInfo("Certificate common name: " << *((*it)->getCommonName()));
+            WrtLogI("Certificate common name: %s", (*it)->getCommonName().c_str());
             CRL::RevocationStatus certResult = checkCertificate(*it);
             ret.isCRLValid &= certResult.isCRLValid;
             ret.isRevoked |= certResult.isRevoked;
             if (ret.isCRLValid && !ret.isRevoked) {
                 addToStore(*it);
             }
+
             if (ret.isRevoked) {
                 return ret;
             }
         }
     }
+
     return ret;
 }
 
 VerificationStatus CRLImpl::checkEndEntity(CertificateCollection &chain)
 {
     if (!chain.sort() && !chain.empty()) {
-        LogInfo("Could not find End Entity certificate. "
+        WrtLogI("Could not find End Entity certificate. "
                 "Collection does not form chain.");
         return VERIFICATION_STATUS_ERROR;
     }
@@ -244,13 +231,13 @@ bool CRLImpl::isOutOfDate(const CRLDataPtr &crl) const {
 bool CRLImpl::updateList(const CertificatePtr &argCert,
     const CRL::UpdatePolicy updatePolicy)
 {
-    LogInfo("Update CRL for certificate");
+    WrtLogI("Update CRL for certificate");
 
     // Retrieve distribution points
     CRL::StringList crlUris = getCrlUris(argCert);
     FOREACH(it, crlUris) {
         // Try to get CRL from database
-        LogInfo("Getting CRL for URI: " << *it);
+        WrtLogI("Getting CRL for URI: %s", (*it).c_str());
 
         bool downloaded = false;
 
@@ -263,24 +250,24 @@ bool CRLImpl::updateList(const CertificatePtr &argCert,
         }
 
         if (!!crl && isOutOfDate(crl)) {
-            LogDebug("Crl out of date - downloading.");
+            WrtLogD("Crl out of date - downloading.");
             crl = downloadCRL(*it);
             downloaded = true;
         }
 
         if (!crl) {
-            LogDebug("Crl not found in cache - downloading.");
+            WrtLogD("Crl not found in cache - downloading.");
             crl = downloadCRL(*it);
             downloaded = true;
         }
 
         if (!crl) {
-            LogDebug("Failed to obtain CRL. URL: " << *it);
+            WrtLogD("Failed to obtain CRL. URL: %s", (*it).c_str());
             continue;
         }
 
         if (!!crl && isOutOfDate(crl)) {
-            LogError("CRL out of date. Broken URL: " << *it);
+            WrtLogE("CRL out of date. Broken URL: %s", (*it).c_str());
         }
 
         // Make X509 internal structure
@@ -288,7 +275,7 @@ bool CRLImpl::updateList(const CertificatePtr &argCert,
 
         //Check if CRL is signed
         if (!verifyCRL(crlInternal, argCert)) {
-            LogError("Failed to verify CRL. URI: " << crl->uri);
+            WrtLogE("Failed to verify CRL. URI: %s", (crl->uri).c_str());
             X509_CRL_free(crlInternal);
             return false;
         }
@@ -333,7 +320,7 @@ bool CRLImpl::verifyCRL(X509_CRL *crl,
                                            X509_CRL_get_issuer(crl), &obj);
     X509_STORE_CTX_free(ctx);
     if (0 >= retVal) {
-        LogError("Unknown CRL issuer certificate!");
+        WrtLogE("Unknown CRL issuer certificate!");
         return false;
     }
 
@@ -341,19 +328,19 @@ bool CRLImpl::verifyCRL(X509_CRL *crl,
     EVP_PKEY *pkey = X509_get_pubkey(obj.data.x509);
     X509_OBJECT_free_contents(&obj);
     if (!pkey) {
-        LogError("Failed to get issuer's public key.");
+        WrtLogE("Failed to get issuer's public key.");
         return false;
     }
     retVal = X509_CRL_verify(crl, pkey);
     EVP_PKEY_free(pkey);
     if (0 > retVal) {
-        LogError("Failed to verify CRL.");
+        WrtLogE("Failed to verify CRL.");
         return false;
     } else if (0 == retVal) {
-        LogError("CRL is invalid");
+        WrtLogE("CRL is invalid");
         return false;
     }
-    LogInfo("CRL is valid.");
+    WrtLogI("CRL is valid.");
     return true;
 }
 
@@ -362,10 +349,10 @@ bool CRLImpl::isPEMFormat(const CRLDataPtr &crl) const
     const char *pattern = "-----BEGIN X509 CRL-----";
     std::string content(crl->buffer, crl->length);
     if (content.find(pattern) != std::string::npos) {
-        LogInfo("CRL is in PEM format.");
+        WrtLogI("CRL is in PEM format.");
         return true;
     }
-    LogInfo("CRL is in DER format.");
+    WrtLogI("CRL is in DER format.");
     return false;
 }
 
@@ -375,11 +362,10 @@ X509_CRL *CRLImpl::convertToInternal(const CRLDataPtr &crl) const
     X509_CRL *ret = NULL;
     if (isPEMFormat(crl)) {
         BIO *bmem = BIO_new_mem_buf(crl->buffer, crl->length);
-        if (!bmem) {
-            LogError("Failed to allocate memory in BIO");
-            ThrowMsg(CRLException::InternalError,
-                     "Failed to allocate memory in BIO");
-        }
+        if (!bmem)
+            VcoreThrowMsg(CRLException::InternalError,
+                          "Failed to allocate memory in BIO");
+
         ret = PEM_read_bio_X509_CRL(bmem, NULL, NULL, NULL);
         BIO_free_all(bmem);
     } else {
@@ -389,11 +375,10 @@ X509_CRL *CRLImpl::convertToInternal(const CRLDataPtr &crl) const
             reinterpret_cast<unsigned char*>(crl->buffer);
         ret = d2i_X509_CRL(NULL, &buffer, crl->length);
     }
-    if (!ret) {
-        LogError("Failed to convert to internal structure");
-        ThrowMsg(CRLException::InternalError,
-                 "Failed to convert to internal structure");
-    }
+
+    if (!ret)
+        VcoreThrowMsg(CRLException::InternalError,
+                      "Failed to convert to internal structure");
     return ret;
 }
 
@@ -401,9 +386,9 @@ X509_STORE_CTX *CRLImpl::createContext(const CertificatePtr &argCert)
 {
     X509_STORE_CTX *ctx;
     ctx = X509_STORE_CTX_new();
-    if (!ctx) {
-        ThrowMsg(CRLException::StorageError, "Failed to create new context.");
-    }
+    if (!ctx)
+        VcoreThrowMsg(CRLException::StorageError, "Failed to create new ctx");
+
     X509_STORE_CTX_init(ctx, m_store, argCert->getX509(), NULL);
     return ctx;
 }
@@ -421,7 +406,7 @@ CRLImpl::CRLDataPtr CRLImpl::downloadCRL(const std::string &uri)
                         &cpath,
                         &use_ssl))
     {
-        LogWarning("Error in OCSP_parse_url");
+        WrtLogW("Error in OCSP_parse_url");
         return CRLDataPtr();
     }
 
@@ -440,7 +425,7 @@ CRLImpl::CRLDataPtr CRLImpl::downloadCRL(const std::string &uri)
     message.setHeader("Host", host);
 
     if (SoupMessageSendSync::REQUEST_STATUS_OK != message.sendSync()) {
-        LogWarning("Error in sending network request.");
+        WrtLogW("Error in sending network request.");
         return CRLDataPtr();
     }
 
@@ -453,22 +438,21 @@ CRLImpl::CRLDataPtr CRLImpl::getCRL(const std::string &uri) const
     CRLCachedData cachedCrl;
     cachedCrl.distribution_point = uri;
     if (!(m_crlCache->getCRLResponse(&cachedCrl))) {
-        LogInfo("CRL not present in database. URI: " << uri);
+        WrtLogI("CRL not present in database. URI: %s", uri.c_str());
         return CRLDataPtr();
     }
 
     std::string body = cachedCrl.crl_body;
 
-    LogInfo("CRL found in database.");
+    WrtLogI("CRL found in database.");
     //TODO: remove when ORM::blob available
     //Encode buffer to base64 format to store in database
 
     Base64Decoder decoder;
     decoder.append(body);
-    if (!decoder.finalize()) {
-        LogError("Failed to decode base64 format.");
-        ThrowMsg(CRLException::StorageError, "Failed to decode base64 format.");
-    }
+    if (!decoder.finalize())
+        VcoreThrowMsg(CRLException::StorageError,
+                      "Failed to decode base64 format.");
     std::string crlBody = decoder.get();
 
     std::unique_ptr<char[]> bodyBuffer(new char[crlBody.length()]);
@@ -482,9 +466,9 @@ void CRLImpl::updateCRL(const CRLDataPtr &crl)
     //TODO: remove when ORM::blob available
     //Encode buffer to base64 format to store in database
     Base64Encoder encoder;
-    if (!crl || !crl->buffer) {
-        ThrowMsg(CRLException::InternalError, "CRL buffer is empty");
-    }
+    if (!crl || !crl->buffer)
+        VcoreThrowMsg(CRLException::InternalError, "CRL buffer is empty");
+
     encoder.append(std::string(crl->buffer, crl->length));
     encoder.finalize();
     std::string b64CRLBody = encoder.get();

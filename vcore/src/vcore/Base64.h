@@ -17,23 +17,20 @@
 #define _BASE64_H_
 
 #include <string>
-#include <dpl/noncopyable.h>
-#include <dpl/exception.h>
+#include <vcore/exception.h>
 
 struct bio_st;
 typedef bio_st BIO;
 
 namespace ValidationCore {
-class Base64Encoder : public DPL::Noncopyable
-{
-  public:
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, InternalError)
-        DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
-        DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
+class Base64Encoder {
+public:
+    class Exception {
+    public:
+        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
     };
     Base64Encoder();
     void append(const std::string &data);
@@ -42,22 +39,23 @@ class Base64Encoder : public DPL::Noncopyable
     void reset();
     ~Base64Encoder();
 
-  private:
+private:
+    Base64Encoder(const Base64Encoder &);
+    const Base64Encoder &operator=(const Base64Encoder &);
+
     BIO *m_b64;
     BIO *m_bmem;
     bool m_finalized;
 };
 
-class Base64Decoder : public DPL::Noncopyable
-{
-  public:
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, InternalError)
-        DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
-        DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
+class Base64Decoder {
+public:
+    class Exception {
+    public:
+        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
     };
     Base64Decoder();
     void append(const std::string &data);
@@ -69,11 +67,12 @@ class Base64Decoder : public DPL::Noncopyable
     bool finalize();
     std::string get() const;
     void reset();
-    ~Base64Decoder()
-    {
-    }
+    ~Base64Decoder() {}
 
-  private:
+private:
+    Base64Decoder(const Base64Decoder &);
+    const Base64Decoder &operator=(const Base64Decoder &);
+
     std::string m_input;
     std::string m_output;
     bool m_finalized;

@@ -25,8 +25,6 @@
 
 #include <ctime>
 
-#include <dpl/noncopyable.h>
-
 #include <vcore/Certificate.h>
 #include <vcore/CertificateCollection.h>
 #include <vcore/VerificationStatus.h>
@@ -35,9 +33,12 @@ namespace ValidationCore {
 
 class OCSPImpl;
 
-class OCSP : DPL::Noncopyable
-{
+class OCSP {
 public:
+
+    OCSP(const OCSP &) = delete;
+    const OCSP &operator=(const OCSP &) = delete;
+
     OCSP();
 
     VerificationStatus checkEndEntity(const CertificateCollection &certList);
@@ -82,6 +83,7 @@ public:
     virtual ~OCSP();
 private:
     OCSPImpl *m_impl;
+
 };
 
 } // namespace ValidationCore

@@ -24,8 +24,9 @@
 
 #include <list>
 #include <string>
+#include <map>
 
-#include <dpl/exception.h>
+#include <vcore/exception.h>
 
 #include <vcore/Certificate.h>
 
@@ -37,14 +38,12 @@ namespace ValidationCore {
  * It could check if collection creates certificate chain.
  */
 
-class CertificateCollection
-{
-  public:
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, WrongUsage)
+class CertificateCollection {
+public:
+    class Exception {
+    public:
+        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongUsage);
     };
 
     CertificateCollection();
@@ -152,7 +151,7 @@ class CertificateCollection
      */
     CertificatePtr back() const;
 
-  protected:
+protected:
     void sortCollection(void);
 
     enum CollectionStatus

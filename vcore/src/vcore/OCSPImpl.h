@@ -36,9 +36,6 @@
 #include <openssl/ocsp.h>
 #include <libsoup/soup.h>
 
-#include <dpl/assert.h>
-#include <dpl/exception.h>
-
 #include <vcore/scoped_gpointer.h>
 #include <vcore/OCSPCertMgrUtil.h>
 #include <vcore/CertificateCollection.h>
@@ -48,6 +45,7 @@
 #include <vcore/SoupMessageSendBase.h>
 #include <vcore/SoupMessageSendSync.h>
 #include <vcore/TimeConversion.h>
+#include <vcore/exception.h>
 /*
  * The WRT MUST NOT allow installation of widgets with revoked signatures.
  *
@@ -82,13 +80,13 @@
 
 namespace ValidationCore {
 
-class OCSPImpl
-{
-  public:
+class OCSPImpl {
+public:
+    OCSPImpl();
+
     static const char* DEFAULT_RESPONDER_URI_ENV;
 
     VerificationStatus checkEndEntity(const CertificateCollection &certList);
-    OCSPImpl();
 
     /**
      * Sets digest algorithm for certid in ocsp request
@@ -107,28 +105,28 @@ class OCSPImpl
     VerificationStatus validateCertificate(CertificatePtr argCert,
                                            CertificatePtr argIssuer);
 
-    void setDefaultResponder(const char* uri)
-    {
-        Assert(uri);
-        m_strResponderURI = DPL::FromUTF8String(uri);
-    }
+    void setDefaultResponder(const char* uri);
 
-    void setUseDefaultResponder(bool value)
-    {
-        m_bUseDefResponder = value;
-    }
+    void setUseDefaultResponder(bool value);
 
     /**
      * @return time when response will become invalid - for list of
      * certificates, this is the minimum of all validities; value is
      * valid only for not-revoked certificates (non error validation result)
      */
-    time_t getResponseValidity()
-    {
-        return m_responseValidity;
-    }
+    time_t getResponseValidity();
 
-  private:
+private:
+    class Exception {
+    public:
+        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, ConnectionError)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, CertificateRevoked)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, CertificateUnknown)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, VerificationError)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, RetrieveCertFromStoreError)
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, VerificationNotSupport)
+    };
     typedef WRT::ScopedGPointer<SoupSession> ScopedSoupSession;
     typedef WRT::ScopedGPointer<SoupMessage> ScopedSoupMessage;
 
@@ -146,18 +144,6 @@ class OCSPImpl
                      char** responseBuffer,
                      size_t* responseSize);
 
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, ConnectionError)
-        DECLARE_EXCEPTION_TYPE(Base, CertificateRevoked)
-        DECLARE_EXCEPTION_TYPE(Base, CertificateUnknown)
-        DECLARE_EXCEPTION_TYPE(Base, VerificationError)
-        DECLARE_EXCEPTION_TYPE(Base, RetrieveCertFromStoreError)
-        DECLARE_EXCEPTION_TYPE(Base, VerificationNotSupport)
-    };
-
     const EVP_MD* m_pCertIdDigestAlg;
     const EVP_MD* m_pRequestDigestAlg;
 
@@ -165,7 +151,7 @@ class OCSPImpl
 
     SoupWrapper::SoupMessageSendBase::RequestStatus sendOcspRequest(
         OCSP_REQUEST* argRequest,
-        const DPL::String& argUri);
+        const std::string& argUri);
 
 
 
@@ -220,7 +206,7 @@ class OCSPImpl
     time_t m_responseValidity;
     bool m_bUseNonce;
     bool m_bUseDefResponder;
-    DPL::String m_strResponderURI;
+    std::string m_strResponderURI;
     bool m_bSignRequest;
     EVP_PKEY*                       m_pSignKey;
     CertificatePtr m_pSignCert;

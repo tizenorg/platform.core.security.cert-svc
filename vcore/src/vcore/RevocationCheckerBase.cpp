@@ -28,19 +28,17 @@
 
 #include <dpl/scoped_fclose.h>
 
-#include <tzplatform_config.h>
-
 #include "Certificate.h"
 #include "CertificateCollection.h"
 
 namespace {
-const char *DefaultBundlePatch = tzplatform_mkpath(TZ_SYS_ETC, "ssl/certs/ca-certificates.crt");
+const char DefaultBundlePatch[] = "/opt/etc/ssl/certs/ca-certificates.crt";
 } //Anonymous name space
 
 namespace ValidationCore {
 CertificatePtr RevocationCheckerBase::loadPEMFile(const char* fileName)
 {
-    DPL::ScopedFClose fd(fopen(fileName, "rb"));
+    VcoreDPL::ScopedFClose fd(fopen(fileName, "rb"));
 
     // no such file, return NULL
     if (!fd.Get()) {

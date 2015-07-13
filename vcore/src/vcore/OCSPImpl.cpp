@@ -22,7 +22,6 @@
  * @brief       Routines for certificate validation over OCSP
  */
 
-#include <vcore/OCSP.h>
 #include <vcore/OCSPImpl.h>
 
 #include <string.h>
@@ -32,11 +31,11 @@
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
+#include <boost/optional.hpp>
 
-#include <dpl/log/log.h>
+#include <dpl/log/wrt_log.h>
 #include <dpl/assert.h>
 #include <dpl/foreach.h>
-#include <dpl/scoped_array.h>
 #include <dpl/scoped_free.h>
 
 #include <libsoup/soup.h>
@@ -100,21 +99,19 @@ OCSPImpl::OCSPImpl() :
     m_bUseDefResponder(false),
     m_bSignRequest(false),
     m_pSignKey(0)
-{
-}
+{}
 
 SoupWrapper::SoupMessageSendBase::RequestStatus OCSPImpl::sendOcspRequest(
         OCSP_REQUEST* argRequest,
-        const DPL::OptionalString& argUri)
+        const std::string& argUri)
 {
     using namespace SoupWrapper;
     // convert OCSP_REQUEST to memory buffer
-    std::string url = DPL::ToUTF8String(*argUri);
     char* requestBuffer;
     int requestSizeInt;
     if (!convertToBuffer(argRequest, &requestBuffer, &requestSizeInt)) {
-        ThrowMsg(Exception::VerificationError,
-                 "OCSP: failed to convert OCSP_REQUEST to mem buffer");
+        VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
+                      "OCSP: failed to convert OCSP_REQUEST to mem buffer");
     }
 
     Assert(requestSizeInt >= 0);
@@ -127,13 +124,13 @@ SoupWrapper::SoupMessageSendBase::RequestStatus OCSPImpl::sendOcspRequest(
     char *cport = 0,*chost = 0,*cpath = 0;
     int use_ssl = 0;
 
-    if (!OCSP_parse_url(const_cast<char*>(url.c_str()),
+    if (!OCSP_parse_url(const_cast<char*>(argUri.c_str()),
                         &chost,
                         &cport,
                         &cpath,
                         &use_ssl))
     {
-        LogWarning("Error in OCSP_parse_url");
+        WrtLogW("Error in OCSP_parse_url");
         return SoupMessageSendBase::REQUEST_STATUS_CONNECTION_ERROR;
     }
 
@@ -148,7 +145,7 @@ SoupWrapper::SoupMessageSendBase::RequestStatus OCSPImpl::sendOcspRequest(
     free(chost);
     free(cpath);
 
-    m_soupMessage.setHost(url);
+    m_soupMessage.setHost(argUri);
     m_soupMessage.setHeader("Host", host);
     m_soupMessage.setRequest(std::string("application/ocsp-request"),
                              buffer);
@@ -163,9 +160,8 @@ ValidationCore::VerificationStatusSet OCSPImpl::validateCertificateList(
 
     if (certs.size() < 2) {
         // no certificates to verify, just return a error
-        LogWarning("No validation will be proceed. OCSP require at"
-                   " least 2 certificates in chain. Found only " <<
-                   certs.size());
+        WrtLogW("No validation will be proceed. OCSP require at"
+                   " least 2 certificates in chain. Found only %d", certs.size());
         statusSet.add(VERIFICATION_STATUS_ERROR);
         return statusSet;
     }
@@ -173,7 +169,7 @@ ValidationCore::VerificationStatusSet OCSPImpl::validateCertificateList(
 	CertificatePtr root = certs.back();
 	CertStoreId::Set storedSetId = createCertificateIdentifier().find(root);
 	char* ocspUrl = storedSetId.getOcspUrl();
-
+	
 	if (ocspUrl != NULL)
 	{
 		setUseDefaultResponder(true);
@@ -185,10 +181,8 @@ ValidationCore::VerificationStatusSet OCSPImpl::validateCertificateList(
 
     time_t minValidity = 0;
     for (++parent; parent != certs.end(); ++iter, ++parent) {
-        LogDebug("Certificate validation (CN:" <<
-                 (*iter)->getOneLine() << ")");
-        LogDebug("Parent certificate     (CN:" <<
-                 (*parent)->getOneLine() << ")");
+        WrtLogD("Certificate validation (CN:%s)", (*iter)->getOneLine().c_str());
+        WrtLogD("Parent certificate     (CN:%s)", (*parent)->getOneLine().c_str());
         statusSet.add(validateCertificate(*iter, *parent));
         if ((0 == minValidity || minValidity > m_responseValidity) &&
                 m_responseValidity > 0)
@@ -227,20 +221,20 @@ VerificationStatus OCSPImpl::validateCertificate(CertificatePtr argCert,
     Assert(!!argCert);
     Assert(!!argIssuer);
 
-    Try {
-        DPL::OptionalString uri;
+    VcoreTry {
+        std::string uri;
 
         if (!m_bUseDefResponder) {
             uri = argCert->getOCSPURL();
-            if (!uri) {
+            if (uri.empty()) {
                 return VERIFICATION_STATUS_NOT_SUPPORT;
             }
         } else {
             if (m_strResponderURI.empty()) {
-                ThrowMsg(Exception::VerificationError,
-                         "Default responder is not set");
+                VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
+                              "Default responder is not set");
             }
-            LogWarning("Default responder will be used");
+            WrtLogW("Default responder will be used");
 
             uri = m_strResponderURI;
         }
@@ -248,7 +242,7 @@ VerificationStatus OCSPImpl::validateCertificate(CertificatePtr argCert,
         // creates a request
         CreateRequestResult newRequest = createRequest(argCert, argIssuer);
         if (!newRequest.success) {
-            ThrowMsg(Exception::VerificationError, "Request creation failed");
+            VcoreThrowMsg(OCSPImpl::Exception::VerificationError, "Request creation failed");
         }
 
         // SSLSmartContainer <OCSP_CERTID> certIdCont(certId);
@@ -267,8 +261,8 @@ VerificationStatus OCSPImpl::validateCertificate(CertificatePtr argCert,
         OcspResponse response  = convertToResponse();
 
         if (!response.first) {
-            ThrowMsg(OCSPImpl::Exception::VerificationError,
-                     "OCSP: failed to convert mem buffer to OCSP_RESPONSE");
+            VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
+                          "OCSP: failed to convert mem buffer to OCSP_RESPONSE");
         }
 
         SSLSmartContainer <OCSP_RESPONSE> responseCont(response.second);
@@ -277,24 +271,40 @@ VerificationStatus OCSPImpl::validateCertificate(CertificatePtr argCert,
         validateResponse(requestCont,
                          responseCont,
                          newRequest.ocspCertId);
-    } Catch(Exception::ConnectionError) {
-        LogWarning("OCSP: ConnectionError");
+    } VcoreCatch(OCSPImpl::Exception::ConnectionError) {
+        WrtLogW("OCSP: ConnectionError");
         return VERIFICATION_STATUS_CONNECTION_FAILED;
-    } Catch(Exception::CertificateRevoked) {
-        LogWarning("OCSP: Revoked");
+    } VcoreCatch(OCSPImpl::Exception::CertificateRevoked) {
+        WrtLogW("OCSP: Revoked");
         return VERIFICATION_STATUS_REVOKED;
-    } Catch(Exception::CertificateUnknown) {
-        LogWarning("OCSP: Unknown");
+    } VcoreCatch(OCSPImpl::Exception::CertificateUnknown) {
+        WrtLogW("OCSP: Unknown");
         return VERIFICATION_STATUS_UNKNOWN;
-    } Catch(Exception::VerificationError) {
-        LogWarning("OCSP: Verification error");
+    } VcoreCatch(OCSPImpl::Exception::VerificationError) {
+        WrtLogW("OCSP: Verification error");
         return VERIFICATION_STATUS_VERIFICATION_ERROR;
-    } Catch(Exception::Base) {
-        LogWarning("OCSP: Error");
+    } VcoreCatch(OCSPImpl::Exception::Base) {
+        WrtLogW("OCSP: Error");
         return VERIFICATION_STATUS_ERROR;
     }
-    LogWarning("OCSP: Good");
+    WrtLogW("OCSP: Good");
     return VERIFICATION_STATUS_GOOD;
+}
+
+void OCSPImpl::setDefaultResponder(const char *uri)
+{
+    Assert(uri);
+    m_strResponderURI = std::string(uri);
+}
+
+void OCSPImpl::setUseDefaultResponder(bool value)
+{
+    m_bUseDefResponder = value;
+}
+
+time_t OCSPImpl::getResponseValidity()
+{
+    return m_responseValidity;
 }
 
 OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
@@ -303,7 +313,7 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
     OCSP_REQUEST* newRequest = OCSP_REQUEST_new();
 
     if (!newRequest) {
-        LogWarning("OCSP: Failed to create a request");
+        WrtLogW("OCSP: Failed to create a request");
         return CreateRequestResult();
     }
 
@@ -312,14 +322,14 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
     OCSP_CERTID* certId = addSerial(argCert, argIssuer);
 
     if (!certId) {
-        LogWarning("OCSP: Unable to create a serial id");
+        WrtLogW("OCSP: Unable to create a serial id");
         return CreateRequestResult();
     }
     SSLSmartContainer <OCSP_CERTID> certIdCont(certId);
 
     // Inserting certificate ID to request
     if (!OCSP_request_add0_id(requestCont, certIdCont)) {
-        LogWarning("OCSP: Unable to create a certificate id");
+        WrtLogW("OCSP: Unable to create a certificate id");
         return CreateRequestResult();
     }
 
@@ -329,7 +339,7 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
 
     if (m_bSignRequest) {
         if (!m_pSignCert || !m_pSignKey) {
-            LogWarning("OCSP: Unable to sign request if "
+            WrtLogW("OCSP: Unable to sign request if "
                        "SignCert or SignKey was not set");
             return CreateRequestResult();
         }
@@ -341,7 +351,7 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
                                0,
                                0))
         {
-            LogWarning("OCSP: Unable to sign request");
+            WrtLogW("OCSP: Unable to sign request");
             return CreateRequestResult();
         }
     }
@@ -367,7 +377,7 @@ void OCSPImpl::setDigestAlgorithmForCertId(OCSP::DigestAlgorithm alg)
     if (NULL != foundAlg) {
         m_pCertIdDigestAlg = foundAlg;
     } else {
-        LogDebug("Request for unsupported CertId digest algorithm"
+        WrtLogD("Request for unsupported CertId digest algorithm"
                  "ignored!");
     }
 }
@@ -379,7 +389,7 @@ void OCSPImpl::setDigestAlgorithmForRequest(OCSP::DigestAlgorithm alg)
     if (NULL != foundAlg) {
         m_pRequestDigestAlg = foundAlg;
     } else {
-        LogDebug("Request for unsupported OCSP request digest algorithm"
+        WrtLogD("Request for unsupported OCSP request digest algorithm"
                  "ignored!");
     }
 }
@@ -402,24 +412,24 @@ void OCSPImpl::validateResponse(OCSP_REQUEST* argRequest,
 
     if (result != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
         handleInvalidResponse(result);
-        ThrowMsg(Exception::VerificationError, "OCSP_response_status failed");
+        VcoreThrowMsg(OCSPImpl::Exception::VerificationError, "OCSP_response_status failed");
     }
 
     // get response object
     OCSP_BASICRESP* basic = OCSP_response_get1_basic(argResponse);
     if (!basic) {
-        ThrowMsg(Exception::VerificationError,
-                 "OCSP: Unable to get a BASICRESP object.");
+        VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
+                      "OCSP: Unable to get a BASICRESP object.");
     }
 
     SSLSmartContainer <OCSP_BASICRESP> basicRespCont(basic);
     if (m_bUseNonce && OCSP_check_nonce(argRequest, basicRespCont) <= 0) {
-        ThrowMsg(Exception::VerificationError, "OCSP: Invalid nonce");
+        VcoreThrowMsg(OCSPImpl::Exception::VerificationError, "OCSP: Invalid nonce");
     }
 
     if (!verifyResponse(basic)) {
-        ThrowMsg(Exception::VerificationError,
-                 "Unable to verify the OCSP responder's certificate");
+        VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
+                      "Unable to verify the OCSP responder's certificate");
     }
 
     checkRevocationStatus(basicRespCont, argCertId);
@@ -431,7 +441,7 @@ bool OCSPImpl::verifyResponse(OCSP_BASICRESP* basic)
     // verify ocsp response
     int response = OCSP_basic_verify(basic, NULL, m_pTrustedStore, 0);
     if (response <= 0) {
-        LogWarning("OCSP verification failed");
+        WrtLogW("OCSP verification failed");
     }
 
     return response > 0;
@@ -456,8 +466,8 @@ void OCSPImpl::checkRevocationStatus(OCSP_BASICRESP* basic,
                                &thisUpdate,
                                &nextUpdate))
     {
-        ThrowMsg(Exception::VerificationError,
-                 "OCSP: Failed to find certificate status.");
+        VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
+                      "OCSP: Failed to find certificate status.");
     }
 
     if (!OCSP_check_validity(thisUpdate,
@@ -465,27 +475,26 @@ void OCSPImpl::checkRevocationStatus(OCSP_BASICRESP* basic,
                              MaxValidatyPeriodInSeconds,
                              MaxAge))
     {
-        ThrowMsg(Exception::VerificationError,
-                 "OCSP: Failed to check certificate validate.");
+        VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
+                      "OCSP: Failed to check certificate validate.");
     }
 
     if (nextUpdate) {
         asn1GeneralizedTimeToTimeT(nextUpdate,&m_responseValidity);
         time_t now;
         time(&now);
-        LogDebug("Time of next OCSP update got from server: " <<
-                 m_responseValidity);
-        LogDebug("Expires in: " << (m_responseValidity - now));
-        LogDebug("Original: " << nextUpdate->data);
+        WrtLogD("Time of next OCSP update got from server: %d", m_responseValidity);
+        WrtLogD("Expires in: %d", (m_responseValidity - now));
+        WrtLogD("Original: %d", nextUpdate->data);
     }
 
     switch (status) {
     case V_OCSP_CERTSTATUS_GOOD:
         return;
     case V_OCSP_CERTSTATUS_REVOKED:
-        ThrowMsg(Exception::CertificateRevoked, "Certificate is Revoked");
+        VcoreThrowMsg(OCSPImpl::Exception::CertificateRevoked, "Certificate is Revoked");
     case V_OCSP_CERTSTATUS_UNKNOWN:
-        ThrowMsg(Exception::CertificateUnknown, "Certificate is Unknown");
+        VcoreThrowMsg(OCSPImpl::Exception::CertificateUnknown, "Certificate is Unknown");
     default:
         Assert(false && "Invalid status");
     }
@@ -512,7 +521,7 @@ OCSPImpl::OcspResponse OCSPImpl::convertToResponse()
     BIO_free_all(res_mem_bio);
 
     if (!response) {
-        LogWarning("OCSP: Failed to convert OCSP Response to DER format");
+        WrtLogW("OCSP: Failed to convert OCSP Response to DER format");
         return std::make_pair(false, static_cast<OCSP_RESPONSE*>(NULL));
     }
 
@@ -523,23 +532,23 @@ void OCSPImpl::handleInvalidResponse(int result)
 {
     switch (result) {
     case OCSP_RESPONSE_STATUS_MALFORMEDREQUEST:
-        LogWarning("OCSP: Server returns "
+        WrtLogW("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_MALFORMEDREQUEST status");
         break;
     case OCSP_RESPONSE_STATUS_INTERNALERROR:
-        LogWarning("OCSP: Server returns "
+        WrtLogW("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_INTERNALERROR status");
         break;
     case OCSP_RESPONSE_STATUS_TRYLATER:
-        LogWarning("OCSP: Server returns "
+        WrtLogW("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_TRYLATER status");
         break;
     case OCSP_RESPONSE_STATUS_SIGREQUIRED:
-        LogWarning("OCSP: Server returns "
+        WrtLogW("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_SIGREQUIRED status");
         break;
     case OCSP_RESPONSE_STATUS_UNAUTHORIZED:
-        LogWarning("OCSP: Server returns "
+        WrtLogW("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_UNAUTHORIZED status");
         break;
     default:

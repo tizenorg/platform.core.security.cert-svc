@@ -31,7 +31,7 @@
 
 namespace ValidationCore {
 #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-DPL::DB::ThreadDatabaseSupport& ThreadInterface(void);
+VcoreDPL::DB::ThreadDatabaseSupport& ThreadInterface(void);
 #endif
 } // namespace ValidationCore
 

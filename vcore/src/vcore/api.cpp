@@ -46,7 +46,7 @@
 #include <openssl/bio.h>
 
 #include <dpl/foreach.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
@@ -73,10 +73,6 @@
 #define END_CERT        "-----END CERTIFICATE-----"
 #define START_TRUSTED   "-----BEGIN TRUSTED CERTIFICATE-----"
 #define END_TRUSTED     "-----END TRUSTED CERTIFICATE-----"
-
-#ifndef LOG_TAG
-#define LOG_TAG "CERT_SVC"
-#endif
 
 using namespace ValidationCore;
 
@@ -469,7 +465,7 @@ public:
             fieldId = SUBJECT_COMMONNAME;
             break;
         default:
-            WrtLogE("Not implemented!");
+            LogError("Not implemented!");
             return CERTSVC_WRONG_ARGUMENT;
         }
 
@@ -477,16 +473,16 @@ public:
                           cert_svc_cert_context_final);
 
         if (ctx.get() == NULL) {
-            WrtLogW("Error in cert_svc_cert_context_init.");
+            LogWarning("Error in cert_svc_cert_context_init.");
             return CERTSVC_FAIL;
         }
 
-        WrtLogD("Match string: %s", value);
+        LogDebug("Match string : " << value);
         result = cert_svc_search_certificate(ctx.get(), fieldId, const_cast<char*>(value));
-        WrtLogD("Search finished!");
+        LogDebug("Search finished!");
 
         if (CERT_SVC_ERR_NO_ERROR != result) {
-            WrtLogW("Error during certificate search");
+            LogWarning("Error during certificate search");
             return CERTSVC_FAIL;
         }
 
@@ -501,7 +497,7 @@ public:
             ScopedCertCtx ctx2(cert_svc_cert_context_init(),
                                cert_svc_cert_context_final);
             if (ctx2.get() == NULL) {
-                WrtLogW("Error in cert_svc_cert_context_init.");
+                LogWarning("Error in cert_svc_cert_context_init.");
                 return CERTSVC_FAIL;
             }
 
@@ -509,7 +505,7 @@ public:
             if (CERT_SVC_ERR_NO_ERROR !=
                 cert_svc_load_file_to_context(ctx2.get(), fileList->filename))
             {
-                WrtLogW("Error in cert_svc_load_file_to_context");
+                LogWarning("Error in cert_svc_load_file_to_context");
                 return CERTSVC_FAIL;
             }
             int certId = addCert(CertificatePtr(new Certificate(*(ctx2.get()->certBuf))));
@@ -1003,14 +999,14 @@ public:
 		xmlDocPtr doc = xmlParseFile(FINGERPRINT_LIST_PATH);
 		if ((doc == NULL) || (xmlDocGetRootElement(doc) == NULL))
 		{
-			WrtLogE("Failed to prase fingerprint_list.xml");
+			LogError("Failed to prase fingerprint_list.xml");
 			return CERTSVC_IO_ERROR;
 		}
 
 		xmlNodePtr curPtr = xmlFirstElementChild(xmlDocGetRootElement(doc));
 		if(curPtr == NULL)
 		{
-			WrtLogE("Can not find root");
+			LogError("Can not find root");
 			ret = CERTSVC_IO_ERROR;
 			goto out;
 		}
@@ -1020,7 +1016,7 @@ public:
 			xmlAttr* attr = curPtr->properties;
 			if(!attr->children || !attr->children->content)
 			{
-				WrtLogE("Failed to get fingerprints from list");
+				LogError("Failed to get fingerprints from list");
 				ret = CERTSVC_FAIL;
 				goto out;
 			}
@@ -1029,18 +1025,18 @@ public:
 			xmlNodePtr FpPtr = xmlFirstElementChild(curPtr);
 			if(FpPtr == NULL)
 			{
-				WrtLogE("Could not find fingerprint");
+				LogError("Could not find fingerprint");
 				ret = CERTSVC_FAIL;
 				goto out;
 			}
 
-			WrtLogD("Retrieve level : %s", strLevel);
+			LogDebug("Retrieve level : " << strLevel);
 			while(FpPtr)
 			{
 				xmlChar *content = xmlNodeGetContent(FpPtr);
 				if(xmlStrcmp(content, (xmlChar*)fingerprint.c_str()) == 0)
 				{
-					WrtLogD("fingerprint : %s are %s", content, strLevel);
+					LogDebug("fingerprint : " << content << " are " << strLevel);
 					if(!xmlStrcmp(strLevel, xmlPathDomainPlatform))
 					{
 						*visibility = CERTSVC_VISIBILITY_PLATFORM;
@@ -1305,7 +1301,7 @@ out:
 
         result = c_certsvc_pkcs12_load_certificates_from_store(storeType, pfxIdString.privateHandler, &certs, &ncerts);
         if (result != CERTSVC_SUCCESS) {
-            WrtLogE("Unable to load certificates from store.");
+            LogError("Unable to load certificates from store.");
             return result;
         }
 
@@ -1314,7 +1310,7 @@ out:
             Alias.privateLength = strlen(certs[i]);
             result = certsvc_pkcs12_get_certificate_info_from_store(instance, storeType, Alias, &certBuffer, &certLength);
             if (result != CERTSVC_SUCCESS || !certBuffer) {
-                WrtLogE("Failed to get certificate buffer.");
+                LogError("Failed to get certificate buffer.");
                 return CERTSVC_FAIL;
             }
 
@@ -1339,7 +1335,7 @@ out:
             }
 
             if (!trailer) {
-                WrtLogE("Failed the get the certificate.");
+                LogError("Failed the get the certificate.");
                 return CERTSVC_FAIL;
             }
 
@@ -1689,14 +1685,14 @@ int certsvc_pkcs12_dup_evp_pkey(
         &size);
 
     if (result != CERTSVC_SUCCESS) {
-        WrtLogE("Error in certsvc_pkcs12_private_key_dup");
+        LogError("Error in certsvc_pkcs12_private_key_dup");
         return result;
     }
 
     BIO *b = BIO_new(BIO_s_mem());
 
     if ((int)size != BIO_write(b, buffer, size)) {
-        WrtLogE("Error in BIO_write");
+        LogError("Error in BIO_write");
         BIO_free_all(b);
         certsvc_pkcs12_private_key_free(buffer);
         return CERTSVC_FAIL;
@@ -1712,7 +1708,7 @@ int certsvc_pkcs12_dup_evp_pkey(
         return CERTSVC_SUCCESS;
     }
 
-    WrtLogE("Result is null. Openssl REASON code is: %d", ERR_GET_REASON(ERR_peek_last_error()));
+    LogError("Result is null. Openssl REASON code is : " << ERR_GET_REASON(ERR_peek_last_error()));
 
     return CERTSVC_FAIL;
 }
@@ -1891,7 +1887,7 @@ int certsvc_certificate_get_visibility(CertSvcCertificate certificate, int* visi
         return impl(certificate.privateInstance)->getVisibility(certificate, visibility);
     } catch (...)
 	{
-		WrtLogE("exception occur");
+		LogError("exception occur");
 	}
     return CERTSVC_FAIL;
 }
@@ -1933,19 +1929,19 @@ int certsvc_get_certificate(CertSvcInstance instance,
     try {
         result = c_certsvc_pkcs12_get_certificate_buffer_from_store(storeType, gname, &certBuffer, &length);
         if (result != CERTSVC_SUCCESS) {
-            WrtLogE("Failed to get certificate buffer from store.");
+            LogError("Failed to get certificate buffer from store.");
             return result;
         }
 
         pBio = BIO_new(BIO_s_mem());
         if (pBio == NULL) {
-            WrtLogE("Failed to allocate memory.");
+            LogError("Failed to allocate memory.");
             result = CERTSVC_BAD_ALLOC;
         }
 
         length = BIO_write(pBio, (const void*) certBuffer, length);
         if (length < 1) {
-            WrtLogE("Failed to load cert into bio.");
+            LogError("Failed to load cert into bio.");
             result = CERTSVC_BAD_ALLOC;
         }
 
@@ -1960,13 +1956,13 @@ int certsvc_get_certificate(CertSvcInstance instance,
             fileName.append(CERTSVC_PKCS12_STORAGE_DIR);
             fileName.append(gname);
             if (!(fp_write = fopen(fileName.c_str(), "w"))) {
-                WrtLogE("Failed to open the file for writing, [%s].", fileName.c_str());
+                LogError("Failed to open the file for writing, [" << fileName << "].");
                 result = CERTSVC_FAIL;
                 goto error;
             }
 
             if (fwrite(certBuffer, sizeof(char), (size_t)length, fp_write) != (size_t)length) {
-                WrtLogE("Fail to write certificate.");
+                LogError("Fail to write certificate.");
                 result = CERTSVC_FAIL;
                 goto error;
             }
@@ -1974,7 +1970,7 @@ int certsvc_get_certificate(CertSvcInstance instance,
             fclose(fp_write);
             result = certsvc_certificate_new_from_file(instance, fileName.c_str(), certificate);
             if (result != CERTSVC_SUCCESS) {
-                WrtLogE("Failed to construct certificate from buffer.");
+                LogError("Failed to construct certificate from buffer.");
                 goto error;
             }
             unlink(fileName.c_str());
@@ -1996,13 +1992,13 @@ int certsvc_pkcs12_check_alias_exists_in_store(CertSvcInstance instance,
     int *is_unique)
 {
     if (pfxIdString.privateHandler == NULL || pfxIdString.privateLength<=0) {
-        WrtLogE("Invalid input parameter.");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
 
@@ -2015,7 +2011,7 @@ int certsvc_pkcs12_free_certificate_list_loaded_from_store(CertSvcInstance insta
     CertSvcStoreCertList** certList)
 {
     if (*certList == NULL) {
-        WrtLogE("Invalid input parameter.");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
@@ -2032,13 +2028,13 @@ int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
 	int* length)
 {
     if (*certList != NULL) {
-        WrtLogE("Invalid input parameter.");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
 
@@ -2054,13 +2050,13 @@ int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance inst
 	int* length)
 {
     if (*certList != NULL) {
-        WrtLogE("Invalid input parameter.");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
 
@@ -2075,13 +2071,13 @@ int certsvc_pkcs12_get_root_certificate_list_from_store(CertSvcInstance instance
 	int* length)
 {
     if (*certList != NULL) {
-        WrtLogE("Invalid input parameter.");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
 
@@ -2097,13 +2093,13 @@ int certsvc_pkcs12_get_certificate_info_from_store(CertSvcInstance instance,
     size_t* certSize)
 {
     if (*certBuffer != NULL) {
-        WrtLogE("Invalid input parameter.");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
 
@@ -2118,7 +2114,7 @@ int certsvc_pkcs12_delete_certificate_from_store(CertSvcInstance instance,
 {
      try {
          if (!impl(instance)->checkValidStoreType(storeType)) {
-             WrtLogE("Invalid input parameter.");
+             LogError("Invalid input parameter.");
              return CERTSVC_INVALID_STORE_TYPE;
          }
          return impl(instance)->pkcsDeleteCertFromStore(storeType, gname);
@@ -2135,7 +2131,7 @@ int certsvc_pkcs12_import_from_file_to_store(CertSvcInstance instance,
     try {
         if (path.privateHandler != NULL) {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
         return impl(instance)->pkcsImportToStore(storeType, path, password, pfxIdString);
@@ -2152,13 +2148,13 @@ int certsvc_pkcs12_get_alias_name_for_certificate_in_store(CertSvcInstance insta
     char **alias)
 {
     if (gname.privateHandler == NULL || gname.privateLength<=0) {
-        WrtLogE("Invalid input parameter.");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
         return impl(instance)->pkcsGetAliasNameForCertInStore(storeType, gname, alias);
@@ -2174,7 +2170,7 @@ int certsvc_pkcs12_set_certificate_status_to_store(CertSvcInstance instance,
 {
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
         return impl(instance)->pkcsSetCertStatusToStore(storeType, is_root_app, gname, status);
@@ -2190,7 +2186,7 @@ int certsvc_pkcs12_get_certificate_status_from_store(
 {
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
         return impl(instance)->pkcsGetCertStatusFromStore(storeType, gname, status);
@@ -2205,7 +2201,7 @@ int certsvc_pkcs12_get_certificate_from_store(CertSvcInstance instance,
 {
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
         return impl(instance)->getCertFromStore(instance, storeType, gname, certificate);
@@ -2221,7 +2217,7 @@ int certsvc_pkcs12_load_certificate_list_from_store(
 {
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
         return impl(instance)->getPkcsCertificateListFromStore(instance, storeType, pfxIdString, certificateList);
@@ -2238,7 +2234,7 @@ int certsvc_pkcs12_private_key_dup_from_store(
 {
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
-            WrtLogE("Invalid input parameter.");
+            LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
         return impl(instance)->getPkcsPrivateKeyFromStore(storeType, gname, certBuffer, certSize);
@@ -2257,13 +2253,13 @@ int certsvc_pkcs12_dup_evp_pkey_from_store(
 
     int result = certsvc_pkcs12_private_key_dup_from_store(instance, storeType, gname, &buffer, &size);
     if (result != CERTSVC_SUCCESS) {
-        WrtLogE("Error in certsvc_pkcs12_private_key_dup");
+        LogError("Error in certsvc_pkcs12_private_key_dup");
         return result;
     }
 
     BIO *b = BIO_new(BIO_s_mem());
     if ((int)size != BIO_write(b, buffer, size)) {
-         WrtLogE("Error in BIO_write");
+         LogError("Error in BIO_write");
          BIO_free_all(b);
          certsvc_pkcs12_private_key_free(buffer);
          return CERTSVC_FAIL;
@@ -2275,7 +2271,7 @@ int certsvc_pkcs12_dup_evp_pkey_from_store(
     if (*pkey)
         return CERTSVC_SUCCESS;
 
-    WrtLogE("Result is null. Openssl REASON code is: %d", ERR_GET_REASON(ERR_peek_last_error()));
+    LogError("Result is null. Openssl REASON code is : " << ERR_GET_REASON(ERR_peek_last_error()));
     return CERTSVC_FAIL;
 }
 

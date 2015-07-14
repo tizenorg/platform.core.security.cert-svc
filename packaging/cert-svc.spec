@@ -25,6 +25,7 @@ BuildRequires: pkgconfig(libsystemd-daemon)
 BuildRequires: pkgconfig(key-manager)
 BuildRequires: pkgconfig(secure-storage)
 BuildRequires: pkgconfig(libtzplatform-config)
+BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: boost-devel
 %if 0%{?certsvc_feature_ocsp_crl}
 BuildRequires: pkgconfig(vconf)

@@ -22,6 +22,8 @@
 #ifndef DPL_SINGLETON_IMPL_H
 #define DPL_SINGLETON_IMPL_H
 
+#include <dpl/singleton.h>
+
 /*
  * WARNING!
  *
@@ -46,8 +48,8 @@ Class &Singleton<Class>::Instance()
 }
 } // namespace VcoreDPL
 
-#define IMPLEMENT_SINGLETON(Type)                                           \
-    template VcoreDPL::Singleton<Type>&VcoreDPL::Singleton<Type>::InternalInstance();    \
+#define IMPLEMENT_SINGLETON(Type)                                                     \
+    template VcoreDPL::Singleton<Type>&VcoreDPL::Singleton<Type>::InternalInstance(); \
     template Type & VcoreDPL::Singleton<Type>::Instance();                            \
 
 #endif // DPL_SINGLETON_IMPL_H

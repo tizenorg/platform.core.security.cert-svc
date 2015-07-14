@@ -20,7 +20,7 @@
  * @brief       Search for author-signature.xml and signatureN.xml files.
  */
 #include <vcore/SignatureFinder.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #include <dirent.h>
 #include <errno.h>
@@ -60,7 +60,7 @@ SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
      * find a dir
      */
     if ((dp = opendir(m_dir.c_str())) == NULL) {
-        WrtLogE("Error opening directory: %s", m_dir.c_str());
+        LogError("Error opening directory: " << m_dir);
         return ERROR_OPENING_DIR;
     }
 
@@ -89,7 +89,7 @@ SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
     }
 
     if (errno != 0) {
-        WrtLogE("Error in readdir");
+        LogError("Error in readdir");
         closedir(dp);
         return ERROR_READING_DIR;
     }

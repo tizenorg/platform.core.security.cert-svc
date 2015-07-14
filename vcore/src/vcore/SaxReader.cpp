@@ -20,7 +20,7 @@
  * @brief       Simple c++ interface for libxml2.
  */
 #include <dpl/assert.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #include <vcore/SaxReader.h>
 
@@ -47,7 +47,7 @@ void SaxReader::initialize(
 {
     Assert(m_reader == 0 && "Double initialization of SaxReader");
 
-    WrtLogD("SaxReader opening file: %s", filename.c_str());
+    LogDebug("SaxReader opening file: " << filename);
 
     m_reader = xmlNewTextReaderFilename(filename.c_str());
 

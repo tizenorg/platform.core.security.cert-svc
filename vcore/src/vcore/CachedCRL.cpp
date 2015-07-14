@@ -23,8 +23,7 @@
 #include <vcore/CachedCRL.h>
 
 #include <dpl/foreach.h>
-#include <dpl/log/wrt_log.h>
-#include <dpl/foreach.h>
+#include <dpl/log/log.h>
 
 #include <vcore/CRLImpl.h>
 #include <vcore/CertificateCacheDAO.h>
@@ -86,7 +85,7 @@ VerificationStatus CachedCRL::check(const CertificateCollection &certs)
     }
     if (!allValid) {
         // problems with CRL validity
-        WrtLogD("Some CRLs not valid");
+        LogDebug("Some CRLs not valid");
     }
     CRL::RevocationStatus stat;
     Try {
@@ -96,24 +95,22 @@ VerificationStatus CachedCRL::check(const CertificateCollection &certs)
         return VERIFICATION_STATUS_ERROR;
     }
     if (stat.isRevoked) {
-        WrtLogD("Status REVOKED");
+        LogDebug("Status REVOKED");
         return VERIFICATION_STATUS_REVOKED;
     }
-    WrtLogD("Status GOOD");
+    LogDebug("Status GOOD");
     return VERIFICATION_STATUS_GOOD;
 }
 
 VerificationStatus CachedCRL::checkEndEntity(CertificateCollection &certs)
 {
     if (certs.empty()) {
-        WrtLogE("Collection empty. This should never happen.");
-        WrtLogD("Status ERROR");
+        LogError("Collection empty. This should never happen.");
         return VERIFICATION_STATUS_ERROR;
     }
     if (!certs.sort()) {
-        WrtLogE("Could not find End Entity certificate. "
+        LogError("Could not find End Entity certificate. "
                 "Collection does not form chain.");
-        WrtLogD("Status ERROR");
         return VERIFICATION_STATUS_ERROR;
     }
     CRLImpl crl(new CRLCacheDAO);
@@ -131,15 +128,15 @@ VerificationStatus CachedCRL::checkEndEntity(CertificateCollection &certs)
     }
     if (!allValid) {
         // problems with CRL validity
-        WrtLogD("Some CRLs not valid");
+        LogDebug("Some CRLs not valid");
     }
     CertificateList::const_iterator iter = certs.begin();
     CRL::RevocationStatus stat = crl.checkCertificate(*iter);
     if (stat.isRevoked) {
-        WrtLogD("Status REVOKED");
+        LogDebug("Status REVOKED");
         return VERIFICATION_STATUS_REVOKED;
     }
-    WrtLogD("Status GOOD");
+    LogDebug("Status GOOD");
     return VERIFICATION_STATUS_GOOD;
 }
 
@@ -164,7 +161,7 @@ bool CachedCRL::updateCRLForUri(const std::string &uri, bool useExpiredShift)
     }
     if (CertificateCacheDAO::getCRLResponse(&cachedCRL)) {
         if (now < cachedCRL.next_update_time) {
-            WrtLogD("Cached CRL still valid for: %s", uri.c_str());
+            LogDebug("Cached CRL still valid for : " << uri);
             return true;
         }
     }
@@ -172,7 +169,7 @@ bool CachedCRL::updateCRLForUri(const std::string &uri, bool useExpiredShift)
     CRLImpl crl(new CRLCacheDAO);
     CRLImpl::CRLDataPtr list = crl.downloadCRL(uri);
     if (!list) {
-        WrtLogW("Could not retreive CRL from %s", uri.c_str());
+        LogWarning("Could not retreive CRL from " << uri);
         return false;
     }
     crl.updateCRL(list);

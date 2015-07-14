@@ -21,7 +21,7 @@
  */
 #include <stddef.h>
 #include <dpl/exception.h>
-#include <dpl/log/vcore_log.h>
+#include <dpl/log/log.h>
 #include <cstdio>
 
 namespace VcoreDPL {
@@ -31,8 +31,7 @@ void (*Exception::m_terminateHandler)() = NULL;
 
 void LogUnhandledException(const std::string &str)
 {
-    // Logging to dlog
-    VcoreLogD("%s", str.c_str());
+    LogDebug("" << str);
 }
 
 void LogUnhandledException(const std::string &str,
@@ -40,8 +39,9 @@ void LogUnhandledException(const std::string &str,
                            int line,
                            const char *function)
 {
-    // Logging to dlog
-    VcoreLogE("Exception occured on file[%s] line[%d] function[%s] msg[%s]",
-            filename, line, function, str.c_str());
+    LogError("Exception occured on file[" << filename
+        << "] line[" << line
+        << "] function[" << function
+        << "] msg[" << str << "]");
 }
 } // namespace VcoreDPL

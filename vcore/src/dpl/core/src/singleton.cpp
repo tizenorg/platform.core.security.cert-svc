@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 /*
- * @file        generic_event.cpp
+ * @file        singleton.cpp
  * @author      Przemyslaw Dobrowolski (p.dobrowolsk@samsung.com)
  * @version     1.0
  * @brief       This file is the implementation file of singleton

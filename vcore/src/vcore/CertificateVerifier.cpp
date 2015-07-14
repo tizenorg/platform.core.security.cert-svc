@@ -23,7 +23,7 @@
 
 #include <dpl/assert.h>
 #include <dpl/foreach.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 namespace ValidationCore {
 
@@ -35,7 +35,7 @@ CertificateVerifier::CertificateVerifier(bool enableOcsp, bool enableCrl)
 VerificationStatus CertificateVerifier::check(
         CertificateCollection &certCollection) const
 {
-    WrtLogD("== Certificate collection validation start ==");
+    LogDebug("== Certificate collection validation start ==");
     Assert(certCollection.isChain() && "Collection must form chain.");
 
     VerificationStatus statusOcsp;
@@ -52,14 +52,14 @@ VerificationStatus CertificateVerifier::check(
     } else {
         statusCrl = VERIFICATION_STATUS_GOOD;
     }
-    WrtLogD("== Certificate collection validation end ==");
+    LogDebug("== Certificate collection validation end ==");
     return getStatus(statusOcsp, statusCrl);
 }
 
 VerificationStatus CertificateVerifier::obtainOcspStatus(
         const CertificateCollection &chain) const
 {
-    WrtLogD("== Obtain ocsp status ==");
+    LogDebug("== Obtain ocsp status ==");
     CachedOCSP ocsp;
     return ocsp.check(chain);
 }
@@ -67,7 +67,7 @@ VerificationStatus CertificateVerifier::obtainOcspStatus(
 VerificationStatus CertificateVerifier::obtainCrlStatus(
         const CertificateCollection &chain) const
 {
-    WrtLogD("== Obtain crl status ==");
+    LogDebug("== Obtain crl status ==");
     CachedCRL crl;
     return crl.check(chain);
 }
@@ -79,26 +79,26 @@ VerificationStatus CertificateVerifier::getStatus(
     if (ocsp == VERIFICATION_STATUS_REVOKED ||
         crl == VERIFICATION_STATUS_REVOKED)
     {
-        WrtLogD("Return status: REVOKED");
+        LogDebug("Return status: REVOKED");
         return VERIFICATION_STATUS_REVOKED;
     }
 
     if (ocsp == VERIFICATION_STATUS_GOOD) {
-        WrtLogD("Return status: GOOD");
+        LogDebug("Return status: GOOD");
         return VERIFICATION_STATUS_GOOD;
     }
 
     if (ocsp == VERIFICATION_STATUS_UNKNOWN) {
-        WrtLogD("Return status: UNKNOWN");
+        LogDebug("Return status: UNKNOWN");
         return VERIFICATION_STATUS_UNKNOWN;
     }
 
     if (ocsp == VERIFICATION_STATUS_NOT_SUPPORT) {
-        WrtLogD("Return status: NOT_SUPPORT");
+        LogDebug("Return status: NOT_SUPPORT");
         return VERIFICATION_STATUS_GOOD;
     }
 
-    WrtLogD("Return status: ERROR");
+    LogDebug("Return status: ERROR");
     return VERIFICATION_STATUS_ERROR;
 }
 
@@ -125,7 +125,7 @@ VerificationStatus CertificateVerifier::checkEndEntity(
     } else {
         statusCrl.add(VERIFICATION_STATUS_GOOD);
     }
-    WrtLogD("== Certificate collection validateion end ==");
+    LogDebug("== Certificate collection validateion end ==");
     return getStatus(statusOcsp.convertToStatus(), statusCrl.convertToStatus());
 }
 

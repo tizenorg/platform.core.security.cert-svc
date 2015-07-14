@@ -20,7 +20,7 @@
 #include <openssl/evp.h>
 #include <openssl/buffer.h>
 
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #include <dpl/scoped_free.h>
 
@@ -37,7 +37,7 @@ Base64Encoder::Base64Encoder() :
 void Base64Encoder::append(const std::string &data)
 {
     if (m_finalized) {
-        WrtLogW("Already finalized.");
+        LogWarning("Already finalized.");
         VcoreThrowMsg(Exception::AlreadyFinalized, "Already finalized");
     }
 
@@ -50,7 +50,7 @@ void Base64Encoder::append(const std::string &data)
 void Base64Encoder::finalize()
 {
     if (m_finalized) {
-        WrtLogW("Already finalized.");
+        LogWarning("Already finalized.");
         VcoreThrowMsg(Exception::AlreadyFinalized, "Already finalized.");
     }
     m_finalized = true;
@@ -62,13 +62,13 @@ void Base64Encoder::finalize()
 std::string Base64Encoder::get()
 {
     if (!m_finalized) {
-        WrtLogW("Not finalized");
+        LogWarning("Not finalized");
         VcoreThrowMsg(Exception::NotFinalized, "Not finalized");
     }
     BUF_MEM *bptr = 0;
     BIO_get_mem_ptr(m_b64, &bptr);
     if (bptr == 0) {
-        WrtLogE("Bio internal error");
+        LogError("Bio internal error");
         VcoreThrowMsg(Exception::InternalError, "Bio internal error");
     }
 
@@ -85,7 +85,7 @@ void Base64Encoder::reset()
     m_b64 = BIO_new(BIO_f_base64());
     m_bmem = BIO_new(BIO_s_mem());
     if (!m_b64 || !m_bmem) {
-        WrtLogE("Error during allocation memory in BIO");
+        LogError("Error during allocation memory in BIO");
         VcoreThrowMsg(Exception::InternalError,
                  "Error during allocation memory in BIO");
     }
@@ -106,7 +106,7 @@ Base64Decoder::Base64Decoder() :
 void Base64Decoder::append(const std::string &data)
 {
     if (m_finalized) {
-        WrtLogW("Already finalized.");
+        LogWarning("Already finalized.");
         VcoreThrowMsg(Exception::AlreadyFinalized, "Already finalized.");
     }
     m_input.append(data);
@@ -121,7 +121,7 @@ static bool whiteCharacter(char a)
 bool Base64Decoder::finalize()
 {
     if (m_finalized) {
-        WrtLogW("Already finalized.");
+        LogWarning("Already finalized.");
         VcoreThrowMsg(Exception::AlreadyFinalized, "Already finalized.");
     }
 
@@ -140,7 +140,7 @@ bool Base64Decoder::finalize()
         {
             continue;
         }
-        WrtLogE("Base64 input contains illegal chars: %c", m_input[i]);
+        LogError("Base64 input contains illegal chars: " << m_input[i]);
         return false;
     }
 
@@ -150,14 +150,14 @@ bool Base64Decoder::finalize()
     VcoreDPL::ScopedFree<char> buffer(static_cast<char*>(malloc(len)));
 
     if (!buffer) {
-        WrtLogE("Error in malloc.");
+        LogError("Error in malloc.");
         VcoreThrowMsg(Exception::InternalError, "Error in malloc.");
     }
 
     memset(buffer.Get(), 0, len);
     b64 = BIO_new(BIO_f_base64());
     if (!b64) {
-        WrtLogE("Couldn't create BIO object.");
+        LogError("Couldn't create BIO object.");
         VcoreThrowMsg(Exception::InternalError, "Couldn't create BIO object.");
     }
     BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
@@ -168,7 +168,7 @@ bool Base64Decoder::finalize()
 
     if (!bmem) {
         BIO_free(b64);
-        WrtLogE("Internal error in BIO");
+        LogError("Internal error in BIO");
         VcoreThrowMsg(Exception::InternalError, "Internal error in BIO");
     }
 
@@ -176,7 +176,7 @@ bool Base64Decoder::finalize()
 
     if (!bmem) {
         BIO_free(b64);
-        WrtLogE("Internal error in BIO");
+        LogError("Internal error in BIO");
         VcoreThrowMsg(Exception::InternalError, "Internal error in BIO");
     }
 
@@ -198,7 +198,7 @@ bool Base64Decoder::finalize()
 std::string Base64Decoder::get() const
 {
     if (!m_finalized) {
-        WrtLogW("Not finalized.");
+        LogWarning("Not finalized.");
         VcoreThrowMsg(Exception::NotFinalized, "Not finalized");
     }
     return m_output;

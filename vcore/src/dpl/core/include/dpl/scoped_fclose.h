@@ -26,9 +26,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <string>
-#include <dpl/log/vcore_log.h>
 #include <dpl/scoped_resource.h>
-#include <dpl/errno_string.h>
 
 namespace VcoreDPL {
 struct ScopedFClosePolicy
@@ -42,17 +40,12 @@ struct ScopedFClosePolicy
     {
         if (file != NULL) {
             // Try to flush first
-            if (TEMP_FAILURE_RETRY(fflush(file)) != 0) {
-                std::string errString = GetErrnoString();
-                VcoreLogD("Failed to fflush scoped fclose error: %s",
-                    errString.c_str());
-            }
+            if (TEMP_FAILURE_RETRY(fflush(file)) != 0)
+                return;
 
             // fclose cannot be retried, try to close once
-            if (fclose(file) != 0) {
-                std::string errString = GetErrnoString();
-                VcoreLogD("Failed scoped fclose error: %s", errString.c_str());
-            }
+            if (fclose(file) != 0)
+                return;
         }
     }
 };

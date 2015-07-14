@@ -25,7 +25,7 @@
 #include <dpl/char_traits.h>
 #include <dpl/errno_string.h>
 #include <dpl/exception.h>
-#include <dpl/log/vcore_log.h>
+#include <dpl/log/log.h>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -198,7 +198,7 @@ static UChar *ConvertToICU(const String &inputString)
         error == U_BUFFER_OVERFLOW_ERROR)
     {
         // What buffer size is ok ?
-        VcoreLogD("ICU: Output buffer size: %i", size);
+        LogDebug("ICU: Output buffer size: " << size);
     } else {
         ThrowMsg(StringException::ICUInvalidCharacterFound,
                  "ICU: Failed to retrieve output string size. Error: "

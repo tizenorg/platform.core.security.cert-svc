@@ -22,13 +22,15 @@
 #ifndef DPL_LOG_H
 #define DPL_LOG_H
 
-#include <dpl/singleton.h>
-#include <dpl/noncopyable.h>
-#include <dpl/log/abstract_log_provider.h>
-#include <dpl/log/dlog_log_provider.h>
-#include <dpl/log/old_style_log_provider.h>
 #include <sstream>
 #include <list>
+#include <unordered_map>
+#include <string>
+
+#include <dpl/singleton.h>
+#include <dpl/noncopyable.h>
+
+#include <dpl/log/abstract_log_provider.h>
 
 namespace VcoreDPL {
 namespace Log {
@@ -38,62 +40,20 @@ namespace Log {
  * To switch logs into old style, export
  * DPL_USE_OLD_STYLE_LOGS before application start
  */
-class LogSystem :
-    private Noncopyable
+class LogSystem : private Noncopyable
 {
-  private:
-    typedef std::list<AbstractLogProvider *> AbstractLogProviderPtrList;
-    AbstractLogProviderPtrList m_providers;
-
-    DLOGLogProvider *m_dlogProvider;
-    OldStyleLogProvider *m_oldStyleProvider;
-
-    bool m_isLoggingEnabled;
-
-  public:
-    bool IsLoggingEnabled() const;
+public:
     LogSystem();
     virtual ~LogSystem();
 
-    /**
-     * Log debug message
-     */
-    void Debug(const char *message,
-               const char *filename,
-               int line,
-               const char *function);
+    AbstractLogProvider::LogLevel GetLogLevel() const { return m_level; }
 
-    /**
-     * Log info message
-     */
-    void Info(const char *message,
-              const char *filename,
-              int line,
-              const char *function);
+    void Log(AbstractLogProvider::LogLevel level,
+             const char *message,
+             const char *filename,
+             int line,
+             const char *function) const;
 
-    /**
-     * Log warning message
-     */
-    void Warning(const char *message,
-                 const char *filename,
-                 int line,
-                 const char *function);
-
-    /**
-     * Log error message
-     */
-    void Error(const char *message,
-               const char *filename,
-               int line,
-               const char *function);
-
-    /**
-     * Log pedantic message
-     */
-    void Pedantic(const char *message,
-                  const char *filename,
-                  int line,
-                  const char *function);
 
     /**
      * Set default's DLOG provider Tag
@@ -111,6 +71,32 @@ class LogSystem :
      * Remove abstract provider from providers list
      */
     void RemoveProvider(AbstractLogProvider *provider);
+
+    /**
+     * Selects given provider by name (overwrites environment setting)
+     *
+     * Throws std::out_of_range exception if not found.
+     */
+    void SelectProvider(const std::string& name);
+
+    /**
+     * Sets log level (overwrites environment settings)
+     */
+    void SetLogLevel(const char* level);
+
+private:
+    void RemoveProviders();
+
+    typedef std::list<AbstractLogProvider *> AbstractLogProviderPtrList;
+    AbstractLogProviderPtrList m_providers;
+    AbstractLogProvider::LogLevel m_level;
+
+    typedef AbstractLogProvider *(*ProviderFn)();
+    /*
+     * It cannot be global as it is used in library constructor and we can't be sure which
+     * constructor is called first: library's or new_provider's.
+     */
+    std::unordered_map<std::string, ProviderFn> m_providerCtor;
 };
 
 /*
@@ -135,37 +121,42 @@ typedef Singleton<LogSystem> LogSystemSingleton;
 }
 } // namespace VcoreDPL
 
-//
-// Log support
-//
-//
 
-#ifdef DPL_LOGS_ENABLED
-    #define DPL_MACRO_FOR_LOGGING(message, function)                           \
-    do                                                                     \
-    {                                                                      \
-        if (VcoreDPL::Log::LogSystemSingleton::Instance().IsLoggingEnabled())   \
-        {                                                                  \
-            std::ostringstream platformLog;                                \
-            platformLog << message;                                        \
-            VcoreDPL::Log::LogSystemSingleton::Instance().function(             \
-                platformLog.str().c_str(),                                 \
-                __FILE__, __LINE__, __FUNCTION__);                         \
-        }                                                                  \
-    } while (0)
-#else
 /* avoid warnings about unused variables */
-    #define DPL_MACRO_FOR_LOGGING(message, function)                           \
-    do {                                                                   \
+#define DPL_MACRO_DUMMY_LOGGING(message, level)                                 \
+    do {                                                                        \
         VcoreDPL::Log::NullStream ns;                                           \
-        ns << message;                                                     \
+        ns << message;                                                          \
     } while (0)
-#endif
 
-#define  LogDebug(message) DPL_MACRO_FOR_LOGGING(message, Debug)
-#define  LogInfo(message) DPL_MACRO_FOR_LOGGING(message, Info)
-#define  LogWarning(message) DPL_MACRO_FOR_LOGGING(message, Warning)
-#define  LogError(message) DPL_MACRO_FOR_LOGGING(message, Error)
-#define  LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, Pedantic)
+#define DPL_MACRO_FOR_LOGGING(message, level)                                   \
+do                                                                              \
+{                                                                               \
+    if (level > VcoreDPL::Log::AbstractLogProvider::LogLevel::None &&           \
+        VcoreDPL::Log::LogSystemSingleton::Instance().GetLogLevel() >= level)   \
+    {                                                                           \
+        std::ostringstream platformLog;                                         \
+        platformLog << message;                                                 \
+        VcoreDPL::Log::LogSystemSingleton::Instance().Log(level,                \
+                                                     platformLog.str().c_str(), \
+                                                     __FILE__,                  \
+                                                     __LINE__,                  \
+                                                     __FUNCTION__);             \
+    }                                                                           \
+} while (0)
+
+#define  LogError(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Error)
+
+#ifdef BUILD_TYPE_DEBUG
+    #define LogDebug(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
+    #define LogInfo(message)     DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Info)
+    #define LogWarning(message)  DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Warning)
+    #define LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
+#else
+    #define LogDebug(message)    DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
+    #define LogInfo(message)     DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Info)
+    #define LogWarning(message)  DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Warning)
+    #define LogPedantic(message) DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
+#endif // BUILD_TYPE_DEBUG
 
 #endif // DPL_LOG_H

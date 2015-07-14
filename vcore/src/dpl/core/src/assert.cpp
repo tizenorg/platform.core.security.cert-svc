@@ -25,7 +25,7 @@
 #include <dpl/assert.h>
 #include <dpl/colors.h>
 #include <dpl/exception.h>
-#include <dpl/log/vcore_log.h>
+#include <dpl/log/log.h>
 
 namespace VcoreDPL {
 void AssertProc(const char *condition,
@@ -34,11 +34,11 @@ void AssertProc(const char *condition,
                 const char *function)
 {
 
-#define INTERNAL_LOG(message)                  \
-do {                                           \
-    std::ostringstream platformLog;            \
-    platformLog << message;                    \
-    VcoreLogD("%s", platformLog.str().c_str());  \
+#define INTERNAL_LOG(message)          \
+do {                                   \
+    std::ostringstream platformLog;    \
+    platformLog << message;            \
+    LogDebug("" << platformLog.str()); \
 } while (0)
 
     // Try to log failed assertion to log system

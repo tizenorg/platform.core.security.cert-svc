@@ -20,39 +20,56 @@
  * @brief       This file is the implementation file of DLOG log provider
  */
 #include <stddef.h>
-#include <dpl/log/dlog_log_provider.h>
 #include <cstring>
 #include <sstream>
+#include <map>
+#include <stdexcept>
+
 #include <dlog.h>
 
-#ifdef SECURE_LOG
-    #define INTERNAL_DLP_LOG_ SECURE_LOG
-#else
-    #define INTERNAL_DLP_LOG_ LOG
-#endif
-
-/*
- * The __extension__ keyword in the following define is required because
- * macros used here from dlog.h use non-standard extension that cause
- * gcc to show unwanted warnings when compiling with -pedantic switch.
- */
-#define INTERNAL_DLP_LOG __extension__ INTERNAL_DLP_LOG_
+#include <dpl/log/dlog_log_provider.h>
 
 namespace VcoreDPL {
 namespace Log {
-std::string DLOGLogProvider::FormatMessage(const char *message,
-                                           const char *filename,
-                                           int line,
-                                           const char *function)
+
+namespace {
+typedef void (*dlogMacro)(const char *, const char *);
+
+void error(const char *tag, const char *msg)
 {
-    std::ostringstream val;
-
-    val << std::string("[") <<
-    LocateSourceFileName(filename) << std::string(":") << line <<
-    std::string("] ") << function << std::string("(): ") << message;
-
-    return val.str();
+    SLOG(LOG_ERROR, tag, "%s", msg);
 }
+
+void warning(const char *tag, const char *msg)
+{
+    SLOG(LOG_WARN, tag, "%s", msg);
+}
+
+void info(const char *tag, const char *msg)
+{
+    SLOG(LOG_INFO, tag, "%s", msg);
+}
+
+void debug(const char *tag, const char *msg)
+{
+    SLOG(LOG_DEBUG, tag, "%s", msg);
+}
+
+void pedantic(const char *tag, const char *msg)
+{
+    SLOG(LOG_VERBOSE, tag, "%s", msg);
+}
+
+std::map<AbstractLogProvider::LogLevel, dlogMacro> dlogMacros = {
+        // [](const char* tag, const char* msg) { SLOG(LOG_ERROR, tag, "%s", msg); } won't compile
+        { AbstractLogProvider::LogLevel::Error,     error },
+        { AbstractLogProvider::LogLevel::Warning,   warning },
+        { AbstractLogProvider::LogLevel::Info,      info },
+        { AbstractLogProvider::LogLevel::Debug,     debug},
+        { AbstractLogProvider::LogLevel::Pedantic,  pedantic}
+};
+
+} // namespace anonymous
 
 DLOGLogProvider::DLOGLogProvider()
 {}
@@ -62,56 +79,28 @@ DLOGLogProvider::~DLOGLogProvider()
 
 void DLOGLogProvider::SetTag(const char *tag)
 {
-    m_tag.Reset(strdup(tag));
+    size_t size = strlen(tag)+1;
+    char *buff = new (std::nothrow) char[size];
+    if (buff)
+        memcpy(buff, tag, size);
+    m_tag.reset(buff);
 }
 
-void DLOGLogProvider::Debug(const char *message,
-                            const char *filename,
-                            int line,
-                            const char *function)
+void DLOGLogProvider::Log(AbstractLogProvider::LogLevel level,
+                          const char *message,
+                          const char *filename,
+                          int line,
+                          const char *function) const
 {
-    INTERNAL_DLP_LOG(LOG_DEBUG, m_tag.Get(), "%s",
-        FormatMessage(message, filename, line, function).c_str());
-}
+    std::ostringstream val;
+    val << std::string("[") << LocateSourceFileName(filename) << std::string(":") << line <<
+           std::string("] ") << function << std::string("(): ") << message;
 
-void DLOGLogProvider::Info(const char *message,
-                           const char *filename,
-                           int line,
-                           const char *function)
-{
-    INTERNAL_DLP_LOG(LOG_INFO, m_tag.Get(), "%s",
-        FormatMessage(message, filename, line, function).c_str());
-}
-
-void DLOGLogProvider::Warning(const char *message,
-                              const char *filename,
-                              int line,
-                              const char *function)
-{
-    INTERNAL_DLP_LOG(LOG_WARN, m_tag.Get(), "%s",
-        FormatMessage(message, filename, line, function).c_str());
-}
-
-void DLOGLogProvider::Error(const char *message,
-                            const char *filename,
-                            int line,
-                            const char *function)
-{
-    INTERNAL_DLP_LOG(LOG_ERROR, m_tag.Get(), "%s",
-        FormatMessage(message, filename, line, function).c_str());
-}
-
-void DLOGLogProvider::Pedantic(const char *message,
-                               const char *filename,
-                               int line,
-                               const char *function)
-{
-    INTERNAL_DLP_LOG(LOG_DEBUG, "DPL", "%s",
-        FormatMessage(message, filename, line, function).c_str());
+    try {
+        dlogMacros.at(level)(m_tag.get(), val.str().c_str());
+    } catch (const std::out_of_range&) {
+        SLOG(LOG_ERROR, m_tag.get(), "Unsupported log level: %d", level);
+    }
 }
 }
 } // namespace VcoreDPL
-
-#undef INTERNAL_DLP_LOG
-#undef INTERNAL_DLP_LOG_
-

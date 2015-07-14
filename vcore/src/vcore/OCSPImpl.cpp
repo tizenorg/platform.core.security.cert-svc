@@ -33,7 +33,7 @@
 #include <openssl/x509v3.h>
 #include <boost/optional.hpp>
 
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 #include <dpl/assert.h>
 #include <dpl/foreach.h>
 #include <dpl/scoped_free.h>
@@ -130,7 +130,7 @@ SoupWrapper::SoupMessageSendBase::RequestStatus OCSPImpl::sendOcspRequest(
                         &cpath,
                         &use_ssl))
     {
-        WrtLogW("Error in OCSP_parse_url");
+        LogWarning("Error in OCSP_parse_url");
         return SoupMessageSendBase::REQUEST_STATUS_CONNECTION_ERROR;
     }
 
@@ -160,8 +160,8 @@ ValidationCore::VerificationStatusSet OCSPImpl::validateCertificateList(
 
     if (certs.size() < 2) {
         // no certificates to verify, just return a error
-        WrtLogW("No validation will be proceed. OCSP require at"
-                   " least 2 certificates in chain. Found only %d", certs.size());
+        LogWarning("No validation will be proceed. OCSP require at"
+                   " least 2 certificates in chain. Found only " << certs.size());
         statusSet.add(VERIFICATION_STATUS_ERROR);
         return statusSet;
     }
@@ -181,8 +181,8 @@ ValidationCore::VerificationStatusSet OCSPImpl::validateCertificateList(
 
     time_t minValidity = 0;
     for (++parent; parent != certs.end(); ++iter, ++parent) {
-        WrtLogD("Certificate validation (CN:%s)", (*iter)->getOneLine().c_str());
-        WrtLogD("Parent certificate     (CN:%s)", (*parent)->getOneLine().c_str());
+        LogDebug("Certificate validation (CN:" << (*iter)->getOneLine() << ")");
+        LogDebug("Parent certificate     (CN:" << (*parent)->getOneLine() << ")");
         statusSet.add(validateCertificate(*iter, *parent));
         if ((0 == minValidity || minValidity > m_responseValidity) &&
                 m_responseValidity > 0)
@@ -234,7 +234,7 @@ VerificationStatus OCSPImpl::validateCertificate(CertificatePtr argCert,
                 VcoreThrowMsg(OCSPImpl::Exception::VerificationError,
                               "Default responder is not set");
             }
-            WrtLogW("Default responder will be used");
+            LogWarning("Default responder will be used");
 
             uri = m_strResponderURI;
         }
@@ -272,22 +272,22 @@ VerificationStatus OCSPImpl::validateCertificate(CertificatePtr argCert,
                          responseCont,
                          newRequest.ocspCertId);
     } VcoreCatch(OCSPImpl::Exception::ConnectionError) {
-        WrtLogW("OCSP: ConnectionError");
+        LogWarning("OCSP: ConnectionError");
         return VERIFICATION_STATUS_CONNECTION_FAILED;
     } VcoreCatch(OCSPImpl::Exception::CertificateRevoked) {
-        WrtLogW("OCSP: Revoked");
+        LogWarning("OCSP: Revoked");
         return VERIFICATION_STATUS_REVOKED;
     } VcoreCatch(OCSPImpl::Exception::CertificateUnknown) {
-        WrtLogW("OCSP: Unknown");
+        LogWarning("OCSP: Unknown");
         return VERIFICATION_STATUS_UNKNOWN;
     } VcoreCatch(OCSPImpl::Exception::VerificationError) {
-        WrtLogW("OCSP: Verification error");
+        LogWarning("OCSP: Verification error");
         return VERIFICATION_STATUS_VERIFICATION_ERROR;
     } VcoreCatch(OCSPImpl::Exception::Base) {
-        WrtLogW("OCSP: Error");
+        LogWarning("OCSP: Error");
         return VERIFICATION_STATUS_ERROR;
     }
-    WrtLogW("OCSP: Good");
+    LogWarning("OCSP: Good");
     return VERIFICATION_STATUS_GOOD;
 }
 
@@ -313,7 +313,7 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
     OCSP_REQUEST* newRequest = OCSP_REQUEST_new();
 
     if (!newRequest) {
-        WrtLogW("OCSP: Failed to create a request");
+        LogWarning("OCSP: Failed to create a request");
         return CreateRequestResult();
     }
 
@@ -322,14 +322,14 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
     OCSP_CERTID* certId = addSerial(argCert, argIssuer);
 
     if (!certId) {
-        WrtLogW("OCSP: Unable to create a serial id");
+        LogWarning("OCSP: Unable to create a serial id");
         return CreateRequestResult();
     }
     SSLSmartContainer <OCSP_CERTID> certIdCont(certId);
 
     // Inserting certificate ID to request
     if (!OCSP_request_add0_id(requestCont, certIdCont)) {
-        WrtLogW("OCSP: Unable to create a certificate id");
+        LogWarning("OCSP: Unable to create a certificate id");
         return CreateRequestResult();
     }
 
@@ -339,7 +339,7 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
 
     if (m_bSignRequest) {
         if (!m_pSignCert || !m_pSignKey) {
-            WrtLogW("OCSP: Unable to sign request if "
+            LogWarning("OCSP: Unable to sign request if "
                        "SignCert or SignKey was not set");
             return CreateRequestResult();
         }
@@ -351,7 +351,7 @@ OCSPImpl::CreateRequestResult OCSPImpl::createRequest(CertificatePtr argCert,
                                0,
                                0))
         {
-            WrtLogW("OCSP: Unable to sign request");
+            LogWarning("OCSP: Unable to sign request");
             return CreateRequestResult();
         }
     }
@@ -377,8 +377,7 @@ void OCSPImpl::setDigestAlgorithmForCertId(OCSP::DigestAlgorithm alg)
     if (NULL != foundAlg) {
         m_pCertIdDigestAlg = foundAlg;
     } else {
-        WrtLogD("Request for unsupported CertId digest algorithm"
-                 "ignored!");
+        LogDebug("Request for unsupported CertId digest algorithm ignored!");
     }
 }
 
@@ -389,8 +388,7 @@ void OCSPImpl::setDigestAlgorithmForRequest(OCSP::DigestAlgorithm alg)
     if (NULL != foundAlg) {
         m_pRequestDigestAlg = foundAlg;
     } else {
-        WrtLogD("Request for unsupported OCSP request digest algorithm"
-                 "ignored!");
+        LogDebug("Request for unsupported OCSP request digest algorithm ignored!");
     }
 }
 
@@ -441,7 +439,7 @@ bool OCSPImpl::verifyResponse(OCSP_BASICRESP* basic)
     // verify ocsp response
     int response = OCSP_basic_verify(basic, NULL, m_pTrustedStore, 0);
     if (response <= 0) {
-        WrtLogW("OCSP verification failed");
+        LogWarning("OCSP verification failed");
     }
 
     return response > 0;
@@ -483,9 +481,9 @@ void OCSPImpl::checkRevocationStatus(OCSP_BASICRESP* basic,
         asn1GeneralizedTimeToTimeT(nextUpdate,&m_responseValidity);
         time_t now;
         time(&now);
-        WrtLogD("Time of next OCSP update got from server: %d", m_responseValidity);
-        WrtLogD("Expires in: %d", (m_responseValidity - now));
-        WrtLogD("Original: %d", nextUpdate->data);
+        LogDebug("Time of next OCSP update got from server: " << m_responseValidity);
+        LogDebug("Expires in: " << (m_responseValidity - now));
+        LogDebug("Original: " << nextUpdate->data);
     }
 
     switch (status) {
@@ -521,7 +519,7 @@ OCSPImpl::OcspResponse OCSPImpl::convertToResponse()
     BIO_free_all(res_mem_bio);
 
     if (!response) {
-        WrtLogW("OCSP: Failed to convert OCSP Response to DER format");
+        LogWarning("OCSP: Failed to convert OCSP Response to DER format");
         return std::make_pair(false, static_cast<OCSP_RESPONSE*>(NULL));
     }
 
@@ -532,23 +530,23 @@ void OCSPImpl::handleInvalidResponse(int result)
 {
     switch (result) {
     case OCSP_RESPONSE_STATUS_MALFORMEDREQUEST:
-        WrtLogW("OCSP: Server returns "
+        LogWarning("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_MALFORMEDREQUEST status");
         break;
     case OCSP_RESPONSE_STATUS_INTERNALERROR:
-        WrtLogW("OCSP: Server returns "
+        LogWarning("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_INTERNALERROR status");
         break;
     case OCSP_RESPONSE_STATUS_TRYLATER:
-        WrtLogW("OCSP: Server returns "
+        LogWarning("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_TRYLATER status");
         break;
     case OCSP_RESPONSE_STATUS_SIGREQUIRED:
-        WrtLogW("OCSP: Server returns "
+        LogWarning("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_SIGREQUIRED status");
         break;
     case OCSP_RESPONSE_STATUS_UNAUTHORIZED:
-        WrtLogW("OCSP: Server returns "
+        LogWarning("OCSP: Server returns "
                    "OCSP_RESPONSE_STATUS_UNAUTHORIZED status");
         break;
     default:

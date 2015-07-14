@@ -20,8 +20,16 @@
  * @brief       This file is the implementation file of log system
  */
 #include <stddef.h>
-#include <dpl/log/log.h>
+#include <string.h>
+#include <stdexcept>
+#include <cassert>
+
 #include <dpl/singleton_impl.h>
+#include <dpl/log/old_style_log_provider.h>
+#include <dpl/log/dlog_log_provider.h>
+#include <dpl/log/journal_log_provider.h>
+
+#include <dpl/log/log.h>
 
 IMPLEMENT_SINGLETON(VcoreDPL::Log::LogSystem)
 
@@ -29,119 +37,44 @@ namespace VcoreDPL {
 namespace Log {
 namespace // anonymous
 {
-const char *OLD_STYLE_LOGS_ENV_NAME = "DPL_USE_OLD_STYLE_LOGS";
-const char *OLD_STYLE_PEDANTIC_LOGS_ENV_NAME =
-    "DPL_USE_OLD_STYLE_PEDANTIC_LOGS";
-const char *OLD_STYLE_LOGS_MASK_ENV_NAME = "DPL_USE_OLD_STYLE_LOGS_MASK";
-const char *DPL_LOG_OFF = "DPL_LOG_OFF";
+const char *const CERTSVC_LOG_LEVEL    = "CERTSVC_LOG_LEVEL";
+const char *const CERTSVC_LOG_PROVIDER = "CERTSVC_LOG_PROVIDER";
+
+const char *const CONSOLE  = "CONSOLE";
+const char *const DLOG     = "DLOG";
+const char *const JOURNALD = "JOURNALD";
 } // namespace anonymous
 
-bool LogSystem::IsLoggingEnabled() const
+LogSystem::LogSystem()
+  : m_providerCtor({
+#ifdef BUILD_TYPE_DEBUG
+        { CONSOLE,  []{ return static_cast<AbstractLogProvider *>(new OldStyleLogProvider()); }},
+#endif
+        { DLOG,     []{ return static_cast<AbstractLogProvider *>(new DLOGLogProvider());     }},
+        { JOURNALD, []{ return static_cast<AbstractLogProvider *>(new JournalLogProvider());  }}
+    })
 {
-    return m_isLoggingEnabled;
-}
+    SetLogLevel(getenv(CERTSVC_LOG_LEVEL));
 
-LogSystem::LogSystem() :
-    m_dlogProvider(NULL),
-    m_oldStyleProvider(NULL),
-    m_isLoggingEnabled(!getenv(DPL_LOG_OFF))
-{
-    bool oldStyleLogs = false;
-    bool oldStyleDebugLogs = true;
-    bool oldStyleInfoLogs = true;
-    bool oldStyleWarningLogs = true;
-    bool oldStyleErrorLogs = true;
-    bool oldStylePedanticLogs = false;
-
-    // Check environment settings about pedantic logs
-    const char *value = getenv(OLD_STYLE_LOGS_ENV_NAME);
-
-    if (value != NULL && !strcmp(value, "1")) {
-        oldStyleLogs = true;
+    AbstractLogProvider *prv = NULL;
+    try {
+        prv = m_providerCtor.at(getenv(CERTSVC_LOG_PROVIDER))();
+    } catch (const std::exception &) {
+        prv = m_providerCtor[JOURNALD]();
     }
 
-    value = getenv(OLD_STYLE_PEDANTIC_LOGS_ENV_NAME);
-
-    if (value != NULL && !strcmp(value, "1")) {
-        oldStylePedanticLogs = true;
-    }
-
-    value = getenv(OLD_STYLE_LOGS_MASK_ENV_NAME);
-
-    if (value != NULL) {
-        size_t len = strlen(value);
-
-        if (len >= 1) {
-            if (value[0] == '0') {
-                oldStyleDebugLogs = false;
-            } else if (value[0] == '1') {
-                oldStyleDebugLogs = true;
-            }
-        }
-
-        if (len >= 2) {
-            if (value[1] == '0') {
-                oldStyleInfoLogs = false;
-            } else if (value[1] == '1') {
-                oldStyleInfoLogs = true;
-            }
-        }
-
-        if (len >= 3) {
-            if (value[2] == '0') {
-                oldStyleWarningLogs = false;
-            } else if (value[2] == '1') {
-                oldStyleWarningLogs = true;
-            }
-        }
-
-        if (len >= 4) {
-            if (value[3] == '0') {
-                oldStyleErrorLogs = false;
-            } else if (value[3] == '1') {
-                oldStyleErrorLogs = true;
-            }
-        }
-    }
-
-    // Setup default DLOG and old style logging
-    if (oldStyleLogs) {
-        // Old style
-        m_oldStyleProvider = new OldStyleLogProvider(oldStyleDebugLogs,
-                                                     oldStyleInfoLogs,
-                                                     oldStyleWarningLogs,
-                                                     oldStyleErrorLogs,
-                                                     oldStylePedanticLogs);
-        AddProvider(m_oldStyleProvider);
-    } else {
-        // DLOG
-        m_dlogProvider = new DLOGLogProvider();
-        AddProvider(m_dlogProvider);
-    }
+    AddProvider(prv);
 }
 
 LogSystem::~LogSystem()
 {
-    // Delete all providers
-    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
-         iterator != m_providers.end();
-         ++iterator)
-    {
-        delete *iterator;
-    }
-
-    m_providers.clear();
-
-    // And even default providers
-    m_dlogProvider = NULL;
-    m_oldStyleProvider = NULL;
+    RemoveProviders();
 }
 
 void LogSystem::SetTag(const char* tag)
 {
-    if (m_dlogProvider != NULL) {
-        m_dlogProvider->SetTag(tag);
-    }
+    for (auto &it : m_providers)
+        it->SetTag(tag);
 }
 
 void LogSystem::AddProvider(AbstractLogProvider *provider)
@@ -154,69 +87,49 @@ void LogSystem::RemoveProvider(AbstractLogProvider *provider)
     m_providers.remove(provider);
 }
 
-void LogSystem::Debug(const char *message,
-                      const char *filename,
-                      int line,
-                      const char *function)
+void LogSystem::SelectProvider(const std::string &name)
 {
-    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
-         iterator != m_providers.end();
-         ++iterator)
-    {
-        (*iterator)->Debug(message, filename, line, function);
-    }
+    ProviderFn& prv = m_providerCtor.at(name);
+
+    RemoveProviders();
+    AddProvider(prv());
 }
 
-void LogSystem::Info(const char *message,
-                     const char *filename,
-                     int line,
-                     const char *function)
+void LogSystem::SetLogLevel(const char *level)
 {
-    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
-         iterator != m_providers.end();
-         ++iterator)
-    {
-        (*iterator)->Info(message, filename, line, function);
+    try {
+        m_level = static_cast<AbstractLogProvider::LogLevel>(std::stoi(level));
+    } catch(const std::exception&) {
+        m_level = AbstractLogProvider::LogLevel::Debug;
     }
+
+    if (m_level < AbstractLogProvider::LogLevel::None)
+        m_level = AbstractLogProvider::LogLevel::None;
+    else if (m_level > AbstractLogProvider::LogLevel::Pedantic)
+        m_level = AbstractLogProvider::LogLevel::Pedantic;
+
+#ifndef BUILD_TYPE_DEBUG
+    if (m_level > AbstractLogProvider::LogLevel::Error)
+        m_level = AbstractLogProvider::LogLevel::Error;
+#endif // BUILD_TYPE_DEBUG
 }
 
-void LogSystem::Warning(const char *message,
-                        const char *filename,
-                        int line,
-                        const char *function)
+void LogSystem::Log(AbstractLogProvider::LogLevel level,
+                    const char *message,
+                    const char *filename,
+                    int line,
+                    const char *function) const
 {
-    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
-         iterator != m_providers.end();
-         ++iterator)
-    {
-        (*iterator)->Warning(message, filename, line, function);
-    }
+    for (const auto &it : m_providers)
+        it->Log(level, message, filename, line, function);
 }
 
-void LogSystem::Error(const char *message,
-                      const char *filename,
-                      int line,
-                      const char *function)
+void LogSystem::RemoveProviders()
 {
-    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
-         iterator != m_providers.end();
-         ++iterator)
-    {
-        (*iterator)->Error(message, filename, line, function);
-    }
-}
+    for (auto &it : m_providers)
+        delete it;
 
-void LogSystem::Pedantic(const char *message,
-                         const char *filename,
-                         int line,
-                         const char *function)
-{
-    for (AbstractLogProviderPtrList::iterator iterator = m_providers.begin();
-         iterator != m_providers.end();
-         ++iterator)
-    {
-        (*iterator)->Pedantic(message, filename, line, function);
-    }
+    m_providers.clear();
 }
 }
 } // namespace VcoreDPL

@@ -20,8 +20,7 @@
  * @brief       This file is the implementation pipe from process
  */
 
-#include<dpl/test/process_pipe.h>
-#include<dpl/log/vcore_log.h>
+#include <dpl/test/process_pipe.h>
 
 namespace VcoreDPL {
 
@@ -60,8 +59,6 @@ void ProcessPipe::Open(const std::string & command)
     // Save new descriptor
     m_file = file;
     m_fd = fileno(m_file);
-
-    VcoreLogD("Opened pipe: %s", fcommand.c_str());
 }
 
 void ProcessPipe::Close()
@@ -76,8 +73,6 @@ void ProcessPipe::Close()
 
     m_fd = -1;
     m_file = NULL;
-
-    VcoreLogD("Closed pipe");
 }
 
 }

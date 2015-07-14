@@ -26,7 +26,7 @@
 
 #include <vconf.h>
 
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 namespace SoupWrapper {
 
@@ -43,10 +43,8 @@ SoupMessageSendBase::RequestStatus SoupMessageSendSync::sendSync()
     std::unique_ptr <SoupURI, std::function<void(SoupURI*)> >
                    proxyURI(soup_uri_new (proxy.get()), soup_uri_free);
 
-    WrtLogD("Proxy ptr: %s Proxy addr: %s", (void*)proxy.get(), proxy.get());
-
     for(int tryCount = 0; tryCount < m_tryCount; ++ tryCount){
-        WrtLogD("Try(%d) to download %s", tryCount, m_host.c_str());
+        LogDebug("Try(" << tryCount << ") to download " << m_host);
 
         ScopedSoupSession session(soup_session_async_new_with_options(
               SOUP_SESSION_ASYNC_CONTEXT,
@@ -62,7 +60,7 @@ SoupMessageSendBase::RequestStatus SoupMessageSendSync::sendSync()
         msg.Reset(createRequest());
 
         if (!msg) {
-            WrtLogE("Unable to send HTTP request.");
+            LogError("Unable to send HTTP request.");
             m_status = STATUS_IDLE;
             return REQUEST_STATUS_CONNECTION_ERROR;
         }
@@ -79,7 +77,7 @@ SoupMessageSendBase::RequestStatus SoupMessageSendSync::sendSync()
             m_status = STATUS_IDLE;
             return REQUEST_STATUS_OK;
         } else {
-            WrtLogW("Soup failed with code [%d] message [%s]", msg->status_code, msg->response_body->data);
+            LogWarning("Soup failed with code [" << msg->status_code << "] message [" << msg->response_body->data << "]");
         }
     }
 

@@ -22,10 +22,6 @@
 #ifndef DPL_SINGLETON_H
 #define DPL_SINGLETON_H
 
-#include <boost/optional.hpp>
-#include <dpl/thread.h>
-#include <dpl/assert.h>
-
 namespace VcoreDPL {
 template<typename Class>
 class Singleton :
@@ -41,8 +37,6 @@ class Singleton :
   private:
     Singleton()
     {}
-
-    typedef boost::optional<Thread *> OptionalThreadPtr;
 
     static Singleton &InternalInstance();
 

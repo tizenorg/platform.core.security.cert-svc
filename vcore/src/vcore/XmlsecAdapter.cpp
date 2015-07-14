@@ -39,7 +39,7 @@
 #include <xmlsec/errors.h>
 
 #include <dpl/assert.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #include <vcore/XmlsecAdapter.h>
 
@@ -78,7 +78,7 @@ void* XmlSec::fileOpenCallback(const char *filename)
 {
     std::string path = s_prefixPath + filename;
 
-   // WrtLogD("Xmlsec opening: %s", path);
+   // LogDebug("Xmlsec opening : " << path);
     return new FileWrapper(xmlFileOpen(path.c_str()),false);
 }
 
@@ -100,7 +100,6 @@ int XmlSec::fileReadCallback(void *context,
 
 int XmlSec::fileCloseCallback(void *context)
 {
-  //WrtLogD("Xmlsec closing:  ");
     FileWrapper *fw = static_cast<FileWrapper*>(context);
     int output = 0;
     if (!(fw->released)) {
@@ -136,11 +135,11 @@ void LogDebugPrint(const char* file, int line, const char* func,
     if(reason != 256)
     {
        fprintf(stderr, "## [validate error]: %s\n", total);
-       WrtLogE(" %s", total);
+       LogError(" " << total);
     }
     else
     {
-       WrtLogD(" %s", total);
+       LogDebug(" " << total);
     }
 }
 
@@ -158,13 +157,13 @@ XmlSec::XmlSec() :
 #endif
 
     if (xmlSecInit() < 0) {
-        WrtLogE("Xmlsec initialization failed.");
+        LogError("Xmlsec initialization failed.");
         ThrowMsg(Exception::InternalError, "Xmlsec initialization failed.");
     }
 
     if (xmlSecCheckVersion() != 1) {
         xmlSecShutdown();
-        WrtLogE("Loaded xmlsec library version is not compatible.");
+        LogError("Loaded xmlsec library version is not compatible.");
         ThrowMsg(Exception::InternalError,
                  "Loaded xmlsec library version is not compatible.");
     }
@@ -172,7 +171,7 @@ XmlSec::XmlSec() :
 #ifdef XMLSEC_CRYPTO_DYNAMIC_LOADING
     if (xmlSecCryptoDLLoadLibrary(BAD_CAST XMLSEC_CRYPTO) < 0) {
         xmlSecShutdown();
-        WrtLogE(
+        LogError(
             "Error: unable to load default xmlsec-crypto library. Make sure "
             "that you have it installed and check shared libraries path "
             "(LD_LIBRARY_PATH) envornment variable.");
@@ -183,14 +182,14 @@ XmlSec::XmlSec() :
 
     if (xmlSecCryptoAppInit(NULL) < 0) {
         xmlSecShutdown();
-        WrtLogE("Crypto initialization failed.");
+        LogError("Crypto initialization failed.");
         ThrowMsg(Exception::InternalError, "Crypto initialization failed.");
     }
 
     if (xmlSecCryptoInit() < 0) {
         xmlSecCryptoAppShutdown();
         xmlSecShutdown();
-        WrtLogE("Xmlsec-crypto initialization failed.");
+        LogError("Xmlsec-crypto initialization failed.");
         ThrowMsg(Exception::InternalError,
                  "Xmlsec-crypto initialization failed.");
     }
@@ -238,7 +237,7 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
     int size, res = -1;
 
     fileExtractPrefix(context);
-    WrtLogD("Prefix path: %s", s_prefixPath.c_str());
+    LogDebug("Prefix path : " << s_prefixPath);
 
     xmlSecIOCleanupCallbacks();
 
@@ -251,7 +250,7 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
     /*   load file */
     doc = xmlParseFile(context->signatureFile.c_str());
     if ((doc == NULL) || (xmlDocGetRootElement(doc) == NULL)) {
-        WrtLogW("Unable to parse file %s", (context->signatureFile).c_str());
+        LogWarning("Unable to parse file " << context->signatureFile);
         goto done;
     }
 
@@ -259,14 +258,14 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
     node = xmlSecFindNode(xmlDocGetRootElement(
                               doc), xmlSecNodeSignature, xmlSecDSigNs);
     if (node == NULL) {
-        WrtLogW("Start node not found in %s", (context->signatureFile).c_str());
+        LogWarning("Start node not found in " << context->signatureFile);
         goto done;
     }
 
     /*   create signature context */
     dsigCtx = xmlSecDSigCtxCreate(mngr);
     if (dsigCtx == NULL) {
-        WrtLogE("Failed to create signature context.");
+        LogError("Failed to create signature context.");
         goto done;
     }
 
@@ -276,14 +275,14 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
     }
 
     if (context->validationTime) {
-        WrtLogD("Setting validation time.");
+        LogDebug("Setting validation time.");
         dsigCtx->keyInfoReadCtx.certsVerificationTime = context->validationTime;
     }
 
     if( m_noHash == true || m_partialHash == true ) {
-        WrtLogD("SignatureEx start >> ");
+        LogDebug("SignatureEx start >> ");
         if( m_pList == NULL ) {
-            WrtLogW("## [validate]: uriList does not exist" );
+            LogWarning("## [validate]: uriList does not exist" );
             fprintf(stderr, "## [validate]: uriList does not exist\n");
             res = xmlSecDSigCtxVerifyEx(dsigCtx, node, 1, NULL);
     } else {
@@ -292,7 +291,7 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
 
         if(m_pList == NULL)
         {
-          WrtLogW("## [validate]: uriList does not exist" );
+          LogWarning("## [validate]: uriList does not exist" );
           fprintf(stderr, "## [validate]: uriList does not exist\n");
           res = -1;
           goto done;
@@ -327,17 +326,17 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
      }
 
      if(res < 0) {
-        WrtLogE("SignatureEx verify error.");
+        LogError("SignatureEx verify error.");
         fprintf(stderr, "## [validate error]: SignatureEx verify error\n");
         res = -1;
         goto done;
      }
     } else {
-       WrtLogD("Signature start >> ");
+       LogDebug("Signature start >> ");
 
        /*  Verify signature */
        if (xmlSecDSigCtxVerify(dsigCtx, node) < 0) {
-         WrtLogE("Signature verify error.");
+         LogError("Signature verify error.");
          fprintf(stderr, "## [validate error]: Signature verify error\n");
          res = -1;
          goto done;
@@ -346,24 +345,24 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
 
     if (dsigCtx->keyInfoReadCtx.flags2 &
      XMLSEC_KEYINFO_ERROR_FLAGS_BROKEN_CHAIN) {
-        WrtLogW("XMLSEC_KEYINFO_FLAGS_ALLOW_BROKEN_CHAIN was set to true!");
-        WrtLogW("Signature contains broken chain!");
+        LogWarning("XMLSEC_KEYINFO_FLAGS_ALLOW_BROKEN_CHAIN was set to true!");
+        LogWarning("Signature contains broken chain!");
         context->errorBrokenChain = true;
     }
 
     /*   print verification result to stdout */
     if (dsigCtx->status == xmlSecDSigStatusSucceeded) {
-        WrtLogD("Signature is OK");
+        LogDebug("Signature is OK");
         res = 0;
     } else {
-        WrtLogD("Signature is INVALID");
+        LogDebug("Signature is INVALID");
         res = -1;
         goto done;
     }
 
     if (dsigCtx->c14nMethod && dsigCtx->c14nMethod->id &&
         dsigCtx->c14nMethod->id->name) {
-       // WrtLogI("Canonicalization method: %s", (reinterpret_cast<const char *>(dsigCtx->c14nMethod->id->name)).c_str());
+       // LogInfo("Canonicalization method: " << (reinterpret_cast<const char *>(dsigCtx->c14nMethod->id->name)).c_str());
     }
 
     size = xmlSecPtrListGetSize(&(dsigCtx->signedInfoReferences));
@@ -379,9 +378,9 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
                     reinterpret_cast<const char *>(dsigRefCtx->digestMethod->id
                                                        ->name);
                 std::string strDigest(pDigest);
-                /*WrtLogI("reference digest method: %s" (reinterpret_cast<const char *>(dsigRefCtx->digestMethod->id->name)).c_str());*/
+                /*LogInfo("reference digest method: " << (reinterpret_cast<const char *>(dsigRefCtx->digestMethod->id->name)).c_str());*/
                 if (strDigest == DIGEST_MD5) {
-                    WrtLogW("MD5 digest method used! Please use sha");
+                    LogWarning("MD5 digest method used! Please use sha");
                     res = -1;
                     break;
                 }
@@ -418,7 +417,7 @@ void XmlSec::loadDERCertificateMemory(XmlSecContext *context,
     int size = i2d_X509(context->certificatePtr->getX509(), &derCertificate);
 
     if (!derCertificate) {
-        WrtLogE("Failed during x509 conversion to der format.");
+        LogError("Failed during x509 conversion to der format.");
         ThrowMsg(Exception::InternalError,
                  "Failed during x509 conversion to der format.");
     }
@@ -429,7 +428,7 @@ void XmlSec::loadDERCertificateMemory(XmlSecContext *context,
                                               xmlSecKeyDataFormatDer,
                                               xmlSecKeyDataTypeTrusted) < 0) {
         OPENSSL_free(derCertificate);
-        WrtLogE("Failed to load der certificate from memory.");
+        LogError("Failed to load der certificate from memory.");
         ThrowMsg(Exception::InternalError,
                  "Failed to load der certificate from memory.");
     }
@@ -444,7 +443,7 @@ void XmlSec::loadPEMCertificateFile(XmlSecContext *context,
                                         context->certificatePath.c_str(),
                                         xmlSecKeyDataFormatPem,
                                         xmlSecKeyDataTypeTrusted) < 0) {
-        WrtLogE("Failed to load PEM certificate from file.");
+        LogError("Failed to load PEM certificate from file.");
         ThrowMsg(Exception::InternalError,
                  "Failed to load PEM certificate from file.");
     }
@@ -459,19 +458,19 @@ XmlSec::Result XmlSec::validate(XmlSecContext *context)
     xmlSecErrorsSetCallback(LogDebugPrint);
 
     if (!m_initialized) {
-        WrtLogE("XmlSec is not initialized.");
+        LogError("XmlSec is not initialized.");
         ThrowMsg(Exception::InternalError, "XmlSec is not initialized");
     }
 
     AutoPtr<xmlSecKeysMngr> mngr(xmlSecKeysMngrCreate());
 
     if (!mngr.get()) {
-        WrtLogE("Failed to create keys manager.");
+        LogError("Failed to create keys manager.");
         ThrowMsg(Exception::InternalError, "Failed to create keys manager.");
     }
 
     if (xmlSecCryptoAppDefaultKeysMngrInit(mngr.get()) < 0) {
-        WrtLogE("Failed to initialize keys manager.");
+        LogError("Failed to initialize keys manager.");
         ThrowMsg(Exception::InternalError, "Failed to initialize keys manager.");
     }
     context->referenceSet.clear();

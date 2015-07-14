@@ -24,7 +24,7 @@
 #include <vcore/Base64.h>
 #include <dpl/binary_queue.h>
 #include <dpl/foreach.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #include <algorithm>
 
@@ -67,7 +67,7 @@ bool CertificateCollection::load(const std::string &buffer)
     base64.reset();
     base64.append(buffer);
     if (!base64.finalize()) {
-        WrtLogW("Error during chain decoding");
+        LogWarning("Error during chain decoding");
         return false;
     }
     std::string binaryData = base64.get();
@@ -92,11 +92,11 @@ bool CertificateCollection::load(const std::string &buffer)
                 rawDERCert.begin(),
                 rawDERCert.end()))));
         } VcoreCatch (Certificate::Exception::Base) {
-            WrtLogW("Error during certificate creation.");
+            LogWarning("Error during certificate creation.");
             return false;
         }
 
-        WrtLogD("Loading certificate. Certificate common name: %s", list.back()->getCommonName().c_str());
+        LogDebug("Loading certificate. Certificate common name: " << list.back()->getCommonName());
     }
     load(list);
     return true;
@@ -199,7 +199,7 @@ void CertificateCollection::sortCollection()
     }
 
     if (!issTransl.empty()) {
-        WrtLogW("Certificates don't form a valid chain.");
+        LogWarning("Certificates don't form a valid chain.");
         m_collectionStatus = COLLECTION_CHAIN_BROKEN;
         return;
     }

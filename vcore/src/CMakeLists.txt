@@ -16,6 +16,7 @@ PKG_CHECK_MODULES(VCORE_DEPS
     icu-uc
     libsoup-2.4
     db-util
+    libsystemd-journal
 
     sqlite3
     vconf
@@ -33,6 +34,7 @@ PKG_CHECK_MODULES(VCORE_DEPS
     icu-uc
     libsoup-2.4
     db-util
+    libsystemd-journal
     )
 ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
 
@@ -90,6 +92,7 @@ SET(VCORE_DPL_LOG_SOURCES
     ${VCORE_DPL_LOG_SRC_DIR}/abstract_log_provider.cpp
     ${VCORE_DPL_LOG_SRC_DIR}/old_style_log_provider.cpp
     ${VCORE_DPL_LOG_SRC_DIR}/dlog_log_provider.cpp
+    ${VCORE_DPL_LOG_SRC_DIR}/journal_log_provider.cpp
     ${VCORE_DPL_LOG_SRC_DIR}/log.cpp
     )
 ########### DPL SOURCES ##########

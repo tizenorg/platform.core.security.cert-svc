@@ -21,7 +21,7 @@
  */
 #include <stddef.h>
 #include <dpl/thread.h>
-#include <dpl/log/vcore_log.h>
+#include <dpl/log/log.h>
 #include <sys/time.h>
 #include <algorithm>
 #include <dpl/assert.h>
@@ -116,7 +116,7 @@ Thread *Thread::GetCurrentThread()
 
 void *Thread::StaticThreadEntry(void *param)
 {
-    VcoreLogD("Entered static thread entry");
+    LogDebug("Entered static thread entry");
 
     // Retrieve context
     Thread *This = static_cast<Thread *>(param);
@@ -126,7 +126,7 @@ void *Thread::StaticThreadEntry(void *param)
     int result = pthread_setspecific(g_threadSpecific.threadSpecific, This);
 
     if (result)
-        VcoreLogE("Failed to set threadSpecific.");
+        LogError("Failed to set threadSpecific.");
 
     // Enter thread proc
     // Do not allow exceptions to hit pthread core
@@ -145,10 +145,10 @@ void *Thread::StaticThreadEntry(void *param)
 
         // Abandon thread
         if (This->m_abandon) {
-            VcoreLogD("Thread was abandoned");
+            LogDebug("Thread was abandoned");
             This->m_thread.detach();
         } else {
-            VcoreLogD("Thread is joinable");
+            LogDebug("Thread is joinable");
         }
     }
 
@@ -157,13 +157,13 @@ void *Thread::StaticThreadEntry(void *param)
 
 int Thread::ThreadEntry()
 {
-    VcoreLogD("Entered default thread entry");
+    LogDebug("Entered default thread entry");
     return Exec();
 }
 
 void Thread::ProcessEvents()
 {
-    VcoreLogD("Processing events");
+    LogDebug("Processing events");
 
     // Steal current event list
     InternalEventList stolenEvents;
@@ -176,7 +176,7 @@ void Thread::ProcessEvents()
     }
 
     // Process event list
-    VcoreLogD("Stolen %u internal events", stolenEvents.size());
+    LogDebug("Stolen " << stolenEvents.size() << " internal events");
 
     for (InternalEventList::iterator iterator = stolenEvents.begin();
          iterator != stolenEvents.end();
@@ -200,7 +200,7 @@ void Thread::ProcessTimedEvents()
         unsigned long currentTimeMiliseconds = GetCurrentTimeMiliseconds();
 
         // Info
-        VcoreLogD("Processing timed events. Time now: %lu ms", currentTimeMiliseconds);
+        LogDebug("Processing timed events. Time now: " << currentTimeMiliseconds << " ms");
 
         // All timed events are sorted chronologically
         // Emit timed out events
@@ -210,9 +210,9 @@ void Thread::ProcessTimedEvents()
                m_timedEventVector.begin()->dueTimeMiliseconds)
         {
             // Info
-            VcoreLogD("Transforming timed event into immediate event. Absolute due time: %lu ms",
+            LogDebug("Transforming timed event into immediate event. Absolute due time: " <<
                     (m_timedEventVector.begin()->registerTimeMiliseconds +
-                     m_timedEventVector.begin()->dueTimeMiliseconds));
+                     m_timedEventVector.begin()->dueTimeMiliseconds) << " ms");
 
             // Emit immediate event
             PushEvent(m_timedEventVector.begin()->event,
@@ -237,7 +237,7 @@ unsigned long Thread::GetCurrentTimeMiliseconds() const
 
 int Thread::Exec()
 {
-    VcoreLogD("Executing thread event processing");
+    LogDebug("Executing thread event processing");
 
     const std::size_t MIN_HANDLE_LIST_SIZE = 4;
 
@@ -303,7 +303,7 @@ int Thread::Exec()
         }
 
         // Info
-        VcoreLogD("Thread loop minimum wait time: %lu ms", minimumWaitTime);
+        LogDebug("Thread loop minimum wait time: " << minimumWaitTime << " ms");
 
         // Do thread waiting
         WaitableHandleIndexList waitableHandleIndexList =
@@ -311,7 +311,7 @@ int Thread::Exec()
 
         if (waitableHandleIndexList.empty()) {
             // Timeout occurred. Process timed events.
-            VcoreLogD("Timed event list elapsed invoker");
+            LogDebug("Timed event list elapsed invoker");
             ProcessTimedEvents();
             continue;
         }
@@ -324,7 +324,7 @@ int Thread::Exec()
         {
             size_t index = *waitableHandleIndexIterator;
 
-            VcoreLogD("Event loop triggered with index: %u", index);
+            LogDebug("Event loop triggered with index: " << index);
 
             switch (index) {
             case 0:
@@ -340,7 +340,7 @@ int Thread::Exec()
                 if (m_directInvoke) {
                     m_directInvoke = false;
 
-                    VcoreLogD("Handling direct invoker");
+                    LogDebug("Handling direct invoker");
 
                     // Update list
                     while (handleList.size() > MIN_HANDLE_LIST_SIZE) {
@@ -363,7 +363,7 @@ int Thread::Exec()
 
             case 2:
                 // Timed event list changed
-                VcoreLogD("Timed event list changed invoker");
+                LogDebug("Timed event list changed invoker");
                 ProcessTimedEvents();
 
                 // Reset timed event invoker
@@ -374,7 +374,7 @@ int Thread::Exec()
 
             case 3:
                 // Waitable handle watch support invoker
-                VcoreLogD("Waitable handle watch invoker event occurred");
+                LogDebug("Waitable handle watch invoker event occurred");
 
                 // First, remove all previous handles
                 while (handleList.size() > MIN_HANDLE_LIST_SIZE) {
@@ -394,14 +394,14 @@ int Thread::Exec()
                 // Handle invoker in waitable watch support
                 WaitableHandleWatchSupport::InvokerFinished();
 
-                VcoreLogD("Waitable handle watch invoker event handled");
+                LogDebug("Waitable handle watch invoker event handled");
 
                 // Done
                 break;
 
             default:
                 // Waitable event watch list
-                VcoreLogD("Waitable handle watch event occurred");
+                LogDebug("Waitable handle watch event occurred");
 
                 // Handle event in waitable handle watch
                 {
@@ -414,7 +414,7 @@ int Thread::Exec()
                 if (m_directInvoke) {
                     m_directInvoke = false;
 
-                    VcoreLogD("Handling direct invoker");
+                    LogDebug("Handling direct invoker");
 
                     // Update list
                     while (handleList.size() > MIN_HANDLE_LIST_SIZE) {
@@ -432,7 +432,7 @@ int Thread::Exec()
                     }
                 }
 
-                VcoreLogD("Waitable handle watch event handled");
+                LogDebug("Waitable handle watch event handled");
 
                 // Done
                 break;
@@ -440,13 +440,13 @@ int Thread::Exec()
         }
     }
 
-    VcoreLogD("Leaving thread event processing");
+    LogDebug("Leaving thread event processing");
     return 0;
 }
 
 void Thread::Run()
 {
-    VcoreLogD("Running thread");
+    LogDebug("Running thread");
 
     // Critical section
     {
@@ -469,7 +469,7 @@ void Thread::Run()
         m_running = true;
     }
 
-    VcoreLogD("Thread run");
+    LogDebug("Thread run");
 }
 
 void Thread::Quit()
@@ -483,7 +483,7 @@ void Thread::Quit()
             return;
         }
 
-        VcoreLogD("Quitting thread...");
+        LogDebug("Quitting thread...");
 
         // Do not abandon thread, we will join
         m_abandon = false;
@@ -498,7 +498,7 @@ void Thread::Quit()
         Throw(Exception::QuitFailed);
     }
 
-    VcoreLogD("Thread quit");
+    LogDebug("Thread quit");
 }
 
 void Thread::PushEvent(void *event,
@@ -516,7 +516,7 @@ void Thread::PushEvent(void *event,
     // Trigger invoker
     m_eventInvoker.Signal();
 
-    VcoreLogD("Event pushed and invoker signaled");
+    LogDebug("Event pushed and invoker signaled");
 }
 
 void Thread::PushTimedEvent(void *event,
@@ -551,9 +551,9 @@ void Thread::PushTimedEvent(void *event,
     // Trigger invoker
     m_timedEventInvoker.Signal();
 
-    VcoreLogD("Timed event pushed and invoker signaled: "
-        "due time: %lu ms, absolute due time: %lu ms",
-        dueTimeMiliseconds, currentTimeMiliseconds + dueTimeMiliseconds);
+    LogDebug("Timed event pushed and invoker signaled: "
+        "due time: " << dueTimeMiliseconds << " ms, absolute due time: " <<
+        (currentTimeMiliseconds + dueTimeMiliseconds) << " ms");
 }
 
 Thread *Thread::GetInvokerThread()

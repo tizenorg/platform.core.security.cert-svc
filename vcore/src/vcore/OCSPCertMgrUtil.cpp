@@ -28,7 +28,7 @@
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <dpl/assert.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 #include <dpl/scoped_resource.h>
 #include <string.h>
 #include <iostream>
@@ -69,7 +69,7 @@ void getCertFromStore(X509_NAME *subject,
         X509 **xcert)
 {
     if (!xcert || *xcert || !subject) {
-        WrtLogE("Invalid input!");
+        LogError("Invalid input!");
         return;
     }
 
@@ -85,43 +85,43 @@ void getCertFromStore(X509_NAME *subject,
 
     ScopedContext ctx(cert_svc_cert_context_init());
     if (ctx.Get() == NULL) {
-        WrtLogW("Error in cert_svc_cert_context_init.");
+        LogWarning("Error in cert_svc_cert_context_init.");
         return;
     }
 
-    WrtLogD("Search certificate with subject: %s", buffer);
+    LogDebug("Search certificate with subject: " << buffer);
     result = cert_svc_search_certificate(ctx.Get(), SUBJECT_STR, buffer);
-    WrtLogD("Search finished!");
+    LogDebug("Search finished!");
 
     if (CERT_SVC_ERR_NO_ERROR != result) {
-        WrtLogW("Error during certificate search");
+        LogWarning("Error during certificate search");
         return;
     }
 
     fileList = ctx.Get()->fileNames;
 
     if (fileList == NULL) {
-        WrtLogD("No certificate found");
+        LogDebug("No certificate found");
         return;
     }
 
     if (fileList->filename == NULL) {
-        WrtLogW("Empty filename");
+        LogWarning("Empty filename");
         return;
     }
 
-    WrtLogD("Found cert file: %s", fileList->filename);
+    LogDebug("Found cert file: " << fileList->filename);
     ScopedContext ctx2(cert_svc_cert_context_init());
 
     if (ctx2.Get() == NULL) {
-        WrtLogW("Error in cert_svc_cert_context_init.");
+        LogWarning("Error in cert_svc_cert_context_init.");
         return;
     }
 
     // TODO add read_certifcate_from_file function to Certificate.h
     if (CERT_SVC_ERR_NO_ERROR !=
         cert_svc_load_file_to_context(ctx2.Get(), fileList->filename)) {
-        WrtLogW("Error in cert_svc_load_file_to_context");
+        LogWarning("Error in cert_svc_load_file_to_context");
         return;
     }
 
@@ -130,18 +130,18 @@ void getCertFromStore(X509_NAME *subject,
     pCertificate = d2i_X509(NULL, &ptr, ctx2.Get()->certBuf->size);
 
     if (pCertificate == NULL) {
-        WrtLogW("Error during certificate conversion in d2i_X509");
+        LogWarning("Error during certificate conversion in d2i_X509");
         return;
     }
 
     *xcert = pCertificate;
     if (fileList->next != NULL) {
-        WrtLogE("There is more then one certificate with same subject :/");
+        LogError("There is more then one certificate with same subject :/");
         // TODO Implement me.
         for (fileList = fileList->next;
              fileList != NULL;
              fileList = fileList->next) {
-            WrtLogE("Additional certificate with same subject: %s", fileList->filename);
+            LogError("Additional certificate with same subject: " << fileList->filename);
         }
     }
 }

@@ -30,7 +30,7 @@
 #include <glib-object.h>
 
 #include <dpl/assert.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
 namespace {
@@ -91,7 +91,7 @@ void VCoreInit()
 {
 #ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL    
     if (threadInterface) {
-        WrtLogD("Already Initialized");
+        LogDebug("Already Initialized");
         return true;
     }
 

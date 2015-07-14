@@ -29,7 +29,7 @@
 #include <pcrecpp.h>
 
 #include <dpl/errno_string.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 namespace {
 
@@ -97,7 +97,7 @@ int ReferenceValidator::Impl::hexToInt(char a) {
     if (a >= '0' && a <= '9') return a-'0';
     if (a >= 'A' && a <= 'F') return a-'A' + 10;
     if (a >= 'a' && a <= 'f') return a-'a' + 10;
-    WrtLogE("Symbol '%c' is out of scope.", a);
+    LogError("Symbol '" << a << "' is out of scope.");
     throw ERROR_DECODING_URL;
 }
 
@@ -125,7 +125,7 @@ std::string ReferenceValidator::Impl::decodeProcent(const std::string &path) {
             }
         }
     } catch (Result &) {
-        WrtLogE("Error while decoding url path: %s", path.c_str());
+        LogError("Error while decoding url path : " << path);
         throw ERROR_DECODING_URL;
     }
     return std::string(output.begin(), output.end());
@@ -141,7 +141,7 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
     std::string currentDir = m_dirpath + directory;
 
     if ((dp = opendir(currentDir.c_str())) == NULL) {
-        WrtLogE("Error opening directory: %s", currentDir.c_str());
+        LogError("Error opening directory : " << currentDir);
         m_errorDescription = currentDir;
         return ERROR_OPENING_DIR;
     }
@@ -168,7 +168,7 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
         }
 
         if (dirp->d_type == DT_DIR) {
-            WrtLogD("Open directory: %s", (directory + dirp->d_name).c_str());
+            LogDebug("Open directory : " << (directory + dirp->d_name));
             std::string tmp_directory = directory + dirp->d_name + "/";
             Result result = dfsCheckDirectories(referenceSet,
                                                 tmp_directory,
@@ -181,14 +181,14 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
             if (referenceSet.end() ==
                 referenceSet.find(directory + dirp->d_name))
             {
-                WrtLogD("Found file: %s", (directory + dirp->d_name).c_str());
-                WrtLogE("Unknown ERROR_REFERENCE_NOT_FOUND.");
+                LogDebug("Found file : " << (directory + dirp->d_name));
+                LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
                 closedir(dp);
                 m_errorDescription = directory + dirp->d_name;
                 return ERROR_REFERENCE_NOT_FOUND;
             }
         } else {
-            WrtLogE("Unknown file type.");
+            LogError("Unknown file type.");
             closedir(dp);
             m_errorDescription = directory + dirp->d_name;
             return ERROR_UNSUPPORTED_FILE_TYPE;
@@ -197,7 +197,7 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
 
     if (errno != 0) {
         m_errorDescription = VcoreDPL::GetErrnoString();
-        WrtLogE("readdir failed. Errno code: %d, Description: ", errno, m_errorDescription.c_str());
+        LogError("readdir failed. Errno code : " << errno << ", Description : " << m_errorDescription);
         closedir(dp);
         return ERROR_READING_DIR;
     }

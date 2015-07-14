@@ -25,7 +25,7 @@
 #include <ctype.h>
 #include <idna.h>
 
-#include <<dpl/log/log.h>>
+#include <dpl/log/log.h>
 
 #include <iri.h>
 #include "ValidatorCommon.h"
@@ -113,7 +113,7 @@ void WacOrigin::parse(const char *url)
     char *output = NULL;
     if (IDNA_SUCCESS !=
         idna_to_ascii_lz(m_host.c_str(), &output, IDNA_USE_STD3_ASCII_RULES)) {
-        WrtLogE("libidn error");
+        LogError("libidn error");
         m_parseFailed = true;
         free(output);
         return;
@@ -144,7 +144,7 @@ void WacOrigin::setPort()
         m_port = PORT_HTTPS;
         return;
     } else {
-        WrtLogD("Scheme %s is not support by WAC2.0 ", m_scheme.c_str());
+        LogDebug("Scheme %s is not support by WAC2.0 " << m_scheme);
         m_parseFailed = true;
     }
 }

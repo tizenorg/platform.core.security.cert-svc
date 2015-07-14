@@ -25,6 +25,9 @@
 
 namespace VcoreDPL {
 namespace Log {
+
+void AbstractLogProvider::SetTag(const char *) {}
+
 const char *AbstractLogProvider::LocateSourceFileName(const char *filename)
 {
     const char *ptr = strrchr(filename, '/');

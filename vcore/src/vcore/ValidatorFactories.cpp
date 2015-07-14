@@ -24,7 +24,7 @@
 #include <vcore/Certificate.h>
 #include <vcore/CertificateConfigReader.h>
 #include <vcore/Config.h>
-#include <dpl/log/wrt_log.h>
+#include <dpl/log/log.h>
 
 #include <string>
 
@@ -38,10 +38,10 @@ const CertificateIdentifier& createCertificateIdentifier()
         CertificateConfigReader reader;
         std::string file =
             ConfigSingleton::Instance().getXMLConfigPath();
-        WrtLogD("File with fingerprint list is: %s", file.c_str());
+        LogDebug("File with fingerprint list is : " << file);
         std::string schema =
             ConfigSingleton::Instance().getXMLSchemaPath();
-        WrtLogD("File with fingerprint list schema is: %s", schema.c_str());
+        LogDebug("File with fingerprint list schema is : " << schema);
         reader.initialize(file, schema);
         reader.read(certificateIdentifier);
 

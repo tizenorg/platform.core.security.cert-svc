@@ -664,7 +664,7 @@ protected:
             this->m_command = TableDefinition::AllocTableDataCommand(
                     this->m_commandString.c_str(),
                     Query<TableDefinition>::m_interface);
-            VcoreLogD("Prepared SQL command %s", this->m_commandString.c_str());
+            LogDebug("Prepared SQL command " << this->m_commandString);
         }
     }
 
@@ -762,7 +762,7 @@ protected:
             this->m_commandString += " ( " + visitor.m_columnNames + " ) ";
             this->m_commandString += "VALUES ( " + visitor.m_values + " )";
 
-            VcoreLogD("Prepared SQL command %s", this->m_commandString.c_str());
+            LogDebug("Prepared SQL command " << this->m_commandString);
             this->m_command = TableDefinition::AllocTableDataCommand(
                 this->m_commandString.c_str(),
                 Query<TableDefinition>::m_interface);
@@ -849,7 +849,7 @@ protected:
                 this->m_commandString.c_str(),
                 Query<TableDefinition>::m_interface);
 
-            VcoreLogD("Prepared SQL command %s", this->m_commandString.c_str());
+            LogDebug("Prepared SQL command " << this->m_commandString);
         }
     }
 
@@ -1065,7 +1065,7 @@ protected:
             this->m_command = TableDefinition::AllocTableDataCommand(
                     this->m_commandString.c_str(),
                     Query<TableDefinition>::m_interface);
-            VcoreLogD("Prepared SQL command %s", this->m_commandString.c_str());
+            LogDebug("Prepared SQL command " << this->m_commandString);
         }
     }
 

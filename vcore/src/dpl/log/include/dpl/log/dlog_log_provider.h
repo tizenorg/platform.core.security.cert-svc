@@ -23,49 +23,28 @@
 #define DPL_DLOG_LOG_PROVIDER_H
 
 #include <dpl/log/abstract_log_provider.h>
-#include <dpl/scoped_free.h>
-#include <string>
+#include <memory>
 
 namespace VcoreDPL {
 namespace Log {
-class DLOGLogProvider :
-    public AbstractLogProvider
+class DLOGLogProvider : public AbstractLogProvider
 {
-  private:
-    VcoreDPL::ScopedFree<char> m_tag;
-
-    static std::string FormatMessage(const char *message,
-                                     const char *filename,
-                                     int line,
-                                     const char *function);
-
-  public:
+public:
     DLOGLogProvider();
     virtual ~DLOGLogProvider();
 
-    virtual void Debug(const char *message,
-                       const char *fileName,
-                       int line,
-                       const char *function);
-    virtual void Info(const char *message,
-                      const char *fileName,
-                      int line,
-                      const char *function);
-    virtual void Warning(const char *message,
-                         const char *fileName,
-                         int line,
-                         const char *function);
-    virtual void Error(const char *message,
-                       const char *fileName,
-                       int line,
-                       const char *function);
-    virtual void Pedantic(const char *message,
-                          const char *fileName,
-                          int line,
-                          const char *function);
+    virtual void Log(AbstractLogProvider::LogLevel level,
+                     const char *message,
+                     const char *fileName,
+                     int line,
+                     const char *function) const;
 
     // Set global Tag according to DLOG
-    void SetTag(const char *tag);
+    virtual void SetTag(const char *tag);
+
+private:
+    std::unique_ptr<char[]> m_tag;
+
 };
 }
 } // namespace VcoreDPL

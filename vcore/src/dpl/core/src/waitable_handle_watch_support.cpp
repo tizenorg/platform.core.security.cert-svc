@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <dpl/waitable_handle_watch_support.h>
 #include <dpl/thread.h>
-#include <dpl/log/vcore_log.h>
+#include <dpl/log/log.h>
 #include <algorithm>
 #include <dpl/assert.h>
 
@@ -35,25 +35,25 @@ WaitableHandleWatchSupport::~WaitableHandleWatchSupport()
 {
     // Developer assertions
     if (!m_watchersMap.empty()) {
-        VcoreLogW("### Leaked watchers map dump ###");
+        LogWarning("### Leaked watchers map dump ###");
 
         for (WaitableHandleWatchersMap::const_iterator iterator =
                  m_watchersMap.begin();
              iterator != m_watchersMap.end();
              ++iterator)
         {
-            VcoreLogW("###   Waitable handle: %i", iterator->first);
+            LogWarning("###   Waitable handle: " << iterator->first);
 
-            VcoreLogW("###     Read listeners: %u", iterator->second.readListenersCount);
-            VcoreLogW("###     Write listeners: %u", iterator->second.writeListenersCount);
+            LogWarning("###     Read listeners: " << iterator->second.readListenersCount);
+            LogWarning("###     Write listeners: " << iterator->second.writeListenersCount);
 
             for (WaitableHandleListenerList::const_iterator listenersIterator =
                      iterator->second.listeners.begin();
                  listenersIterator != iterator->second.listeners.end();
                  ++listenersIterator)
             {
-                VcoreLogW("###       Mode: %i. Listener: %p",
-                        listenersIterator->mode, listenersIterator->listener);
+                LogWarning("###       Mode: " << listenersIterator->mode
+                    << ". Listener: " << listenersIterator->listener);
             }
         }
     }
@@ -97,7 +97,7 @@ WaitableHandleListEx WaitableHandleWatchSupport::WaitableWatcherHandles() const
 
 void WaitableHandleWatchSupport::InvokerFinished()
 {
-    VcoreLogD("Invoker finished called");
+    LogDebug("Invoker finished called");
 
     // Reset invoker
     m_watchersInvoker.Reset();
@@ -116,7 +116,7 @@ void WaitableHandleWatchSupport::HandleWatcher(WaitableHandle waitableHandle,
     // Warning: Listeners and/or watcher may also disappear during dispatching
     // handlers!
     //
-    VcoreLogD("Waitable event occurred");
+    LogDebug("Waitable event occurred");
 
     // Critical section for other threads
     {
@@ -139,7 +139,7 @@ void WaitableHandleWatchSupport::HandleWatcher(WaitableHandle waitableHandle,
             if (m_watchersMap.find(trackedWatchersIterator->first) ==
                 m_watchersMap.end())
             {
-                VcoreLogD("Watcher disappeared during watcher handler");
+                LogDebug("Watcher disappeared during watcher handler");
                 continue;
             }
 
@@ -152,8 +152,7 @@ void WaitableHandleWatchSupport::HandleWatcher(WaitableHandle waitableHandle,
             WaitableHandleListenerList trackedListeners =
                 trackedWatchersIterator->second.listeners;
 
-            VcoreLogD("Calling waitable event listeners (%u)...",
-                    trackedListeners.size());
+            LogDebug("Calling waitable event listeners (" << trackedListeners.size() << ")...");
 
             // Notice: We must carefully call listeners here as they may
             // disappear or be created during each of handler call
@@ -174,7 +173,7 @@ void WaitableHandleWatchSupport::HandleWatcher(WaitableHandle waitableHandle,
                 if (m_watchersMap.find(trackedWatchersIterator->first) ==
                     m_watchersMap.end())
                 {
-                    VcoreLogD("Watcher disappeared during watcher handler");
+                    LogDebug("Watcher disappeared during watcher handler");
                     break;
                 }
 
@@ -200,7 +199,7 @@ void WaitableHandleWatchSupport::HandleWatcher(WaitableHandle waitableHandle,
                 }
 
                 if (!listenerStillExists) {
-                    VcoreLogD("Watcher listener disappeared during watcher handler");
+                    LogDebug("Watcher listener disappeared during watcher handler");
                     break;
                 }
 
@@ -210,17 +209,17 @@ void WaitableHandleWatchSupport::HandleWatcher(WaitableHandle waitableHandle,
                 }
 
                 // Call waitable event watch listener
-                VcoreLogD("Before tracker listener call...");
+                LogDebug("Before tracker listener call...");
                 trackedListenersIterator->listener->OnWaitableHandleEvent(
                     trackedWatchersIterator->first,
                     trackedListenersIterator->mode);
-                VcoreLogD("After tracker listener call...");
+                LogDebug("After tracker listener call...");
             }
 
             // Now call all those listeners who registered during listener calls
             // FIXME: Implement! Notice, that scenario may be recursive!
 
-            VcoreLogD("Waitable event listeners called");
+            LogDebug("Waitable event listeners called");
 
             // No more waitable events possible - consistency check
             break;
@@ -255,7 +254,7 @@ void WaitableHandleWatchSupport::AddWaitableHandleWatch(
         }
     }
 
-    VcoreLogD("Adding waitable handle watch: %i", waitableHandle);
+    LogDebug("Adding waitable handle watch : " << waitableHandle);
 
     // Push new waitable event watch
     if (mapIterator != m_watchersMap.end()) {
@@ -283,7 +282,7 @@ void WaitableHandleWatchSupport::AddWaitableHandleWatch(
     // Trigger waitable event invoker to commit changes
     CommitInvoker();
 
-    VcoreLogD("Waitable event watch added and invoker signaled");
+    LogDebug("Waitable event watch added and invoker signaled");
 }
 
 void WaitableHandleWatchSupport::RemoveWaitableHandleWatch(
@@ -321,7 +320,7 @@ void WaitableHandleWatchSupport::RemoveWaitableHandleWatch(
     // Same pair listener-mode must exist
     Assert(listIterator != mapIterator->second.listeners.end());
 
-    VcoreLogD("Removing waitable handle watch: %i", waitableHandle);
+    LogDebug("Removing waitable handle watch : " << waitableHandle);
 
     // Remove waitable event watch
     mapIterator->second.listeners.erase(listIterator);
@@ -348,19 +347,19 @@ void WaitableHandleWatchSupport::RemoveWaitableHandleWatch(
     // Trigger waitable event invoker to commit changes
     CommitInvoker();
 
-    VcoreLogD("Waitable event watch removed and invoker signaled");
+    LogDebug("Waitable event watch removed and invoker signaled");
 }
 
 void WaitableHandleWatchSupport::CommitInvoker()
 {
     // Check calling context and execute invoker
     if (Thread::GetCurrentThread() == GetInvokerThread()) {
-        VcoreLogD("Calling direct invoker");
+        LogDebug("Calling direct invoker");
 
         // Direct invoker call
         HandleDirectInvoker();
     } else {
-        VcoreLogD("Calling indirect invoker");
+        LogDebug("Calling indirect invoker");
 
         // Indirect invoker call
         m_watchersInvoker.Signal();

@@ -97,7 +97,7 @@ class ThreadDatabaseSupport :
         }
 
         // Destroy connection
-        VcoreLogD("Destroying thread database connection: %s", m_address.c_str());
+        LogDebug("Destroying thread database connection: " << m_address);
 
         delete *Connection();
 
@@ -119,16 +119,16 @@ class ThreadDatabaseSupport :
 
     void TransactionUnref()
     {
-        VcoreLogD("Unref transaction");
+        LogDebug("Unref transaction");
 
         if (--(*TransactionDepth()) == 0) {
-            VcoreLogD("Transaction is finalized");
+            LogDebug("Transaction is finalized");
 
             if (*TransactionCancel()) {
-                VcoreLogD("Transaction will be rolled back");
+                LogDebug("Transaction will be rolled back");
                 (*Connection())->RollbackTransaction();
             } else {
-                VcoreLogD("Transaction will be commited");
+                LogDebug("Transaction will be commited");
                 (*Connection())->CommitTransaction();
             }
         }
@@ -157,7 +157,7 @@ class ThreadDatabaseSupport :
         }
 
         // Initialize SQL connection described in traits
-        VcoreLogD("Attaching thread database connection: %s", m_address.c_str());
+        LogDebug("Attaching thread database connection: " << m_address);
 
         Connection() = new VcoreDPL::DB::SqlConnection(
                 m_address.c_str(), m_flags, options);
@@ -194,7 +194,7 @@ class ThreadDatabaseSupport :
         // It must not be in linger state yet
         Assert(*Linger() == false);
 
-        VcoreLogD("Detaching thread database connection: %s", m_address.c_str());
+        LogDebug("Detaching thread database connection: " << m_address);
 
         // Enter linger state
         *Linger() = true;
@@ -246,11 +246,11 @@ class ThreadDatabaseSupport :
         // Calling thread must support thread database connections
         Assert(!Connection().IsNull());
 
-        VcoreLogD("Begin transaction");
+        LogDebug("Begin transaction");
 
         // Addref transaction
         if (++(*TransactionDepth()) == 1) {
-            VcoreLogD("Transaction is initialized");
+            LogDebug("Transaction is initialized");
 
             TransactionCancel() = false;
             (*Connection())->BeginTransaction();
@@ -262,7 +262,7 @@ class ThreadDatabaseSupport :
         // Calling thread must support thread database connections
         Assert(!Connection().IsNull());
 
-        VcoreLogD("Commit transaction");
+        LogDebug("Commit transaction");
 
         // Unref transation
         TransactionUnref();

@@ -138,7 +138,11 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
 {
     DIR *dp;
     struct dirent *dirp;
-    std::string currentDir = m_dirpath + directory;
+    std::string currentDir = m_dirpath;
+    if (!directory.empty()) {
+        currentDir += "/";
+        currentDir += directory;
+    }
 
     if ((dp = opendir(currentDir.c_str())) == NULL) {
         LogError("Error opening directory : " << currentDir);

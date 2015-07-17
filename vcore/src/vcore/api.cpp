@@ -58,14 +58,6 @@
 #include <vcore/CertificateCollection.h>
 #include <vcore/pkcs12.h>
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL 
-#include <cert-svc/ccrl.h>
-#include <cert-svc/cocsp.h>
-#include <vcore/OCSP.h>
-#include <vcore/CRL.h>
-#include <vcore/CRLCacheInterface.h>
-#endif
-
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
@@ -80,72 +72,12 @@ namespace {
 
 typedef std::unique_ptr<CERT_CONTEXT, std::function<int(CERT_CONTEXT*)> > ScopedCertCtx;
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-class CRLCacheCAPI : public CRLCacheInterface {
-public:
-    CRLCacheCAPI(
-        CertSvcCrlCacheWrite crlWrite,
-        CertSvcCrlCacheRead crlRead,
-        CertSvcCrlFree crlFree,
-        void *userParam)
-      : m_crlWrite(crlWrite)
-      , m_crlRead(crlRead)
-      , m_crlFree(crlFree)
-      , m_userParam(userParam)
-    {}
-
-    bool getCRLResponse(CRLCachedData *ptr){
-        if (!m_crlRead || !m_crlFree)
-            return false;
-
-        char *buffer;
-        int size;
-
-        bool result = m_crlRead(
-            ptr->distribution_point.c_str(),
-            &buffer,
-            &size,
-            &(ptr->next_update_time),
-            m_userParam);
-
-        if (result) {
-            ptr->crl_body.clear();
-            ptr->crl_body.append(buffer, size);
-            m_crlFree(buffer, m_userParam);
-        }
-
-        return result;
-    }
-    void setCRLResponse(CRLCachedData *ptr){
-        if (m_crlWrite) {
-            m_crlWrite(
-                ptr->distribution_point.c_str(),
-                ptr->crl_body.c_str(),
-                ptr->crl_body.size(),
-                ptr->next_update_time,
-                m_userParam);
-        }
-    }
-
-private:
-    CertSvcCrlCacheWrite m_crlWrite;
-    CertSvcCrlCacheRead m_crlRead;
-    CertSvcCrlFree m_crlFree;
-    void *m_userParam;
-};
-#endif
-
 class CertSvcInstanceImpl {
 public:
     CertSvcInstanceImpl()
       : m_certificateCounter(0)
       , m_idListCounter(0)
       , m_stringListCounter(0)
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-      , m_crlWrite(NULL)
-      , m_crlRead(NULL)
-      , m_crlFree(NULL)
-#endif
     {}
 
     ~CertSvcInstanceImpl(){
@@ -366,26 +298,6 @@ public:
         return CERTSVC_SUCCESS;
     }
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    inline int getCrl(const CertSvcCertificate &cert, CertSvcStringList *handler){
-        auto iter = m_certificateMap.find(cert.privateHandler);
-        if (iter == m_certificateMap.end()) {
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-        int position = m_stringListCounter++;
-
-        std::list<std::string> temp = iter->second->getCrlUris();
-        std::copy(temp.begin(),
-                  temp.end(),
-                  back_inserter(m_stringListMap[position]));
-
-        handler->privateHandler = position;
-        handler->privateInstance = cert.privateInstance;
-
-        return CERTSVC_SUCCESS;
-    }
-#endif
-
     inline int getStringFromList(
         const CertSvcStringList &handler,
         int position,
@@ -586,95 +498,6 @@ public:
         return CERTSVC_SUCCESS;
     }
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    inline int ocspCheck(const CertSvcCertificate *chain,
-                         int chain_size,
-                         const CertSvcCertificate *trusted,
-                         int trusted_size,
-                         const char *url,
-                         int *status)
-    {
-        auto instance = chain[0].privateInstance.privatePtr;
-
-        for(int i=1; i<chain_size; ++i) {
-            if (instance != chain[i].privateInstance.privatePtr)
-            {
-                return CERTSVC_WRONG_ARGUMENT;
-            }
-        }
-        CertificateList chainList, trustedList;
-
-        for(int i=0; i<chain_size; ++i) {
-            auto cert = m_certificateMap.find(chain[i].privateHandler);
-            if (cert == m_certificateMap.end()) {
-                return CERTSVC_WRONG_ARGUMENT;
-            }
-            chainList.push_back(cert->second);
-        }
-
-        for(int i=0; i<trusted_size; ++i) {
-            if (instance != trusted[i].privateInstance.privatePtr)
-            {
-                return CERTSVC_WRONG_ARGUMENT;
-            }
-        }
-
-        for(int i=0; i<trusted_size; ++i) {
-            auto cert = m_certificateMap.find(trusted[i].privateHandler);
-            if (cert == m_certificateMap.end()) {
-                return CERTSVC_WRONG_ARGUMENT;
-            }
-            trustedList.push_back(cert->second);
-        }
-
-        OCSP ocsp;
-//        ocsp.setDigestAlgorithmForCertId(OCSP::SHA1);
-//        ocsp.setDigestAlgorithmForRequest(OCSP::SHA1);
-        ocsp.setTrustedStore(trustedList);
-
-        if (url) {
-            ocsp.setUseDefaultResponder(true);
-            ocsp.setDefaultResponder(url);
-        }
-
-        CertificateCollection collection;
-        collection.load(chainList);
-        if (!collection.sort()) {
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-
-        chainList = collection.getChain();
-
-        VerificationStatusSet statusSet = ocsp.validateCertificateList(chainList);
-
-        int ret = 0;
-        if (statusSet.contains(VERIFICATION_STATUS_GOOD)) {
-            ret |= CERTSVC_OCSP_GOOD;
-        }
-        if (statusSet.contains(VERIFICATION_STATUS_REVOKED)) {
-            ret |= CERTSVC_OCSP_REVOKED;
-        }
-        if (statusSet.contains(VERIFICATION_STATUS_UNKNOWN)) {
-            ret |= CERTSVC_OCSP_UNKNOWN;
-        }
-        if (statusSet.contains(VERIFICATION_STATUS_VERIFICATION_ERROR)) {
-            ret |= CERTSVC_OCSP_VERIFICATION_ERROR;
-        }
-        if (statusSet.contains(VERIFICATION_STATUS_NOT_SUPPORT)) {
-            ret |= CERTSVC_OCSP_NO_SUPPORT;
-        }
-        if (statusSet.contains(VERIFICATION_STATUS_CONNECTION_FAILED)) {
-            ret |= CERTSVC_OCSP_CONNECTION_FAILED;
-        }
-        if (statusSet.contains(VERIFICATION_STATUS_ERROR)) {
-            ret |= CERTSVC_OCSP_ERROR;
-        }
-
-        *status = ret;
-        return CERTSVC_SUCCESS;
-    }
-#endif
-
     inline int verify(
         CertSvcCertificate certificate,
         CertSvcString &message,
@@ -839,70 +662,6 @@ public:
 
         return CERTSVC_SUCCESS;
     }
-
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    inline void setCRLFunction(
-        CertSvcCrlCacheWrite writePtr,
-        CertSvcCrlCacheRead readPtr,
-        CertSvcCrlFree freePtr)
-    {
-        m_crlWrite = writePtr;
-        m_crlRead = readPtr;
-        m_crlFree = freePtr;
-    }
-
-    inline int crlCheck(
-        CertSvcCertificate certificate,
-        CertSvcCertificate *trustedStore,
-        int storeSize,
-        int force,
-        int *status,
-        void *userParam)
-    {
-        for(int i=1; i<storeSize; ++i) {
-            if (certificate.privateInstance.privatePtr
-                != trustedStore[i].privateInstance.privatePtr)
-            {
-                return CERTSVC_WRONG_ARGUMENT;
-            }
-        }
-
-        CRL crl(new CRLCacheCAPI(m_crlWrite, m_crlRead, m_crlFree, userParam));
-
-        for (int i=0; i<storeSize; ++i) {
-            auto iter = m_certificateMap.find(trustedStore[i].privateHandler);
-            if (iter == m_certificateMap.end()) {
-                return CERTSVC_WRONG_ARGUMENT;
-            }
-            crl.addToStore(iter->second);
-        }
-
-        auto iter = m_certificateMap.find(certificate.privateHandler);
-        if (iter == m_certificateMap.end()) {
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-        if (iter->second->getCrlUris().empty()) {
-            *status = CERTSVC_CRL_NO_SUPPORT;
-            return CERTSVC_SUCCESS;
-        }
-        crl.updateList(iter->second, force ? CRL::UPDATE_ON_DEMAND: CRL::UPDATE_ON_EXPIRED);
-        CRL::RevocationStatus st = crl.checkCertificate(iter->second);
-        *status = 0;
-
-        if (!st.isCRLValid) {
-            *status |= CERTSVC_CRL_VERIFICATION_ERROR;
-            return CERTSVC_SUCCESS;
-        }
-
-        if (st.isRevoked) {
-            *status |= CERTSVC_CRL_REVOKED;
-        } else {
-            *status |= CERTSVC_CRL_GOOD;
-        }
-
-        return CERTSVC_SUCCESS;
-    }
-#endif
 
     inline int certificateVerify(
         CertSvcCertificate certificate,
@@ -1384,12 +1143,6 @@ private:
     std::map<int, std::vector<std::string> > m_stringListMap;
 
     std::set<char *> m_allocatedStringSet;
-	
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    CertSvcCrlCacheWrite m_crlWrite;
-    CertSvcCrlCacheRead m_crlRead;
-    CertSvcCrlFree m_crlFree;
-#endif
 };
 
 inline CertSvcInstanceImpl *impl(CertSvcInstance instance) {
@@ -1580,18 +1333,6 @@ int certsvc_certificate_is_root_ca(CertSvcCertificate certificate, int *status)
     return impl(certificate.privateInstance)->isRootCA(certificate, status);
 }
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-int certsvc_certificate_get_crl_distribution_points(
-        CertSvcCertificate certificate,
-        CertSvcStringList *handler)
-{
-    try {
-        return impl(certificate.privateInstance)->getCrl(certificate, handler);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-#endif
-
 int certsvc_string_list_get_one(
         CertSvcStringList handler,
         int position,
@@ -1718,33 +1459,6 @@ void certsvc_pkcs12_free_evp_pkey(EVP_PKEY* pkey)
     EVP_PKEY_free(pkey);
 }
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-int certsvc_ocsp_check(
-    CertSvcCertificate *chain,
-    int chain_size,
-    CertSvcCertificate *trusted,
-    int trusted_size,
-    const char *url,
-    int *status)
-{
-    try {
-        if (!chain || !trusted) {
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-        return impl(chain[0].privateInstance)->
-            ocspCheck(chain,
-                      chain_size,
-                      trusted,
-                      trusted_size,
-                      url,
-                      status);
-    } catch (std::bad_alloc &) {
-        return CERTSVC_BAD_ALLOC;
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-#endif
-
 int certsvc_message_verify(
     CertSvcCertificate certificate,
     CertSvcString message,
@@ -1805,37 +1519,6 @@ int certsvc_string_not_managed(
     output->privateInstance = instance;
     return CERTSVC_SUCCESS;
 }
-
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-void certsvc_crl_cache_functions(
-    CertSvcInstance instance,
-    CertSvcCrlCacheWrite writePtr,
-    CertSvcCrlCacheRead readPtr,
-    CertSvcCrlFree freePtr)
-{
-    impl(instance)->setCRLFunction(writePtr, readPtr, freePtr);
-}
-
-int certsvc_crl_check(
-    CertSvcCertificate certificate,
-    CertSvcCertificate *trustedStore,
-    int storeSize,
-    int force,
-    int *status,
-    void *userParam)
-{
-    try {
-        return impl(certificate.privateInstance)->crlCheck(
-            certificate,
-            trustedStore,
-            storeSize,
-            force,
-            status,
-            userParam);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-#endif
 
 int certsvc_certificate_verify(
     CertSvcCertificate certificate,

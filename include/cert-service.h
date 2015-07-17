@@ -53,15 +53,6 @@ extern "C" {
 #define CERT_SVC_ERR_INVALID_PARAMETER	-15
 #define CERT_SVC_ERR_PERMISSION_DENIED	-16
 #define CERT_SVC_ERR_IS_EXPIRED	-17
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-#define CERT_SVC_ERR_OCSP_REVOKED	-18
-#define CERT_SVC_ERR_OCSP_UNKNOWN	-19
-#define CERT_SVC_ERR_OCSP_VERIFICATION_ERROR	-20
-#define CERT_SVC_ERR_OCSP_NO_SUPPORT	-21
-#define CERT_SVC_ERR_OCSP_NETWORK_FAILED	-22
-#define CERT_SVC_ERR_OCSP_INTERNAL	-23
-#define CERT_SVC_ERR_OCSP_REMOTE	-24
-#endif
 
 #define CERT_SVC_ERR_INVALID_NO_DEVICE_PROFILE      -25
 #define CERT_SVC_ERR_INVALID_DEVICE_UNIQUE_ID       -26
@@ -216,12 +207,7 @@ int cert_svc_search_certificate(CERT_CONTEXT* ctx, search_field fldName, char* f
 int cert_svc_get_visibility(CERT_CONTEXT* ctx, int* visibility);
 int cert_svc_get_visibility_by_root_certificate(const char* cert_data, int data_len, int* visibility);
 
-
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-int cert_svc_check_ocsp_status(CERT_CONTEXT* ctx, const char* uri);
-#endif
 char* cert_svc_get_certificate_crt_file_path(void);
-
 int cert_svc_util_parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld);
 
 #ifdef __cplusplus

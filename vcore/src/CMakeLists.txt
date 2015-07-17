@@ -3,25 +3,6 @@ ADD_DEFINITIONS("-Wall")
 ADD_DEFINITIONS("-Wextra")
 ADD_DEFINITIONS("-Werror")
 
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-PKG_CHECK_MODULES(VCORE_DEPS
-    REQUIRED
-    glib-2.0
-    libxml-2.0
-    libpcrecpp
-    openssl
-    xmlsec1
-    dlog
-    secure-storage
-    icu-uc
-    libsoup-2.4
-    db-util
-    libsystemd-journal
-
-    sqlite3
-    vconf
-    )
-ELSE(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
 PKG_CHECK_MODULES(VCORE_DEPS
     REQUIRED
     glib-2.0
@@ -36,7 +17,6 @@ PKG_CHECK_MODULES(VCORE_DEPS
     db-util
     libsystemd-journal
     )
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
 
 ADD_DEFINITIONS(${VCORE_DEPS_CFLAGS})
 ADD_DEFINITIONS(${VCORE_DEPS_CFLAGS_OTHER})
@@ -130,22 +110,6 @@ SET(VCORE_SOURCES
     ${VCORE_SRC_DIR}/cert-svc-client.c
     )
 
-SET(VCORE_OCSP_CRL_SOURCES
-    ${VCORE_SRC_DIR}/CachedCRL.cpp
-    ${VCORE_SRC_DIR}/CachedOCSP.cpp
-    ${VCORE_SRC_DIR}/CertificateCacheDAO.cpp
-    ${VCORE_SRC_DIR}/CertificateVerifier.cpp
-    ${VCORE_SRC_DIR}/CRL.cpp
-    ${VCORE_SRC_DIR}/CRLImpl.cpp
-    ${VCORE_SRC_DIR}/CRLCacheDAO.cpp
-    ${VCORE_SRC_DIR}/Database.cpp
-    ${VCORE_SRC_DIR}/OCSP.cpp
-    ${VCORE_SRC_DIR}/OCSPImpl.cpp
-    ${VCORE_SRC_DIR}/SoupMessageSendBase.cpp
-    ${VCORE_SRC_DIR}/SoupMessageSendSync.cpp
-    ${VCORE_SRC_DIR}/OCSPUtil.c
-    )
-
 SET(VCORE_INCLUDES
     ${VCORE_DEPS_INCLUDE_DIRS}
     ${VCORE_SRC_DIR}
@@ -153,28 +117,8 @@ SET(VCORE_INCLUDES
     ${VCORE_DIR}/src/legacy
     )
 
-SET(VCORE_INCLUDES_OCSP_CRL
-    ${VCORE_DIR}/src/orm
-    )
 ########### VCORE SOURCES ########
 
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-SET(VCORE_ALL_SOURCES
-    ${VCORE_SOURCES}
-    ${VCORE_DPL_CORE_SOURCES}
-    ${VCORE_DPL_DB_SOURCES}
-    ${VCORE_DPL_LOG_SOURCES}
-    ${VCORE_OCSP_CRL_SOURCES}
-    )
-SET(VCORE_ALL_INCLUDES
-    ${PROJECT_SOURCE_DIR}/include
-    ${VCORE_INCLUDES}
-    ${VCORE_DPL_DIR}/core/include
-    ${VCORE_DPL_DIR}/db/include
-    ${VCORE_DPL_DIR}/log/include
-    ${VCORE_INCLUDES_OCSP_CRL}
-    )
-ELSE(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
 SET(VCORE_ALL_SOURCES
     ${VCORE_SOURCES}
     ${VCORE_DPL_CORE_SOURCES}
@@ -186,7 +130,6 @@ SET(VCORE_ALL_INCLUDES
     ${VCORE_DPL_DIR}/core/include
     ${VCORE_DPL_DIR}/log/include
     )
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
 
 INCLUDE_DIRECTORIES(SYSTEM ${VCORE_ALL_INCLUDES})
 
@@ -198,10 +141,6 @@ SET_TARGET_PROPERTIES(${TARGET_VCORE_LIB}
         COMPILE_FLAGS "-D_GNU_SOURCE -fPIC -fvisibility=default"
         SOVERSION ${SO_VERSION}
         VERSION ${VERSION})
-
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-ADD_DEPENDENCIES(${TARGET_VCORE_LIB} Sqlite3DbWTF)
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
 
 TARGET_LINK_LIBRARIES(${TARGET_VCORE_LIB}
     ${VCORE_DEPS_LIBRARIES}
@@ -284,23 +223,3 @@ INSTALL(FILES
     ${VCORE_DIR}/src/cert-svc/cstring.h
     DESTINATION ${INCLUDEDIR}/cert-svc/cert-svc
     )
-
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-INSTALL(FILES
-    ${VCORE_SRC_DIR}/IAbstractResponseCache.h
-    ${VCORE_SRC_DIR}/VerificationStatus.h
-    ${VCORE_SRC_DIR}/CachedCRL.h
-    ${VCORE_SRC_DIR}/CachedOCSP.h
-    ${VCORE_SRC_DIR}/CRL.h
-    ${VCORE_SRC_DIR}/CRLCacheInterface.h
-    ${VCORE_SRC_DIR}/OCSP.h
-    ${VCORE_SRC_DIR}/OCSPCertMgrUtil.h
-    DESTINATION ${INCLUDEDIR}/cert-svc/vcore
-    )
-
-INSTALL(FILES
-    ${VCORE_DIR}/src/cert-svc/ccrl.h
-    ${VCORE_DIR}/src/cert-svc/cocsp.h
-    DESTINATION ${INCLUDEDIR}/cert-svc/cert-svc
-    )
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)

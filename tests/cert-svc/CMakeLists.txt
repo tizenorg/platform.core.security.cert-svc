@@ -20,7 +20,6 @@
 
 SET(CERT_SVC_OGIG_TESTS_SOURCES
     ${PROJECT_SOURCE_DIR}/tests/cert-svc/test_caflag.c
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/test_ocsp.c
     ${PROJECT_SOURCE_DIR}/tests/cert-svc/test_suite_main.c
     ${VCORE_DPL_SOURCES}
     )
@@ -64,38 +63,8 @@ INSTALL(FILES
 INSTALL(FILES
     ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/root_ca.der
     ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/root_ca_v1.der
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/ocsp/second_ca.der
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs
     PERMISSIONS OWNER_READ
                 GROUP_READ
                 WORLD_READ
     )  
-
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-INSTALL(DIRECTORY
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/ocsp/
-    DESTINATION ${TZ_SYS_SHARE}/cert-svc/tests/orig_c/data/ocsp
-    FILES_MATCHING
-    PATTERN "*" 
-    PERMISSIONS OWNER_READ
-                OWNER_WRITE
-                OWNER_EXECUTE
-                GROUP_READ
-                GROUP_EXECUTE
-                WORLD_READ
-                WORLD_EXECUTE
-    )
-    
-INSTALL(FILES 
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/ocsp/cert-svc-tests-start-ocsp-server.sh
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/ocsp/cert-svc-tests-kill-ocsp-server.sh
-    DESTINATION ${TZ_SYS_BIN}
-    PERMISSIONS OWNER_READ
-                OWNER_WRITE
-                OWNER_EXECUTE
-                GROUP_READ
-                GROUP_EXECUTE
-                WORLD_READ
-                WORLD_EXECUTE
-    )
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)

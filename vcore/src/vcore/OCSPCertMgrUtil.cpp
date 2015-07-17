@@ -21,9 +21,6 @@
 
 #include <vcore/OCSPCertMgrUtil.h>
 #include <vcore/SSLContainers.h>
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-#include <openssl/ocsp.h>
-#endif
 
 #include <openssl/pem.h>
 #include <openssl/x509.h>

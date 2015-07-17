@@ -30,16 +30,10 @@ namespace CertStoreId {
 
 Set::Set()
   : m_certificateStorage(0)
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-  , m_ocspUrl(NULL)
-#endif
 {}
 
 Set::~Set()
 {
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    delete[] m_ocspUrl;
-#endif
 }
 
 void Set::add(Type second)
@@ -47,18 +41,6 @@ void Set::add(Type second)
     m_certificateStorage |= second;
 }
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-void Set::add(std::string ocspUrl)
-{
-
-    if (ocspUrl.length() == 0)
-        return;
-
-    m_ocspUrl = new char[ocspUrl.length() + 1];
-    if (m_ocspUrl)
-        strncpy(m_ocspUrl, ocspUrl.c_str(), ocspUrl.length() + 1);
-}
-#endif
 
 bool Set::contains(Type second) const
 {
@@ -69,13 +51,6 @@ bool Set::isEmpty() const
 {
     return m_certificateStorage == 0;
 }
-
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-char* Set::getOcspUrl()
-{
-    return m_ocspUrl;
-}
-#endif
 
 } // namespace CertStoreId
 } // namespace ValidationCore

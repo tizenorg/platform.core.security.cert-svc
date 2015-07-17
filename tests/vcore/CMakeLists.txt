@@ -50,19 +50,6 @@ INSTALL(TARGETS ${TARGET_VCORE_TEST}
                 WORLD_EXECUTE
     )
 
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-INSTALL(FILES ${PROJECT_SOURCE_DIR}/tests/vcore/cert-svc-tests-vcore-ocsp-server.sh
-    DESTINATION ${TZ_SYS_BIN}
-    PERMISSIONS OWNER_READ
-                OWNER_WRITE
-                OWNER_EXECUTE
-                GROUP_READ
-                GROUP_EXECUTE
-                WORLD_READ
-                WORLD_EXECUTE
-    )
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-
 ADD_CUSTOM_COMMAND(TARGET ${TARGET_VCORE_TEST} POST_BUILD
     COMMAND ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/create_certs.sh
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/
@@ -140,17 +127,6 @@ INSTALL(FILES
     ${TZ_SYS_RO_APP}/widget/tests/vcore_keys
     )
 
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/ocsp_level0deprecated.crt
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/ocsp_level1.crt
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/ocsp_level2.crt
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/ocsp_rootca.crt
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_keys
-    )
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-
 INSTALL(FILES
     ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/config/fin_list.xml
     ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/config/fin_list.xsd
@@ -178,15 +154,6 @@ INSTALL(FILES
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/vcore_certs/
 )
-
-IF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/cacrl1.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/cacrl2.pem
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_certs/
-    )
-ENDIF(DEFINED TIZEN_FEAT_CERTSVC_OCSP_CRL)
 
 INSTALL(DIRECTORY
     ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/demoCA

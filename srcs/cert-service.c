@@ -675,30 +675,6 @@ int cert_svc_load_PFX_file_to_context(CERT_CONTEXT* ctx, unsigned char** private
 	return CERT_SVC_ERR_NO_ERROR;
 }
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-CERT_SVC_API
-int cert_svc_check_ocsp_status(CERT_CONTEXT* ctx, const char* uri)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	cert_svc_linked_list** certList=NULL;
-
-	if (!ctx || !ctx->certBuf) {
-		SLOGE("[ERR][%s] certBuf must have value.", __func__);
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	if (ctx->certLink) {
-		certList = &(ctx->certLink);
-
-	if ((ret = _check_ocsp_status(ctx->certBuf, certList, uri)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to check revocation status.", __func__);
-		return ret;
-	}
-
-	return CERT_SVC_ERR_NO_ERROR;
-}
-#endif
-
 CERT_SVC_API
 char* cert_svc_get_certificate_crt_file_path(void)
 {

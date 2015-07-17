@@ -27,8 +27,5 @@
 int main() {
 	int ret;
 	ret = test_caflag();
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-	ret = test_ocsp();
-#endif
 	return ret;
 }

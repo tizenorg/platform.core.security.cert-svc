@@ -34,9 +34,6 @@ const std::string TOKEN_CERTIFICATE_DOMAIN = "CertificateDomain";
 const std::string TOKEN_FINGERPRINT_SHA1 = "FingerprintSHA1";
 
 const std::string TOKEN_ATTR_NAME = "name";
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-const std::string TOKEN_ATTR_URL_NAME = "ocspUrl";
-#endif
 const std::string TOKEN_VALUE_TIZEN_DEVELOPER = "tizen-developer";
 const std::string TOKEN_VALUE_TIZEN_TEST = "tizen-test";
 const std::string TOKEN_VALUE_TIZEN_VERIFY = "tizen-verify";
@@ -147,10 +144,6 @@ void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
 void CertificateConfigReader::tokenEndFingerprintSHA1(
         CertificateIdentifier &identificator)
 {
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    std::string url = m_parserSchema.getReader().attribute(TOKEN_ATTR_URL_NAME);
-#endif
-
     std::string text = m_parserSchema.getText();
     text += ":"; // add guard at the end of fingerprint
     Certificate::Fingerprint fingerprint;
@@ -174,8 +167,5 @@ void CertificateConfigReader::tokenEndFingerprintSHA1(
     }
 
     identificator.add(fingerprint, m_certificateDomain);
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    identificator.add(fingerprint, url);
-#endif
 }
 } // namespace ValidationCore

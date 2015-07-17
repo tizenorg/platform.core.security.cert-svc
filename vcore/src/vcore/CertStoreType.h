@@ -54,19 +54,12 @@ public:
 
     void add(Type second);
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    void add(std::string ocspUrl);
-    char* getOcspUrl();
-#endif
 
     bool contains(Type second) const;
     bool isEmpty() const;
 
-  private:
+private:
     Type m_certificateStorage;
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    char* m_ocspUrl;
-#endif
 };
 
 } // namespace CertStoreId

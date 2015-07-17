@@ -272,34 +272,6 @@ int certsvc_certificate_get_not_before(CertSvcCertificate certificate, time_t *r
 int certsvc_certificate_is_root_ca(CertSvcCertificate certificate, int *status);
 
 /**
- * Extract all distribution point from certificate.
- *
- * @param[in] certificate Certificate with distribution points.
- * @param[out] hander Handler to set of string.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
- *
- * Usage example:
- *
- * int max;
- * CertSvcStringList handler;
- * certsvc_certificate_get_crl_distribution_points(instance, some_certificate, &handler);
- * certsvc_certificate_list_get_length(handler, &max);
- * for(int i=0; i<max; ++i)
- *   char *buffer;
- *   int len;
- *   CertSvcString string;
- *   certsvc_string_list_get_one(handler, i, &string);
- *   printf("%s\n", buffer);
- *   certsvc_string_free(buffer); // optional
- * }
- * certsvc_string_list_free(handler); // optional
- */
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-int certsvc_certificate_get_crl_distribution_points(CertSvcCertificate certificate,
-                                                    CertSvcStringList *handler);
-#endif
-
-/**
  * Sort certificates chain. This fuction modifies certificate_array.
  *
  * If function success:

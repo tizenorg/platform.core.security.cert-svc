@@ -24,8 +24,4 @@
 
 int test_caflag();
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-int test_ocsp();
-#endif
-
 #endif /* TEST_CAFLAG_H_ */

@@ -1,5 +1,4 @@
-%define certsvc_feature_ocsp_crl     0
-%define certsvc_test_build           0
+%define certsvc_test_build 0
 
 Name:    cert-svc
 Summary: Certification service
@@ -27,10 +26,6 @@ BuildRequires: pkgconfig(secure-storage)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: boost-devel
-%if 0%{?certsvc_feature_ocsp_crl}
-BuildRequires: pkgconfig(vconf)
-BuildRequires: pkgconfig(sqlite3)
-%endif
 Requires: pkgconfig(libtzplatform-config)
 Requires: ca-certificates-tizen
 Requires: ca-certificates-mozilla
@@ -91,9 +86,6 @@ cmake . -DPREFIX=%{_prefix} \
         -DTZ_SYS_ETC=%TZ_SYS_ETC \
         -DTZ_SYS_RO_WRT_ENGINE=%TZ_SYS_RO_WRT_ENGINE \
         -DTZ_SYS_DB=%TZ_SYS_DB \
-%if 0%{?certsvc_feature_ocsp_crl}
-        -DTIZEN_FEAT_CERTSVC_OCSP_CRL=1 \
-%endif
 %if 0%{?certsvc_test_build}
         -DCERTSVC_TEST_BUILD=1 \
         -DTZ_SYS_RO_APP=%TZ_SYS_RO_APP \
@@ -140,34 +132,6 @@ echo "make ca-certificate.crt"
 %{TZ_SYS_BIN}/make-ca-certificate.sh
 rm %{TZ_SYS_BIN}/make-ca-certificate.sh
 
-echo "create .cert_svc_vcore.db"
-%if 0%{?certsvc_feature_ocsp_crl}
-if [ -z ${2} ]; then
-    echo "This is new install of cert-svc"
-    %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
-else
-    echo "Find out old and new version of databases"
-    VCORE_OLD_DB_VERSION=`sqlite3 %{TZ_SYS_DB}/.cert_svc_vcore.db ".tables" | grep "DB_VERSION_"`
-    VCORE_NEW_DB_VERSION=`cat %{TZ_SYS_SHARE}/cert-svc/cert_svc_vcore_db.sql | tr '[:blank:]' '\n' | grep DB_VERSION_`
-    echo "OLD vcore database version ${VCORE_OLD_DB_VERSION}"
-    echo "NEW vcore database version ${VCORE_NEW_DB_VERSION}"
-
-    if [ ${VCORE_OLD_DB_VERSION} -a ${VCORE_NEW_DB_VERSION} ]; then
-        if [ ${VCORE_OLD_DB_VERSION} = ${VCORE_NEW_DB_VERSION} ]; then
-            echo "Equal database detected so db installation ignored"
-        else
-            echo "Calling /usr/bin/cert_svc_create_clean_db.sh"
-            %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
-        fi
-    else
-        echo "Calling /usr/bin/cert_svc_create_clean_db.sh"
-        %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
-    fi
-fi
-rm %{TZ_SYS_SHARE}/cert-svc/cert_svc_vcore_db.sql
-rm %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
-%endif
-
 echo "create certs-meta.db"
 rm -rf %{TZ_SYS_SHARE}/cert-svc/dbspace/certs-meta.db
 %{TZ_SYS_BIN}/cert_svc_create_clean_store_db.sh %{TZ_SYS_SHARE}/cert-svc/cert_svc_store_db.sql
@@ -200,11 +164,6 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %attr(755,root,root) %{TZ_SYS_BIN}/cert_svc_create_clean_store_db.sh
 %attr(755,root,root) %{TZ_SYS_BIN}/make-ca-certificate.sh
 %attr(755,root,root) %{TZ_SYS_BIN}/initialize_store_db.sh
-
-%if 0%{?certsvc_feature_ocsp_crl}
-%attr(644,root,root) %{TZ_SYS_SHARE}/cert-svc/cert_svc_vcore_db.sql
-%attr(755,root,root) %{TZ_SYS_BIN}/cert_svc_create_clean_db.sh
-%endif
 
 # Resource files install as system
 %{TZ_SYS_SHARE}/cert-svc/certs/user
@@ -242,6 +201,5 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %{TZ_SYS_SHARE}/cert-svc/cert-type/*
 %{TZ_SYS_SHARE}/cert-svc/tests/orig_c/data/caflag/*
 %{TZ_SYS_SHARE}/cert-svc/certs/root_ca*.der
-%{TZ_SYS_SHARE}/cert-svc/certs/second_ca*.der
 %{TZ_SYS_SHARE}/cert-svc/tests/*
 %endif

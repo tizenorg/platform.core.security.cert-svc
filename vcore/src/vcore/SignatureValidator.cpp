@@ -26,9 +26,6 @@
 #include <vcore/ReferenceValidator.h>
 #include <vcore/ValidatorFactories.h>
 #include <vcore/XmlsecAdapter.h>
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-#include <vcore/CertificateVerifier.h>
-#endif
 
 #include <dpl/log/log.h>
 
@@ -99,13 +96,8 @@ public:
                   bool complianceMode)
       : m_complianceModeEnabled(complianceMode)
     {
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-        m_ocspEnable = ocspEnable;
-        m_crlEnable = crlEnable;
-#else
         (void) ocspEnable;
         (void) crlEnable;
-#endif
     }
 
     virtual ~ImplSignatureValidator(){ }
@@ -154,10 +146,6 @@ public:
     }
 protected:
     bool m_complianceModeEnabled;
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    bool m_ocspEnable;
-    bool m_crlEnable;
-#endif
 };
 
 class ImplTizenSignatureValidator : public SignatureValidator::ImplSignatureValidator
@@ -432,37 +420,6 @@ SignatureValidator::Result ImplTizenSignatureValidator::check(
  */
 	}
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    // It is good time to do OCSP check
-    // ocspCheck will throw an exception on any error.
-    // TODO Probably we should catch this exception and add
-    // some information to SignatureData.
-    if (!m_complianceModeEnabled && !data.isAuthorSignature()) {
-        CertificateCollection coll;
-        coll.load(sortedCertificateList);
-
-        if (!coll.sort()) {
-            LogDebug("Collection does not contain chain!");
-            return SignatureValidator::SIGNATURE_INVALID_CERT_CHAIN;//SIGNATURE_INVALID;
-        }
-
-        CertificateVerifier verificator(m_ocspEnable, m_crlEnable);
-        VerificationStatus result = verificator.check(coll);
-
-        if (result == VERIFICATION_STATUS_REVOKED) {
-            return SignatureValidator::SIGNATURE_REVOKED;
-        }
-
-        if (result == VERIFICATION_STATUS_UNKNOWN ||
-            result == VERIFICATION_STATUS_ERROR)
-        {
-            #ifdef _OCSP_POLICY_DISREGARD_UNKNOWN_OR_ERROR_CERTS_
-            disregard = true;
-	    #endif
-        }
-    }
-#endif
-
     if (disregard) {
         LogWarning("Signature is disregard. RootCA is not a member of Tizen");
         return SignatureValidator::SIGNATURE_INVALID_DISTRIBUTOR_CERT;//SIGNATURE_DISREGARD;
@@ -697,37 +654,6 @@ SignatureValidator::Result ImplTizenSignatureValidator::checkList(SignatureData 
         return SignatureValidator::SIGNATURE_INVALID;
     }
  */
-
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    // It is good time to do OCSP check
-    // ocspCheck will throw an exception on any error.
-    // TODO Probably we should catch this exception and add
-    // some information to SignatureData.
-    if (!m_complianceModeEnabled && !data.isAuthorSignature()) {
-        CertificateCollection coll;
-        coll.load(sortedCertificateList);
-
-        if (!coll.sort()) {
-            LogDebug("Collection does not contain chain!");
-            return SignatureValidator::SIGNATURE_INVALID;
-        }
-
-        CertificateVerifier verificator(m_ocspEnable, m_crlEnable);
-        VerificationStatus result = verificator.check(coll);
-
-        if (result == VERIFICATION_STATUS_REVOKED) {
-            return SignatureValidator::SIGNATURE_REVOKED;
-        }
-
-        if (result == VERIFICATION_STATUS_UNKNOWN ||
-            result == VERIFICATION_STATUS_ERROR)
-        {
-	    #ifdef _OCSP_POLICY_DISREGARD_UNKNOWN_OR_ERROR_CERTS_
-            disregard = true;
-	    #endif
-        }
-    }
-#endif
 
     if (disregard) {
         LogWarning("Signature is disregard. RootCA is not a member of Tizen.");
@@ -975,37 +901,6 @@ SignatureValidator::Result ImplWacSignatureValidator::check(
 			return SignatureValidator::SIGNATURE_INVALID;
 		}
 	}
-
-	#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    // It is good time to do OCSP check
-    // ocspCheck will throw an exception on any error.
-    // TODO Probably we should catch this exception and add
-    // some information to SignatureData.
-    if (!m_complianceModeEnabled && !data.isAuthorSignature()) {
-        CertificateCollection coll;
-        coll.load(sortedCertificateList);
-
-        if (!coll.sort()) {
-            LogDebug("Collection does not contain chain!");
-            return SignatureValidator::SIGNATURE_INVALID;
-        }
-
-        CertificateVerifier verificator(m_ocspEnable, m_crlEnable);
-        VerificationStatus result = verificator.check(coll);
-
-        if (result == VERIFICATION_STATUS_REVOKED) {
-            return SignatureValidator::SIGNATURE_REVOKED;
-        }
-
-        if (result == VERIFICATION_STATUS_UNKNOWN ||
-            result == VERIFICATION_STATUS_ERROR)
-        {
-           #ifdef _OCSP_POLICY_DISREGARD_UNKNOWN_OR_ERROR_CERTS_
-            disregard = true;
-	    #endif
-        }
-    }
-#endif
 
     if (disregard) {
         LogWarning("Signature is disregard. RootCA is not a member of Tizen.");

@@ -383,56 +383,6 @@ bool Certificate::isRootCert()
     return isSignedBy(this->shared_from_this());
 }
 
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-std::list<std::string>
-Certificate::getCrlUris() const
-{
-    std::list<std::string> result;
-
-    STACK_OF(DIST_POINT)* distPoints =
-        static_cast<STACK_OF(DIST_POINT)*>(
-            X509_get_ext_d2i(
-                getX509(),
-                NID_crl_distribution_points,
-                NULL,
-                NULL));
-    if (!distPoints) {
-        LogDebug("No distribution points in certificate.");
-        return result;
-    }
-
-    int count = sk_DIST_POINT_num(distPoints);
-    for (int i = 0; i < count; ++i) {
-        DIST_POINT* point = sk_DIST_POINT_value(distPoints, i);
-        if (!point) {
-            LogError("Failed to get distribution point.");
-            continue;
-        }
-        if (point->distpoint != NULL &&
-            point->distpoint->name.fullname != NULL)
-        {
-            int countName =
-                sk_GENERAL_NAME_num(point->distpoint->name.fullname);
-            for (int j = 0; j < countName; ++j) {
-                GENERAL_NAME* name = sk_GENERAL_NAME_value(
-                        point->distpoint->name.fullname, j);
-                if (name != NULL && GEN_URI == name->type) {
-                    char *crlUri =
-                    reinterpret_cast<char*>(name->d.ia5->data);
-                    if (!crlUri) {
-                        LogError("Failed to get URI.");
-                        continue;
-                    }
-                    result.push_back(crlUri);
-                }
-            }
-        }
-    }
-    sk_DIST_POINT_pop_free(distPoints, DIST_POINT_free);
-    return result;
-}
-#endif
-
 long Certificate::getVersion() const
 {
     return X509_get_version(m_x509);

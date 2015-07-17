@@ -48,14 +48,6 @@ public:
         fingerPrintMap[fingerprint].add(domain);
     }
 
-	#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-    void add(const Certificate::Fingerprint &fingerprint,
-			std::string ocspUrl)
-    {
-    	fingerPrintMap[fingerprint].add(ocspUrl);
-    }
-	#endif
-
     CertStoreId::Set find(const Certificate::Fingerprint &fingerprint) const
     {
         FingerPrintMap::const_iterator iter = fingerPrintMap.find(fingerprint);

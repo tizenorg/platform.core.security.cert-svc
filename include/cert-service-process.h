@@ -47,9 +47,6 @@ int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_
 int _verify_signature(cert_svc_mem_buff* certBuf, unsigned char* message, int msgLen, unsigned char* signature, char* algo, int* validity);
 int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor* certDesc);
 int _search_certificate(cert_svc_filename_list** fileNames, search_field fldName, char* fldData);
-#ifdef TIZEN_FEATURE_CERT_SVC_OCSP_CRL
-int _check_ocsp_status(cert_svc_mem_buff* cert, cert_svc_linked_list** certList, const char* uri);
-#endif
 
 int release_certificate_buf(cert_svc_mem_buff* certBuf);
 int release_certificate_data(cert_svc_cert_descriptor* certDesc);

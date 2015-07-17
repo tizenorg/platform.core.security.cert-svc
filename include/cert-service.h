@@ -60,6 +60,8 @@ extern "C" {
 #define CERT_SVC_ERR_IN_DISTRIBUTOR_CASE_AUTHOR_CERT -28
 #define CERT_SVC_ERR_IN_AUTHOR_CASE_DISTRIBUTOR_CERT -29
 
+#define CERT_SVC_STORE_PATH "/usr/share/cert-svc/certs/"
+
 /*********************************************************************************/
 /* Type definitions                                                              */
 /*********************************************************************************/

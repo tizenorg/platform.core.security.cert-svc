@@ -169,47 +169,6 @@ void certsvc_certificate_free(CertSvcCertificate certificate);
 int certsvc_certificate_save_file(CertSvcCertificate certificate, const char *location);
 
 /**
- * Search certificate with specific data. Result is stored in CertSvcInstance.
- * This function will erase all preverious results stored in CertSvcInstance but
- * it will not erase any CertSvcCertificate.
- *
- * You can search by fields: CERTSVC_SUBJECT, CERTSVC_ISSUER, CERTSVC_SUBJECT_COMMON_NAME
- *
- * @param[in] instance CertSvcInstance object.
- * @param[in] field Certificate filed name.
- * @param[in] value Value to search for.
- * @param[out] handler Handler to search result.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
- */
-int certsvc_certificate_search(CertSvcInstance instance,
-                               CertSvcCertificateField field,
-                               const char *value,
-                               CertSvcCertificateList *handler);
-
-/**
- * This function will return certificate id founded by certsvc_certificate_search.
- * You can call this function multiple times to get all results.
- *
- * @param[in] hadler Hander to search results.
- * @param[in] position
- * @param[out] certificate Certficate id.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
- */
-int certsvc_certificate_list_get_one(CertSvcCertificateList handler,
-                                     int position,
-                                     CertSvcCertificate *certificate);
-
-/**
- * Return number of elements on the list.
- *
- * @param[in] handler Handler to certifiacte list.
- * @param[out] length Size of list.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
- */
-int certsvc_certificate_list_get_length(CertSvcCertificateList handler,
-                                        int *size);
-
-/**
  * This function will free list. It will not free certificates on the list.
  * You may free each certificate with certsvc_certificate_free.
  *

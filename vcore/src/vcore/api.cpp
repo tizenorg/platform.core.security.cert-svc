@@ -113,32 +113,6 @@ public:
         }
     }
 
-    inline int getCertFromList(
-        const CertSvcCertificateList &handler,
-        int position,
-        CertSvcCertificate *certificate)
-    {
-        auto iter = m_idListMap.find(handler.privateHandler);
-        if (iter == m_idListMap.end()) {
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-        if (position >= static_cast<int>(iter->second.size())) {
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-        certificate->privateInstance = handler.privateInstance;
-        certificate->privateHandler = (iter->second)[position];
-        return CERTSVC_SUCCESS;
-    }
-
-    inline int getCertListLen(const CertSvcCertificateList &handler, int *len) {
-        auto iter = m_idListMap.find(handler.privateHandler);
-        if (iter == m_idListMap.end() || !len) {
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-        *len = (iter->second).size();
-        return CERTSVC_SUCCESS;
-    }
-
     inline void removeCertList(const CertSvcCertificateList &handler) {
         auto iter = m_idListMap.find(handler.privateHandler);
         if (iter != m_idListMap.end())
@@ -355,75 +329,6 @@ public:
             delete[] *iter;
             m_allocatedStringSet.erase(iter);
         }
-    }
-
-    inline int certificateSearch(
-        CertSvcInstance instance,
-        CertSvcCertificateField field,
-        const char *value,
-        CertSvcCertificateList *handler)
-    {
-        int result;
-        search_field fieldId = SEARCH_FIELD_END;
-
-        switch(field){
-        case CERTSVC_SUBJECT:
-            fieldId = SUBJECT_STR;
-            break;
-        case CERTSVC_ISSUER:
-            fieldId = ISSUER_STR;
-            break;
-        case CERTSVC_SUBJECT_COMMON_NAME:
-            fieldId = SUBJECT_COMMONNAME;
-            break;
-        default:
-            LogError("Not implemented!");
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-
-        ScopedCertCtx ctx(cert_svc_cert_context_init(),
-                          cert_svc_cert_context_final);
-
-        if (ctx.get() == NULL) {
-            LogWarning("Error in cert_svc_cert_context_init.");
-            return CERTSVC_FAIL;
-        }
-
-        LogDebug("Match string : " << value);
-        result = cert_svc_search_certificate(ctx.get(), fieldId, const_cast<char*>(value));
-        LogDebug("Search finished!");
-
-        if (CERT_SVC_ERR_NO_ERROR != result) {
-            LogWarning("Error during certificate search");
-            return CERTSVC_FAIL;
-        }
-
-        cert_svc_filename_list *fileList = ctx.get()->fileNames;
-
-        int listId = m_idListCounter++;
-        std::vector<int> &list = m_idListMap[listId];
-        handler->privateHandler = listId;
-        handler->privateInstance = instance;
-
-        for(;fileList != NULL; fileList = fileList->next) {
-            ScopedCertCtx ctx2(cert_svc_cert_context_init(),
-                               cert_svc_cert_context_final);
-            if (ctx2.get() == NULL) {
-                LogWarning("Error in cert_svc_cert_context_init.");
-                return CERTSVC_FAIL;
-            }
-
-            // TODO add read_certifcate_from_file function to Certificate.h
-            if (CERT_SVC_ERR_NO_ERROR !=
-                cert_svc_load_file_to_context(ctx2.get(), fileList->filename))
-            {
-                LogWarning("Error in cert_svc_load_file_to_context");
-                return CERTSVC_FAIL;
-            }
-            int certId = addCert(CertificatePtr(new Certificate(*(ctx2.get()->certBuf))));
-            list.push_back(certId);
-        }
-        return CERTSVC_SUCCESS;
     }
 
     inline int sortCollection(CertSvcCertificate *certificate_array, int size) {
@@ -832,24 +737,6 @@ out:
 		return ret;
 	}
 
-    inline int pkcsNameIsUnique(
-        CertSvcString pfxIdString,
-        int *is_unique)
-    {
-      gboolean exists;
-      int result = c_certsvc_pkcs12_alias_exists(pfxIdString.privateHandler, &exists);
-      *is_unique = !exists;
-      return result;
-    }
-
-    inline int pkcsImport(
-        CertSvcString path,
-        CertSvcString pass,
-        CertSvcString pfxIdString)
-    {
-      return c_certsvc_pkcs12_import(path.privateHandler, pass.privateHandler, pfxIdString.privateHandler);
-    }
-
     inline int pkcsNameIsUniqueInStore(
         CertStoreType storeType,
         CertSvcString pfxIdString,
@@ -875,87 +762,11 @@ out:
         return c_certsvc_pkcs12_delete_certificate_from_store(storeType, gname.privateHandler);
     }
 
-    inline int getPkcsIdList(
-        CertSvcInstance &instance,
-        CertSvcStringList *handler)
-    {
-      gchar **aliases;
-      gsize i, naliases;
-      std::vector<std::string> output;
-      int result;
-
-      result = c_certsvc_pkcs12_aliases_load(&aliases, &naliases);
-      if(result != CERTSVC_SUCCESS)
-        return result;
-      for(i = 0; i < naliases; i++)
-        output.push_back(std::string(aliases[i]));
-      c_certsvc_pkcs12_aliases_free(aliases);
-
-      int position = m_stringListCounter++;
-      m_stringListMap[position] = output;
-
-      handler->privateHandler = position;
-      handler->privateInstance = instance;
-      return CERTSVC_SUCCESS;
-    }
-
     inline int pkcsHasPassword(
         CertSvcString filepath,
         int *has_password)
     {
       return c_certsvc_pkcs12_has_password(filepath.privateHandler, has_password);
-    }
-
-    inline int getPkcsPrivateKey(
-        CertSvcString pfxIdString,
-        char **buffer,
-        size_t *size)
-    {
-        return c_certsvc_pkcs12_private_key_load(pfxIdString.privateHandler, buffer, size);
-    }
-
-    inline int getPkcsCertificateList(
-        CertSvcInstance &instance,
-        CertSvcString &pfxIdString,
-        CertSvcCertificateList *handler)
-    {
-      gchar **certs;
-      gsize i, ncerts;
-      std::vector<CertificatePtr> certPtrVector;
-      std::vector<int> listId;
-      int result;
-
-      result = c_certsvc_pkcs12_load_certificates(pfxIdString.privateHandler, &certs, &ncerts);
-      if(result != CERTSVC_SUCCESS)
-        return result;
-      for(i = 0; i < ncerts; i++) {
-        ScopedCertCtx context(cert_svc_cert_context_init(), cert_svc_cert_context_final);
-        if(cert_svc_load_file_to_context(context.get(), certs[i]) != CERT_SVC_ERR_NO_ERROR) {
-          c_certsvc_pkcs12_free_certificates(certs);
-          return CERTSVC_IO_ERROR;
-        }
-        else
-          certPtrVector.push_back(CertificatePtr(new Certificate(*(context->certBuf))));
-      }
-      if(ncerts > 0)
-          c_certsvc_pkcs12_free_certificates(certs);
-
-      FOREACH(it, certPtrVector) {
-        listId.push_back(addCert(*it));
-      }
-
-      int position = m_idListCounter++;
-      m_idListMap[position] = listId;
-
-      handler->privateInstance = instance;
-      handler->privateHandler = position;
-
-      return result;
-    }
-
-    inline int pkcsDelete(CertSvcString pfxIdString)
-    {
-      return c_certsvc_pkcs12_delete(pfxIdString.privateHandler);
     }
 
     inline int pkcsImportToStore(
@@ -1249,36 +1060,6 @@ int certsvc_certificate_save_file(
     return impl(certificate.privateInstance)->saveToFile(certificate, location);
 }
 
-int certsvc_certificate_search(
-        CertSvcInstance instance,
-        CertSvcCertificateField field,
-        const char *value,
-        CertSvcCertificateList *handler)
-{
-    try {
-        return impl(instance)->certificateSearch(instance, field, value, handler);
-    } catch (std::bad_alloc &) {
-        return CERTSVC_BAD_ALLOC;
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_certificate_list_get_one(
-        CertSvcCertificateList handler,
-        int position,
-        CertSvcCertificate *certificate)
-{
-    return impl(handler.privateInstance)->
-        getCertFromList(handler,position, certificate);
-}
-
-int certsvc_certificate_list_get_length(
-        CertSvcCertificateList handler,
-        int *size)
-{
-    return impl(handler.privateInstance)->getCertListLen(handler, size);
-}
-
 void certsvc_certificate_list_free(CertSvcCertificateList handler)
 {
     impl(handler.privateInstance)->removeCertList(handler);
@@ -1411,49 +1192,6 @@ void certsvc_certificate_free_x509(X509 *x509)
 		X509_free(x509);
 }
 
-int certsvc_pkcs12_dup_evp_pkey(
-    CertSvcInstance instance,
-    CertSvcString alias,
-    EVP_PKEY** pkey)
-{
-    char *buffer;
-    size_t size;
-
-    int result = certsvc_pkcs12_private_key_dup(
-        instance,
-        alias,
-        &buffer,
-        &size);
-
-    if (result != CERTSVC_SUCCESS) {
-        LogError("Error in certsvc_pkcs12_private_key_dup");
-        return result;
-    }
-
-    BIO *b = BIO_new(BIO_s_mem());
-
-    if ((int)size != BIO_write(b, buffer, size)) {
-        LogError("Error in BIO_write");
-        BIO_free_all(b);
-        certsvc_pkcs12_private_key_free(buffer);
-        return CERTSVC_FAIL;
-    }
-
-    certsvc_pkcs12_private_key_free(buffer);
-
-    *pkey = PEM_read_bio_PrivateKey(b, NULL, NULL, NULL);
-
-    BIO_free_all(b);
-
-    if (*pkey) {
-        return CERTSVC_SUCCESS;
-    }
-
-    LogError("Result is null. Openssl REASON code is : " << ERR_GET_REASON(ERR_peek_last_error()));
-
-    return CERTSVC_FAIL;
-}
-
 void certsvc_pkcs12_free_evp_pkey(EVP_PKEY* pkey)
 {
     EVP_PKEY_free(pkey);
@@ -1572,27 +1310,6 @@ int certsvc_certificate_get_visibility(CertSvcCertificate certificate, int* visi
 	{
 		LogError("exception occur");
 	}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_alias_exists(CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    int *is_unique)
-{
-    try {
-      return impl(instance)->pkcsNameIsUnique(pfxIdString, is_unique);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_import_from_file(CertSvcInstance instance,
-    CertSvcString path,
-    CertSvcString password,
-    CertSvcString pfxIdString)
-{
-    try {
-      return impl(instance)->pkcsImport(path, password, pfxIdString);
-    } catch (...) {}
     return CERTSVC_FAIL;
 }
 
@@ -1958,18 +1675,6 @@ int certsvc_pkcs12_dup_evp_pkey_from_store(
     return CERTSVC_FAIL;
 }
 
-int certsvc_pkcs12_get_id_list(
-    CertSvcInstance instance,
-    CertSvcStringList *pfxIdStringList)
-{
-    try {
-        return impl(instance)->getPkcsIdList(
-            instance,
-            pfxIdStringList);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
 int certsvc_pkcs12_has_password(
     CertSvcInstance instance,
     CertSvcString filepath,
@@ -1983,45 +1688,9 @@ int certsvc_pkcs12_has_password(
     return CERTSVC_FAIL;
 }
 
-int certsvc_pkcs12_load_certificate_list(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    CertSvcCertificateList *certificateList)
-{
-    try {
-        return impl(instance)->getPkcsCertificateList(
-            instance,
-            pfxIdString,
-            certificateList);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_private_key_dup(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    char **buffer,
-    size_t *size)
-{
-    try {
-        return impl(instance)->getPkcsPrivateKey(pfxIdString, buffer, size);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
 void certsvc_pkcs12_private_key_free(
     char *buffer)
 {
     free(buffer);
-}
-
-int certsvc_pkcs12_delete(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString)
-{
-    try {
-        return impl(instance)->pkcsDelete(pfxIdString);
-    } catch (...) {}
-    return CERTSVC_FAIL;
 }
 

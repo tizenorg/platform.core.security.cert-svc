@@ -11,7 +11,6 @@ PKG_CHECK_MODULES(VCORE_DEPS
     openssl
     xmlsec1
     dlog
-    secure-storage
     icu-uc
     libsoup-2.4
     db-util

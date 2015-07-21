@@ -22,7 +22,6 @@ BuildRequires: pkgconfig(libsoup-2.4)
 BuildRequires: pkgconfig(db-util)
 BuildRequires: pkgconfig(libsystemd-daemon)
 BuildRequires: pkgconfig(key-manager)
-BuildRequires: pkgconfig(secure-storage)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: boost-devel

@@ -33,8 +33,6 @@
 #include <openssl/pem.h>
 #include <db-util.h>
 
-#include <ss_manager.h>
-
 #include <cert-service.h>
 #include <cert-service-util.h>
 #include <cert-service-debug.h>
@@ -53,49 +51,7 @@
 #define START_KEY       "-----BEGIN PRIVATE KEY-----"
 #define END_KEY         "-----END PRIVATE KEY-----"
 
-#define CERTSVC_PKCS12_STORAGE_FILE  "storage"
-
-#define CERTSVC_PKCS12_STORAGE_PATH CERTSVC_PKCS12_STORAGE_DIR "/" CERTSVC_PKCS12_STORAGE_FILE
-
-#define MAX_BUFFER_SIZE 16;
 #define _CERT_SVC_VERIFY_PKCS12
-
-static const char  CERTSVC_PKCS12_STORAGE_KEY_PKEY[]    = "pkey";
-static const char  CERTSVC_PKCS12_STORAGE_KEY_CERTS[]   = "certs";
-static const gchar CERTSVC_PKCS12_STORAGE_SEPARATOR     = ';';
-static const char  CERTSVC_PKCS12_UNIX_GROUP[]          = "secure-storage::pkcs12";
-
-sqlite3 *cert_store_db = NULL;
-
-static gboolean keyfile_check(const char *pathname) {
-  int result;
-  if(access(pathname, F_OK | R_OK | W_OK) == 0)
-    return TRUE;
-  SYSCALL(result = creat(pathname, S_IRUSR | S_IWUSR));
-  if (result != -1) {
-      result = close(result);
-      if(result == -1)
-        SLOGD("Failed to close, errno : %d",  errno);
-      return TRUE;
-  } else {
-      return FALSE;
-  }
-}
-
-static GKeyFile *keyfile_load(const char *pathname) {
-  GKeyFile *keyfile;
-  GError *error;
-
-  if(!keyfile_check(pathname))
-    return NULL;
-  keyfile = g_key_file_new();
-  error = NULL;
-  if(!g_key_file_load_from_file(keyfile, pathname, G_KEY_FILE_KEEP_COMMENTS, &error)) {
-    g_key_file_free(keyfile);
-    return NULL;
-  }
-  return keyfile;
-}
 
 static int generate_random_filepath(char **filepath) {
   int generator;
@@ -132,25 +88,18 @@ static int generate_random_filepath(char **filepath) {
   return (result != -1) ? CERTSVC_SUCCESS : CERTSVC_BAD_ALLOC;
 }
 
-static int unique_filename(char **filepath, gboolean with_secure_storage) {
-  unsigned trial = 0x00U;
+static int unique_filename(char **filepath)
+{
   int result;
-  ssm_file_info_t sfi;
-  int exists = 1;
 
-  for (; trial < 0xFFU; ++trial) {
+  for (unsigned trial = 0x00U; trial < 0xFFU; ++trial) {
     result = generate_random_filepath(filepath);
-    if(result != CERTSVC_SUCCESS)
-      return result;
+    if (result != CERTSVC_SUCCESS)
+        return result;
 
-    exists = (access(*filepath, F_OK) == 0);
-
-    if (with_secure_storage)
-      exists |= (ssm_getinfo(*filepath, &sfi, SSM_FLAG_DATA, CERTSVC_PKCS12_UNIX_GROUP) == 0);
-
-    /* find unique filename */
-    if(!exists)
-      return CERTSVC_SUCCESS;
+    result = access(*filepath, F_OK);
+    if (result != 0)
+        return CERTSVC_SUCCESS;
 
     free(*filepath);
   }
@@ -219,73 +168,6 @@ err:
     return result;
 }
 
-int open_db(sqlite3 **db_handle, const char *db_path) {
-
-    int result = -1;
-    sqlite3 *handle;
-
-    if (access(db_path, F_OK) == 0) {
-        result = db_util_open(db_path, &handle, 0);
-        if (result != SQLITE_OK) {
-            SLOGE("connect to db [%s] failed!", db_path);
-            return CERTSVC_FAIL;
-        }
-        *db_handle = handle;
-        return CERTSVC_SUCCESS;
-    }
-    SLOGD("%s DB does not exists. Create one!!", db_path);
-
-    result = db_util_open(db_path, &handle, 0);
-    if (result != SQLITE_OK) {
-        SLOGE("connect to db [%s] failed!", db_path);
-        return CERTSVC_FAIL;
-    }
-    *db_handle = handle;
-    return CERTSVC_SUCCESS;
-}
-
-int initialize_db() {
-
-    int result = CERTSVC_SUCCESS;
-    if (cert_store_db == NULL) {
-        result = open_db(&cert_store_db, CERTSVC_SYSTEM_STORE_DB);
-        if (result != CERTSVC_SUCCESS)
-            SLOGE("Certsvc store DB creation failed");
-    }
-    return result;
-}
-
-int execute_select_query(char *query, sqlite3_stmt **stmt) {
-
-    int result = CERTSVC_SUCCESS;
-    sqlite3_stmt *stmts = NULL;
-
-    if (cert_store_db != NULL) {
-        sqlite3_close(cert_store_db);
-        cert_store_db = NULL;
-    }
-
-    result = initialize_db();
-    if (result != CERTSVC_SUCCESS) {
-        SLOGE("Failed to initialise database.");
-        result = CERTSVC_IO_ERROR;
-        goto error;
-    }
-
-    result = sqlite3_prepare_v2(cert_store_db, query, strlen(query), &stmts, NULL);
-    if (result != SQLITE_OK) {
-        SLOGE("sqlite3_prepare_v2 failed [%s].", query);
-        result = CERTSVC_FAIL;
-        goto error;
-    }
-
-    *stmt = stmts;
-    result = CERTSVC_SUCCESS;
-
-error:
-    return result;
-}
-
 int c_certsvc_pkcs12_set_certificate_status_to_store(CertStoreType storeType, int is_root_app, char* gname, CertStatus status) {
 
 	return vcore_client_set_certificate_status_to_store(storeType, is_root_app, gname, status);
@@ -344,12 +226,6 @@ int  c_certsvc_pkcs12_free_aliases_loaded_from_store(CertSvcStoreCertList** cert
         (*certList) = (*certList)->next;
         free(tmpNode);
     }
-
-    if (cert_store_db != NULL) {
-        sqlite3_close(cert_store_db);
-        cert_store_db = NULL;
-    }
-    certList = NULL;
     return result;
 }
 
@@ -383,7 +259,7 @@ int install_pem_file_format_to_store(CertStoreType storeType, const char* certBu
     }
 
     if (decideCert == PEM_CRT) {
-        result = unique_filename(&unique, FALSE);
+        result = unique_filename(&unique);
         if (result != CERTSVC_SUCCESS) {
             SLOGE("Fail to generate unique filename.");
             return result;
@@ -846,7 +722,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             n = 0;
             cvaluev = (gchar **)calloc(1 + nicerts, sizeof(gchar *));
             if (unique != NULL) { free(unique); unique = NULL; }
-            result = unique_filename(&unique, FALSE);
+            result = unique_filename(&unique);
             if (result != CERTSVC_SUCCESS || !unique) {
                 SLOGE("Unique filename generation failed.");
                 goto error;
@@ -896,7 +772,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
 
             unlink(unique);
             if (unique!=NULL) { free(unique); unique=NULL; }
-            result = unique_filename(&unique, FALSE);
+            result = unique_filename(&unique);
             if (result != CERTSVC_SUCCESS || !unique) {
                 SLOGE("Unique filename generation failed.");
                 goto error;
@@ -931,7 +807,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
 
             unlink(unique);
             for (i=nicerts; i>0; i--) {
-                 result = unique_filename(&unique, FALSE);
+                 result = unique_filename(&unique);
                  if (result != CERTSVC_SUCCESS || !unique) {
                      SLOGE("Unique filename generation failed.");
                      goto error;
@@ -1010,222 +886,7 @@ error:
     return result;
 }
 
-
-int c_certsvc_pkcs12_alias_exists(const gchar *alias, gboolean *exists) {
-  GKeyFile *keyfile;
-
-  if(exists == NULL)
-    return CERTSVC_WRONG_ARGUMENT;
-  keyfile = keyfile_load(CERTSVC_PKCS12_STORAGE_PATH);
-  if(!keyfile)
-    return CERTSVC_IO_ERROR;
-  *exists = g_key_file_has_group(keyfile, alias);
-  g_key_file_free(keyfile);
-  return CERTSVC_SUCCESS;
-}
-
-int c_certsvc_pkcs12_import(const char *path, const char *password, const gchar *alias) {
-  int exists;
-  FILE *stream;
-  PKCS12 *container;
-  EVP_PKEY *key;
-  X509 *cert;
-  STACK_OF(X509) *certv;
-  int nicerts;
-  char *unique;
-  int result = 0;
-  struct stat st;
-  int wr_res;
-  GKeyFile *keyfile;
-  gchar *bare;
-  gchar *pkvalue;
-  gchar **cvaluev;
-  gsize i, n;
-  gchar *data;
-  gsize length;
-  int readLen = 0;
-  char fileBuffer[4096] = {0,};
-
-  certv = NULL;
-  pkvalue = NULL;
-  if(!alias || strlen(alias) < 1)
-    return CERTSVC_WRONG_ARGUMENT;
-  result = c_certsvc_pkcs12_alias_exists(alias, &exists);
-  if(result != CERTSVC_SUCCESS)
-    return result;
-  if(exists == TRUE)
-    return CERTSVC_DUPLICATED_ALIAS;
-
-  keyfile = keyfile_load(CERTSVC_PKCS12_STORAGE_PATH);
-  if(!keyfile)
-    return CERTSVC_IO_ERROR;
-  if(stat(CERTSVC_PKCS12_STORAGE_PATH, &st) == -1) {
-    if(mkdir(CERTSVC_PKCS12_STORAGE_PATH, S_IRWXU | S_IRWXG | S_IRWXO) == -1) {
-      result = CERTSVC_FAIL;
-      goto free_keyfile;
-    }
-  }
-
-  if((stream = fopen(path, "rb")) == NULL) {
-    result = CERTSVC_IO_ERROR;
-    goto free_keyfile;
-  }
-  container = d2i_PKCS12_fp(stream, NULL);
-  fclose(stream);
-  if(container == NULL) {
-    result = CERTSVC_FAIL;
-    goto free_keyfile;
-  }
-
-
-  result = PKCS12_parse(container, password, &key, &cert, &certv);
-  PKCS12_free(container);
-	if (result == 0)
-	{
-		SLOGD("Failed to parse PKCS12");
-		result = CERTSVC_FAIL;
-		goto free_keyfile;
-	}
-
-	result = verify_cert_details(&cert, &certv);
-	if (result == CERTSVC_FAIL)
-	{
-		SLOGE("Failed to parse the file passed.");
-		goto free_keyfile;
-	}
-
-  nicerts = certv ? sk_X509_num(certv) : 0;
-  cvaluev = (gchar **)calloc(1 + nicerts, sizeof(gchar *));
-  n = 0;
-
-  result = unique_filename(&unique, TRUE);
-  if(result != CERTSVC_SUCCESS)
-    goto clean_cert_chain_and_pkey;
-  if((stream = fopen(unique, "w+")) == NULL) {
-    free(unique);
-    result = CERTSVC_IO_ERROR;
-    goto clean_cert_chain_and_pkey;
-  }
-  result = PEM_write_PrivateKey(stream, key, NULL, NULL, 0, NULL, NULL);
-  if(result == 0) {
-    result = CERTSVC_FAIL;
-    fclose(stream);
-    free(unique);
-    goto clean_cert_chain_and_pkey;
-  }
-
-  fseek(stream, 0, SEEK_SET);
-
-  readLen = fread(fileBuffer, sizeof(char), 4096, stream);
-  fclose(stream);
-  if(readLen <= 0){
-    free(unique);
-    result = CERTSVC_FAIL;
-    SLOGE("failed to read key file");
-    goto clean_cert_chain_and_pkey;
-  }
-
-  wr_res = ssm_write_file(unique, SSM_FLAG_DATA, CERTSVC_PKCS12_UNIX_GROUP);
-  if(wr_res <= 0) {
-    free(unique);
-    result = CERTSVC_FAIL;
-    SLOGE("ssm_write_file failed : %d", wr_res);
-    goto clean_cert_chain_and_pkey;
-  }
-  unlink(unique);
-
-  bare = bare_filename(unique);
-  if(bare) {
-    pkvalue = g_strdup(bare);
-    g_key_file_set_string(keyfile, alias, CERTSVC_PKCS12_STORAGE_KEY_PKEY, pkvalue);
-  }
-  free(unique);
-  result = unique_filename(&unique, TRUE);
-  if(result != CERTSVC_SUCCESS)
-    goto clean_cert_chain_and_pkey;
-  if((stream = fopen(unique, "w")) == NULL) {
-    free(unique);
-    result = CERTSVC_IO_ERROR;
-    goto clean_cert_chain_and_pkey;
-  }
-  result = PEM_write_X509(stream, cert);
-  fclose(stream);
-  if(result == 0) {
-    result = CERTSVC_FAIL;
-    goto clean_cert_chain_and_pkey;
-  }
-  bare = bare_filename(unique);
-  if(bare)
-    cvaluev[n++] = g_strdup(bare);
-  free(unique);
-  for(i = 0; i < (unsigned int)nicerts; i++) {
-    result = unique_filename(&unique, TRUE);
-    if(result != CERTSVC_SUCCESS)
-      goto clean_cert_chain_and_pkey;
-    if((stream = fopen(unique, "w")) == NULL) {
-      free(unique);
-      result = CERTSVC_IO_ERROR;
-      goto clean_cert_chain_and_pkey;
-    }
-    result = PEM_write_X509_AUX(stream, sk_X509_value(certv, i));
-    fclose(stream);
-    if(result == 0) {
-      result = CERTSVC_FAIL;
-      goto clean_cert_chain_and_pkey;
-    }
-    bare = bare_filename(unique);
-    if(bare)
-      cvaluev[n++] = g_strdup(bare);
-    free(unique);
-  }
-  g_key_file_set_list_separator(keyfile, CERTSVC_PKCS12_STORAGE_SEPARATOR);
-  g_key_file_set_string_list(keyfile, alias, CERTSVC_PKCS12_STORAGE_KEY_CERTS, (const gchar * const *)cvaluev, n);
-  data = g_key_file_to_data(keyfile, &length, NULL);
-  if(data == NULL) {
-    result = CERTSVC_BAD_ALLOC;
-    goto clean_cert_chain_and_pkey;
-  }
-  if(!g_file_set_contents(CERTSVC_PKCS12_STORAGE_PATH, data, length, NULL)) {
-    result = CERTSVC_IO_ERROR;
-    goto free_data;
-  }
-  result = CERTSVC_SUCCESS;
-
-  SLOGD("( %s, %s)", path, password);
-
- free_data:
-  g_free(data);
-
- clean_cert_chain_and_pkey:
-  EVP_PKEY_free(key);
-  X509_free(cert);
-  sk_X509_free(certv);
-  free(pkvalue);
- for(i = 0; i < n; i++) {
-    g_free(cvaluev[i]);
- }
-  free(cvaluev);
- free_keyfile:
-  g_key_file_free(keyfile);
-  return result;
-}
-
-int c_certsvc_pkcs12_aliases_load(gchar ***aliases, gsize *naliases) {
-  GKeyFile *keyfile;
-
-  keyfile = keyfile_load(CERTSVC_PKCS12_STORAGE_PATH);
-  if(!keyfile)
-    return CERTSVC_IO_ERROR;
-  *aliases = g_key_file_get_groups(keyfile, naliases);
-  g_key_file_free(keyfile);
-  return CERTSVC_SUCCESS;
-}
-
-void c_certsvc_pkcs12_aliases_free(gchar **aliases) {
-  g_strfreev(aliases);
-}
-
-int c_certsvc_pkcs12_has_password(const char *filepath, gboolean *passworded) {
+int c_certsvc_pkcs12_has_password(const char *filepath, int *passworded) {
   FILE *stream;
   EVP_PKEY *pkey;
   X509 *cert;
@@ -1245,40 +906,17 @@ int c_certsvc_pkcs12_has_password(const char *filepath, gboolean *passworded) {
   if(result == 1) {
     EVP_PKEY_free(pkey);
     X509_free(cert);
-    *passworded = FALSE;
+    *passworded = 0;
     return CERTSVC_SUCCESS;
   }
   else {
     if(ERR_GET_REASON(ERR_peek_last_error()) == PKCS12_R_MAC_VERIFY_FAILURE) {
-      *passworded = TRUE;
+      *passworded = 1;
       return CERTSVC_SUCCESS;
     }
     else
       return CERTSVC_FAIL;
   }
-}
-
-int c_certsvc_pkcs12_load_certificates(const gchar *alias, gchar ***certs, gsize *ncerts) {
-  GKeyFile *keyfile;
-  gchar **barev;
-  gsize i;
-  keyfile = keyfile_load(CERTSVC_PKCS12_STORAGE_PATH);
-  if(!keyfile)
-    return CERTSVC_IO_ERROR;
-  g_key_file_set_list_separator(keyfile, CERTSVC_PKCS12_STORAGE_SEPARATOR);
-  barev = g_key_file_get_string_list(keyfile, alias, CERTSVC_PKCS12_STORAGE_KEY_CERTS, ncerts, NULL);
-  if(barev == NULL) {
-      *ncerts = 0;
-      goto free_keyfile;
-  }
-  *certs = (gchar **)g_malloc((*ncerts + 1) * sizeof(gchar *));
-  for(i = 0; i < *ncerts; i++)
-      (*certs)[i] = g_strdup_printf("%s/%s", CERTSVC_PKCS12_STORAGE_DIR, barev[i]);
-  (*certs)[*ncerts] = NULL;
-  g_strfreev(barev);
-free_keyfile:
-  g_key_file_free(keyfile);
-  return CERTSVC_SUCCESS;
 }
 
 void c_certsvc_pkcs12_free_certificates(gchar **certs) {
@@ -1289,159 +927,6 @@ void c_certsvc_pkcs12_free_certificates(gchar **certs) {
     g_free(certs[i++]);
   g_free(certs);
 }
-
-int c_certsvc_pkcs12_private_key_load(const gchar *alias, char **buffer, gsize *count) {
-  GKeyFile *keyfile;
-  gchar *pkey;
-  GError *error;
-  char *spkp;
-  int result;
-  ssm_file_info_t sfi;
-
-  if(!buffer)
-    return CERTSVC_WRONG_ARGUMENT;
-  keyfile = keyfile_load(CERTSVC_PKCS12_STORAGE_PATH);
-  if(!keyfile)
-    return CERTSVC_IO_ERROR;
-  error = NULL;
-
-  result = CERTSVC_SUCCESS;
-
-  pkey = g_key_file_get_string(keyfile, alias, CERTSVC_PKCS12_STORAGE_KEY_PKEY, &error);
-  g_key_file_free(keyfile);
-
-  if(error && error->code == G_KEY_FILE_ERROR_KEY_NOT_FOUND) {
-    *count = 0;
-    return CERTSVC_SUCCESS;
-  }
-
-  if(error)
-    return CERTSVC_FAIL;
-
-  if(asprintf(&spkp, "%s/%s", CERTSVC_PKCS12_STORAGE_DIR, pkey) == -1) {
-    spkp = NULL;
-    result = CERTSVC_BAD_ALLOC;
-    goto out;
-  }
-
-  if(ssm_getinfo(spkp, &sfi, SSM_FLAG_DATA, CERTSVC_PKCS12_UNIX_GROUP) != 0) {
-    //result = CERTSVC_FAIL;
-    goto out;
-  }
-
-  if((*buffer = (char *)malloc(sfi.originSize))) {
-    result = CERTSVC_BAD_ALLOC;
-    goto out;
-  }
-
-  if(ssm_read(spkp, *buffer, sfi.originSize, count, SSM_FLAG_DATA, CERTSVC_PKCS12_UNIX_GROUP) != 0) {
-    c_certsvc_pkcs12_private_key_free(*buffer);
-    result = CERTSVC_FAIL;
-  }
-
-out:
-  free(spkp);
-  g_free(pkey);
-
-  return result;
-}
-
-void c_certsvc_pkcs12_private_key_free(char *buffer) {
-  free(buffer);
-}
-
-int certsvc_load_file_to_buffer(const char* filePath, unsigned char** certBuf, int* length)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	FILE* fp_in = NULL;
-	unsigned long int fileSize = 0;
-
-	/* get file size */
-	if((ret = cert_svc_get_file_size(filePath, &fileSize)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to get file size, [%s]", __func__, filePath);
-		return CERT_SVC_ERR_FILE_IO;
-	}
-	/* open file and write to buffer */
-	if(!(fp_in = fopen(filePath, "rb"))) {
-		SLOGE("[ERR][%s] Fail to open file, [%s]", __func__, filePath);
-		return CERT_SVC_ERR_FILE_IO;
-	}
-
-	if(!(*certBuf = (unsigned char*)malloc(sizeof(unsigned char) * (unsigned int)(fileSize + 1)))) {
-		SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
-		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
-		goto err;
-	}
-	memset(*certBuf, 0x00, (fileSize + 1));
-	if(fread(*certBuf, sizeof(unsigned char), fileSize, fp_in) != fileSize) {
-		SLOGE("[ERR][%s] Fail to read file, [%s]", __func__, filePath);
-		ret = CERT_SVC_ERR_FILE_IO;
-		goto err;
-	}
-
-	*length = fileSize;
-
-err:
-	if(fp_in != NULL)
-		fclose(fp_in);
-	return ret;
-}
-
-int c_certsvc_pkcs12_delete(const gchar *alias) {
-  gchar **certs;
-  gsize ncerts;
-  char *pkey = NULL;
-  char *spkp = NULL;
-  int result;
-  GKeyFile *keyfile = NULL;
-  gchar *data;
-  gsize i, length;
-
-  data = NULL;
-  result = c_certsvc_pkcs12_load_certificates(alias, &certs, &ncerts);
-  if(result != CERTSVC_SUCCESS)
-    goto load_certificates_failed;
-  keyfile = keyfile_load(CERTSVC_PKCS12_STORAGE_PATH);
-  if(!keyfile) {
-    result = CERTSVC_IO_ERROR;
-    goto keyfile_load_failed;
-  }
-  pkey = g_key_file_get_string(keyfile, alias, CERTSVC_PKCS12_STORAGE_KEY_PKEY, NULL);
-  if(g_key_file_remove_group(keyfile, alias, NULL)) {
-    data = g_key_file_to_data(keyfile, &length, NULL);
-    if(data == NULL) {
-      result = CERTSVC_BAD_ALLOC;
-      goto keyfile_free;
-    }
-    if(!g_file_set_contents(CERTSVC_PKCS12_STORAGE_PATH, data, length, NULL)) {
-      result = CERTSVC_IO_ERROR;
-      goto data_free;
-    }
-  }
-
-  for(i = 0; i < ncerts; i++)
-  {
-    unlink(certs[i]);
-  }
-  if(pkey != NULL) {
-      if(asprintf(&spkp, "%s/%s", CERTSVC_PKCS12_STORAGE_DIR, pkey) == -1) {
-          result = CERTSVC_BAD_ALLOC;
-          goto data_free;
-      }
-      ssm_delete_file(spkp, SSM_FLAG_DATA, CERTSVC_PKCS12_UNIX_GROUP);
-      free(spkp);
-  }
- data_free:
-  g_free(data);
- keyfile_free:
-  g_key_file_free(keyfile);
- keyfile_load_failed:
-  if(ncerts != 0)
-      c_certsvc_pkcs12_free_certificates(certs);
- load_certificates_failed:
-  return result;
-}
-
 
 int cert_svc_get_file_size(const char* filepath, unsigned long int* length)
 {

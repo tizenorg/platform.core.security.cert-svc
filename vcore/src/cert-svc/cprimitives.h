@@ -56,20 +56,6 @@ void certsvc_certificate_free_x509(X509 *x509_copy);
  * be release with function certsvc_pkcs12_free_evp_pkey
  *
  * @param[in] instance
- * @param[in] alias Pkcs12 identificator.
- * @param[out] pkey Duplicate of private key.
- * @return CERTSVC_SUCCESS, CERT_FAIL
- */
-
-int certsvc_pkcs12_dup_evp_pkey(CertSvcInstance instance,
-                                CertSvcString alias,
-                                EVP_PKEY** pkey);
-
-/**
- * This will return pointer to EVP_PKEY base openssl struct. This struct must
- * be release with function certsvc_pkcs12_free_evp_pkey
- *
- * @param[in] instance
  * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
  * @param[in] gname Pkcs12 identificator.
  * @param[out] pkey Duplicate of private key.

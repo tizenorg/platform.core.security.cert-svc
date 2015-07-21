@@ -22,8 +22,6 @@
 #ifndef _VCORE_SRC_VCORE_VCORE_H_
 #define _VCORE_SRC_VCORE_VCORE_H_
 
-#include <string>
-
 namespace ValidationCore {
 /*
  * This function could be run only once. If you call it twice it will
@@ -37,19 +35,6 @@ void VCoreInit(void);
  * This function will free internal structures responsible for db connection.
  */
 void VCoreDeinit(void);
-
-/*
- * All thread with are using OCSP/CRL must call AttachToThread function before
- * it can call OCSP/CRL. More than one thread could be Attach with OCPS/CRL.
- *
- * You mast attach thread to OCSP/CRL because OCSP/CRL is using database
- * CertificateCachedDAO. For each thread that will be using this database
- * vcore  must create internal structure (with connection info).
- *
- */
-void AttachToThreadRO(void);
-void AttachToThreadRW(void);
-void DetachFromThread(void);
 
 } // namespace ValidationCore
 

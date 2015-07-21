@@ -19,28 +19,10 @@
  * @brief
  */
 
-#include <vcore/VCorePrivate.h>
 #include <vcore/Config.h>
 #include <openssl/ssl.h>
-#include <glib.h>
-#include <glib-object.h>
-
-#include <dpl/assert.h>
-#include <dpl/log/log.h>
 
 namespace ValidationCore {
-
-void AttachToThreadRO(void)
-{
-}
-
-void AttachToThreadRW(void)
-{
-}
-
-void DetachFromThread(void)
-{
-}
 
 void VCoreInit()
 {

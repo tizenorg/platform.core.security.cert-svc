@@ -23,15 +23,11 @@
 
 #include <vcore/VCore.h>
 
-#include <glib-object.h>
-
 int main (int argc, char *argv[])
 {
 	ValidationCore::VCoreInit();
 
-	ValidationCore::AttachToThreadRW();
 	DPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
-	ValidationCore::DetachFromThread();
 
 	ValidationCore::VCoreDeinit();
 

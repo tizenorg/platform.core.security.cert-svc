@@ -5,13 +5,11 @@ ADD_DEFINITIONS("-Werror")
 
 PKG_CHECK_MODULES(VCORE_DEPS
     REQUIRED
-    glib-2.0
     libxml-2.0
     libpcrecpp
     openssl
     xmlsec1
     dlog
-    secure-storage
     icu-uc
     libsoup-2.4
     db-util

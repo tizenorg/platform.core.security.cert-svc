@@ -101,58 +101,18 @@ int evaluate_query(sqlite3 *db_handle, char *query) {
 	return CERTSVC_SUCCESS;
 }
 
-int initialize_db(void) {
-
+int initialize_db(void)
+{
 	int result = CERTSVC_SUCCESS;
-//	int i=0;
-//	static int reentry = 1;
-//	char *query = NULL;
-//	char db_list[][6]={"wifi","vpn","email"};
 
-	if (cert_store_db == NULL) {
-		result = open_db(&cert_store_db, CERTSVC_SYSTEM_STORE_DB);
-		if (result != CERTSVC_SUCCESS) {
-			SLOGE("Certsvc store DB creation failed. result[%d]", result);
-			return result;
-		}
-	}
+	if (cert_store_db != NULL)
+		return CERTSVC_SUCCESS;
 
-/*
-	if (reentry == 1) {
-		for (i=0; i<3; i++) {
-			 query = sqlite3_mprintf("create table if not exists %Q (gname text primary key not null, " \
-									 "common_name text key not null, private_key_gname text, " \
-									 "associated_gname text, is_root_cert integer, " \
-									 "enabled integer key not null,"
-									 "is_root_app_enabled integer key not null)", db_list[i]);
+	result = open_db(&cert_store_db, CERTSVC_SYSTEM_STORE_DB);
+	if (result != CERTSVC_SUCCESS)
+		SLOGE("Certsvc store DB creation failed. result[%d]", result);
 
-			 result = evaluate_query(cert_store_db, query);
-			 if (result != CERTSVC_SUCCESS) {
-				 SLOGE("Certificate store database initialisation Failed.");
-				 result = CERTSVC_FAIL;
-			 }
-			 sqlite3_free(query); query=NULL;
-		 }
-
-		 query = sqlite3_mprintf("create table if not exists disabled_certs "\
-								 "(gname text primary key not null, certificate text key not null)");
-
-		 result = evaluate_query(cert_store_db, query);
-		 if (result != CERTSVC_SUCCESS) {
-			 SLOGE("wifi store DB initialisation Failed.");
-			 result = CERTSVC_FAIL;
-		 }
-
-		 sqlite3_free(query); query=NULL;
-		 result = CERTSVC_SUCCESS;
-		 reentry++;
-		 goto err;
-	}
-
-err:
-*/
-
-	return CERTSVC_SUCCESS;
+	return result;
 }
 
 void CertSigHandler(int signo)
@@ -210,21 +170,12 @@ void CertSvcServerComm()
 	client_len = sizeof(clientaddr);
 	signal(SIGINT, (void*)CertSigHandler);
 
-/*
-	if (!cert_store_db) {
-		result = initialize_db();
-		if (result != CERTSVC_SUCCESS) {
-			SLOGE("Failed to initialize database.");
-			result = CERTSVC_IO_ERROR;
-			goto Error_close_exit;
-		}
-
-		if (cert_store_db) {
-			sqlite3_close(cert_store_db);
-			cert_store_db = NULL;
-		}
+	result = initialize_db();
+	if (result != CERTSVC_SUCCESS) {
+		SLOGE("Failed to initialize database.");
+		result = CERTSVC_IO_ERROR;
+		goto Error_close_exit;
 	}
-*/
 
 	fd_set fd;
 	struct timeval tv;
@@ -277,15 +228,6 @@ void CertSvcServerComm()
 			SLOGE("Error in function recv().");
 			send_data.result = CERTSVC_FAIL;
 			goto Error_close_exit;
-		}
-
-		if (!cert_store_db) {
-			result = initialize_db();
-			if (result != CERTSVC_SUCCESS) {
-				SLOGE("Failed to initialize database.");
-				result = CERTSVC_IO_ERROR;
-				goto Error_close_exit;
-			}
 		}
 
 		SLOGD("revc request: reqType=%d", recv_data.reqType);
@@ -358,7 +300,7 @@ void CertSvcServerComm()
 					cert_store_db,
 					recv_data.storeType,
 					recv_data.gname,
-					&send_data.certStatus);
+					&send_data.isAliasUnique);
 			result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			break;
 		}
@@ -436,13 +378,6 @@ void CertSvcServerComm()
 			SLOGE("send failed :%d, errno %d try once", result, errno);
 			//result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			//SLOGE("retry result :%d, errno %d", result, errno);
-		}
-
-		close(client_sockfd);
-		if (cert_store_db) {
-			sqlite3_close(cert_store_db);
-			cert_store_db = NULL;
-			SLOGI("cert_store db was closed");
 		}
 	}
 

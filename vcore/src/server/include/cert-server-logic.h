@@ -25,25 +25,25 @@
 
 #include <db-util.h>
 
-int getCertificateDetailFromStore(sqlite3 *db_handle, int storeType, int certType, const char* pGname, char* pCertBuffer, size_t *certLength);
+int getCertificateDetailFromStore(sqlite3 *db_handle, CertStoreType storeType, CertType certType, const char* pGname, char* pCertBuffer, size_t *certLength);
 
 int getCertificateDetailFromSystemStore(sqlite3 *db_handle, const char* pGname, char* pCertBuffer, size_t *certLength);
 
-int deleteCertificateFromStore(sqlite3 *db_handle, int storeType, const char* pGname);
+int deleteCertificateFromStore(sqlite3 *db_handle, CertStoreType storeType, const char* pGname);
 
-int getCertificateStatusFromStore(sqlite3 *db_handle, int storeType, const char* pGname, int *status);
+int getCertificateStatusFromStore(sqlite3 *db_handle, CertStoreType storeType, const char* pGname, CertStatus *status);
 
-int setCertificateStatusToStore(sqlite3 *db_handle, int storeType, int is_root_app, const char* pGname, int status);
+int setCertificateStatusToStore(sqlite3 *db_handle, CertStoreType storeType, int is_root_app, const char* pGname, CertStatus status);
 
-int checkAliasExistsInStore(sqlite3 *db_handle, int storeType, const char* alias, int *status);
+int checkAliasExistsInStore(sqlite3 *db_handle, CertStoreType storeType, const char* alias, int *isUnique);
 
-int installCertificateToStore(sqlite3 *db_handle, int storeType, const char* pGname, const char *common_name, const char *private_key_gname, const char *associated_gname, const char *pCertBuffer, size_t certLength, int certType);
+int installCertificateToStore(sqlite3 *db_handle, CertStoreType storeType, const char* pGname, const char *common_name, const char *private_key_gname, const char *associated_gname, const char *pCertBuffer, size_t certLength, CertType certType);
 
-int getCertificateListFromStore(sqlite3 *db_handle,  int reqType, int storeType, int is_root_app, char **ppCertListBuffer, size_t *bufferLen, int *certCount);
+int getCertificateListFromStore(sqlite3 *db_handle,  int reqType, CertStoreType storeType, int is_root_app, char **ppCertListBuffer, size_t *bufferLen, size_t *certCount);
 
-int getCertificateAliasFromStore(sqlite3 *db_handle,  int storeType, const char* pGname, char* alias);
+int getCertificateAliasFromStore(sqlite3 *db_handle,  CertStoreType storeType, const char* pGname, char* alias);
 
-int loadCertificatesFromStore(sqlite3 *db_handle,  int storeType, const char* pGname, char **ppCertBlockBuffer, size_t *bufferLen, int *certBlockCount);
+int loadCertificatesFromStore(sqlite3 *db_handle,  CertStoreType storeType, const char* pGname, char **ppCertBlockBuffer, size_t *bufferLen, size_t *certBlockCount);
 
 int update_ca_certificate_file(sqlite3 *db_handle, char *certBuffer, size_t certLength);
 

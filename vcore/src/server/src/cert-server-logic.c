@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include <glib.h>
 #include <dirent.h>
 #include <sys/smack.h>
 #include <sys/socket.h>
@@ -41,6 +40,28 @@
 #include <cert-svc-client.h>
 
 #include <cert-server-logic.h>
+
+static CertStatus int_to_CertStatus(int intval)
+{
+	switch (intval) {
+	case 1:
+		return ENABLED;
+	case 0:
+	default:
+		return DISABLED;
+	}
+}
+
+static int CertStatus_to_int(CertStatus status)
+{
+	switch (status) {
+	case ENABLED:
+		return 1;
+	case DISABLED:
+	default:
+		return 0;
+	}
+}
 
 char *add_shared_owner_prefix(const char *name)
 {
@@ -665,10 +686,10 @@ int enable_disable_cert_status(
 
 	if (is_root_app == ENABLED)
 		query = sqlite3_mprintf("update %Q set is_root_app_enabled=%d , enabled=%d where gname=%Q", ((storeType == WIFI_STORE)? "wifi" : \
-							   (storeType == VPN_STORE)? "vpn" : (storeType == EMAIL_STORE)? "email" : "ssl"),  status, status, pGname);
+							   (storeType == VPN_STORE)? "vpn" : (storeType == EMAIL_STORE)? "email" : "ssl"), CertStatus_to_int(status), status, pGname);
 	else
 		query = sqlite3_mprintf("update %Q set enabled=%d where gname=%Q", ((storeType == WIFI_STORE)? "wifi" : \
-							   (storeType == VPN_STORE)? "vpn" : (storeType == EMAIL_STORE)? "email" : "ssl"),  status, pGname);
+							   (storeType == VPN_STORE)? "vpn" : (storeType == EMAIL_STORE)? "email" : "ssl"), CertStatus_to_int(status), pGname);
 
 	if (!query) {
 		SLOGE("Failed to generate query");
@@ -688,10 +709,10 @@ int enable_disable_cert_status(
 
 int setCertificateStatusToStore(
 	sqlite3 *db_handle,
-	int storeType,
+	CertStoreType storeType,
 	int is_root_app,
 	const char *pGname,
-	int status)
+	CertStatus status)
 {
 	if (!pGname) {
 		SLOGE("Invalid input parameter passed.");
@@ -711,9 +732,9 @@ int setCertificateStatusToStore(
 
 int getCertificateStatusFromStore(
 	sqlite3 *db_handle,
-	int storeType,
+	CertStoreType storeType,
 	const char* pGname,
-	int *status)
+	CertStatus *status)
 {
 	if (!pGname) {
 		SLOGE("Invalid input parameter passed.");
@@ -746,7 +767,7 @@ int getCertificateStatusFromStore(
 		return CERTSVC_FAIL;
 	}
 
-	*status = sqlite3_column_int(stmt, 2);
+	*status = int_to_CertStatus(sqlite3_column_int(stmt, 2));
 
 	sqlite3_finalize(stmt);
 
@@ -757,11 +778,11 @@ int check_alias_exist_in_database(
 	sqlite3 *db_handle,
 	CertStoreType storeType,
 	const char *alias,
-	int *status)
+	int *isUnique)
 {
 	sqlite3_stmt *stmt = NULL;
 
-	if (!alias || !status) {
+	if (!alias || !isUnique) {
 		SLOGE("Invalid input parameter passed.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
@@ -785,27 +806,24 @@ int check_alias_exist_in_database(
 	result = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
-	if (result != SQLITE_ROW) {
-		SLOGD("No records found with the alias passed (%s).", alias);
-		*status = CERTSVC_TRUE;
-	} else {
-		SLOGD("Records found with the alias passed (%s).", alias);
-		*status = CERTSVC_FALSE;
-	}
+	if (result != SQLITE_ROW)
+		*isUnique = CERTSVC_TRUE;
+	else
+		*isUnique = CERTSVC_FALSE;
 
 	return CERTSVC_SUCCESS;
 }
 
 int installCertificateToStore(
 	sqlite3 *db_handle,
-	int storeType,
+	CertStoreType storeType,
 	const char *pGname,
 	const char *common_name,
 	const char *private_key_gname,
 	const char *associated_gname,
 	const char *dataBlock,
 	size_t dataBlockLen,
-	int certType)
+	CertType certType)
 {
 	if ((!pGname)
 		|| (certType == P12_END_USER && !common_name && !private_key_gname)
@@ -861,23 +879,23 @@ int installCertificateToStore(
 
 int checkAliasExistsInStore(
 	sqlite3 *db_handle,
-	int storeType,
+	CertStoreType storeType,
 	const char* alias,
-	int *status)
+	int *isUnique)
 {
 	if (!alias) {
 		SLOGE("Invalid input parameter passed.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	*status = CERTSVC_FAIL;
-	int result = check_alias_exist_in_database(db_handle, storeType, alias, status);
+	*isUnique = CERTSVC_FAIL;
+	int result = check_alias_exist_in_database(db_handle, storeType, alias, isUnique);
 	if (result != CERTSVC_SUCCESS) {
 		SLOGE("Failed to check_alias_exist_in_database. err[%d]", result);
 		return CERTSVC_FAIL;
 	}
 
-	if (*status == CERTSVC_TRUE) {
+	if (*isUnique == CERTSVC_TRUE) {
 		SLOGD("Alias (%s) does not exist in %s store.",
 			alias,
 			(storeType == VPN_STORE) ? "VPN" :
@@ -894,8 +912,8 @@ int checkAliasExistsInStore(
 
 int getCertificateDetailFromStore(
 	sqlite3 *db_handle,
-	int storeType,
-	int certType,
+	CertStoreType storeType,
+	CertType certType,
 	const char *pGname,
 	char *pOutData,
 	size_t *size)
@@ -1075,7 +1093,7 @@ int getCertificateDetailFromSystemStore(
 	return CERTSVC_SUCCESS;
 }
 
-int deleteCertificateFromStore(sqlite3 *db_handle, int storeType, const char* pGname) {
+int deleteCertificateFromStore(sqlite3 *db_handle, CertStoreType storeType, const char *pGname) {
 
 	int result = CERTSVC_SUCCESS;
 	int ckmc_result = CKMC_ERROR_UNKNOWN;
@@ -1172,11 +1190,11 @@ error:
 int getCertificateListFromStore(
 	sqlite3 *db_handle,
 	int reqType,
-	int storeType,
+	CertStoreType storeType,
 	int is_root_app,
 	char **certListBuffer,
 	size_t *bufferLen,
-	int *certCount)
+	size_t *certCount)
 {
 	int result = CERTSVC_SUCCESS;
 	CertSvcStoreCertList *rootCertHead = NULL;
@@ -1186,8 +1204,8 @@ int getCertificateListFromStore(
 	char *query = NULL;
 	int loopCount = 0;
 	int records = 0;
-	int count = 0;
-	int i = 0;
+	size_t count = 0;
+	size_t i = 0;
 
 
 	while (1) {
@@ -1262,7 +1280,7 @@ int getCertificateListFromStore(
 			while (1) {
 				records = sqlite3_step(stmt);
 				if (records != SQLITE_ROW || records == SQLITE_DONE) {
-					if (count < 0) {
+					if (count == 0) {
 						SLOGE("No records found");
 						result = CERTSVC_SUCCESS;
 						goto error;
@@ -1327,7 +1345,7 @@ int getCertificateListFromStore(
 				}
 			}
 
-			if (count <=0 ) {
+			if (count == 0) {
 				SLOGD("No entries found in database.");
 				result = CERTSVC_SUCCESS;
 			}
@@ -1405,7 +1423,7 @@ error:
 	return result;
 }
 
-int getCertificateAliasFromStore(sqlite3 *db_handle, int storeType, const char* gname, char* alias)
+int getCertificateAliasFromStore(sqlite3 *db_handle, CertStoreType storeType, const char *gname, char *alias)
 {
 	int result = CERTSVC_SUCCESS;
 	int records = 0;
@@ -1459,20 +1477,20 @@ error:
 
 int loadCertificatesFromStore(
 	sqlite3 *db_handle,
-	int storeType,
+	CertStoreType storeType,
 	const char* gname,
 	char **ppCertBlockBuffer,
 	size_t *bufferLen,
-	int *certBlockCount)
+	size_t *certBlockCount)
 {
 	int result = CERTSVC_SUCCESS;
-	int count = 0;
+	size_t count = 0;
 	int records = 0;
 	sqlite3_stmt *stmt = NULL;
 	char *query = NULL;
 	char **certs = NULL;
 	const char *tmpText = NULL;
-	int i = 0;
+	size_t i = 0;
 
 	query = sqlite3_mprintf("select associated_gname from %Q where gname=%Q", ((storeType==WIFI_STORE)? "wifi" : \
 						   (storeType==VPN_STORE)? "vpn" : "email"), gname);

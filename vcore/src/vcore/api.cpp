@@ -34,8 +34,6 @@
 #include <string>
 #include <vector>
 
-#include <glib-object.h>
-
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
@@ -101,7 +99,7 @@ public:
         m_allocatedStringSet.clear();
     }
 
-    inline int addCert(const CertificatePtr &cert) {
+    inline size_t addCert(const CertificatePtr &cert) {
         m_certificateMap[m_certificateCounter] = cert;
         return m_certificateCounter++;
     }
@@ -115,14 +113,14 @@ public:
 
     inline int getCertFromList(
         const CertSvcCertificateList &handler,
-        int position,
+        size_t position,
         CertSvcCertificate *certificate)
     {
         auto iter = m_idListMap.find(handler.privateHandler);
         if (iter == m_idListMap.end()) {
             return CERTSVC_WRONG_ARGUMENT;
         }
-        if (position >= static_cast<int>(iter->second.size())) {
+        if (position >= iter->second.size()) {
             return CERTSVC_WRONG_ARGUMENT;
         }
         certificate->privateInstance = handler.privateInstance;
@@ -130,7 +128,7 @@ public:
         return CERTSVC_SUCCESS;
     }
 
-    inline int getCertListLen(const CertSvcCertificateList &handler, int *len) {
+    inline int getCertListLen(const CertSvcCertificateList &handler, size_t *len) {
         auto iter = m_idListMap.find(handler.privateHandler);
         if (iter == m_idListMap.end() || !len) {
             return CERTSVC_WRONG_ARGUMENT;
@@ -244,7 +242,7 @@ public:
             return CERTSVC_SUCCESS;
         }
 
-        char *cstring = new char[result.size()+1];
+        char *cstring = new char[result.size() + 1];
         if (cstring == NULL) {
             buffer->privateHandler = NULL;
             buffer->privateLength = 0;
@@ -252,7 +250,7 @@ public:
             return CERTSVC_BAD_ALLOC;
         }
 
-        strncpy(cstring, result.c_str(), result.size()+1);
+        strncpy(cstring, result.c_str(), result.size() + 1);
 
         buffer->privateHandler = cstring;
         buffer->privateLength = result.size();
@@ -300,7 +298,7 @@ public:
 
     inline int getStringFromList(
         const CertSvcStringList &handler,
-        int position,
+        size_t position,
         CertSvcString *buffer)
     {
         buffer->privateHandler = NULL;
@@ -310,20 +308,20 @@ public:
         if (iter == m_stringListMap.end()) {
             return CERTSVC_WRONG_ARGUMENT;
         }
-        if (position >= (int)iter->second.size()) {
+        if (position >= iter->second.size()) {
             return CERTSVC_WRONG_ARGUMENT;
         }
         const std::string &data = iter->second.at(position);
-        int size = data.size();
-        char *cstring = new char[size+1];
+        size_t size = data.size();
+        char *cstring = new char[size + 1];
         if (!cstring) {
             return CERTSVC_FAIL;
         }
 
-        strncpy(cstring, data.c_str(), data.size()+1);
+        strncpy(cstring, data.c_str(), size + 1);
 
         buffer->privateHandler = cstring;
-        buffer->privateLength = data.size();
+        buffer->privateLength = size;
         buffer->privateInstance = handler.privateInstance;
 
         m_allocatedStringSet.insert(cstring);
@@ -333,13 +331,13 @@ public:
 
     inline int getStringListLen(
         const CertSvcStringList &handler,
-        int *size)
+        size_t *size)
     {
         auto iter = m_stringListMap.find(handler.privateHandler);
         if (iter == m_stringListMap.end()) {
             return CERTSVC_WRONG_ARGUMENT;
         }
-        *size = (int) iter->second.size();
+        *size = iter->second.size();
         return CERTSVC_SUCCESS;
     }
 
@@ -363,10 +361,9 @@ public:
         const char *value,
         CertSvcCertificateList *handler)
     {
-        int result;
         search_field fieldId = SEARCH_FIELD_END;
 
-        switch(field){
+        switch (field) {
         case CERTSVC_SUBJECT:
             fieldId = SUBJECT_STR;
             break;
@@ -390,7 +387,7 @@ public:
         }
 
         LogDebug("Match string : " << value);
-        result = cert_svc_search_certificate(ctx.get(), fieldId, const_cast<char*>(value));
+        int result = cert_svc_search_certificate(ctx.get(), fieldId, const_cast<char*>(value));
         LogDebug("Search finished!");
 
         if (CERT_SVC_ERR_NO_ERROR != result) {
@@ -398,14 +395,14 @@ public:
             return CERTSVC_FAIL;
         }
 
-        cert_svc_filename_list *fileList = ctx.get()->fileNames;
 
-        int listId = m_idListCounter++;
-        std::vector<int> &list = m_idListMap[listId];
+        size_t listId = m_idListCounter++;
+        std::vector<size_t> &list = m_idListMap[listId];
         handler->privateHandler = listId;
         handler->privateInstance = instance;
 
-        for(;fileList != NULL; fileList = fileList->next) {
+        cert_svc_filename_list *fileList = ctx.get()->fileNames;
+        while (fileList) {
             ScopedCertCtx ctx2(cert_svc_cert_context_init(),
                                cert_svc_cert_context_final);
             if (ctx2.get() == NULL) {
@@ -420,19 +417,21 @@ public:
                 LogWarning("Error in cert_svc_load_file_to_context");
                 return CERTSVC_FAIL;
             }
-            int certId = addCert(CertificatePtr(new Certificate(*(ctx2.get()->certBuf))));
-            list.push_back(certId);
+
+            list.push_back(addCert(CertificatePtr(new Certificate(*(ctx2.get()->certBuf)))));
+
+            fileList = fileList->next;
         }
         return CERTSVC_SUCCESS;
     }
 
-    inline int sortCollection(CertSvcCertificate *certificate_array, int size) {
+    inline int sortCollection(CertSvcCertificate *certificate_array, size_t size) {
         if (size < 2) {
             return CERTSVC_WRONG_ARGUMENT;
         }
 
-        for(int i=1; i<size; ++i) {
-            if (certificate_array[i-1].privateInstance.privatePtr
+        for (size_t i = 1; i < size; ++i) {
+            if (certificate_array[i - 1].privateInstance.privatePtr
                 != certificate_array[i].privateInstance.privatePtr)
             {
                 return CERTSVC_WRONG_ARGUMENT;
@@ -440,10 +439,10 @@ public:
         }
 
         CertificateList certList;
-        std::map<Certificate*,int> translator;
+        std::map<Certificate*, size_t> translator;
 
-        for(int i=0; i<size; ++i) {
-            int pos = certificate_array[i].privateHandler;
+        for (size_t i = 0; i < size; ++i) {
+            size_t pos = certificate_array[i].privateHandler;
             auto cert = m_certificateMap.find(pos);
             if (cert == m_certificateMap.end()) {
                 return CERTSVC_WRONG_ARGUMENT;
@@ -461,10 +460,9 @@ public:
 
         auto chain = collection.getChain();
 
-        int i=0;
-        for (auto iter = chain.begin(); iter != chain.end() && i<size; ++iter, ++i) {
-            certificate_array[i].privateHandler = translator[iter->get()];
-        }
+        size_t i = 0;
+        for (const auto &cert : collection.getChain())
+            certificate_array[i++].privateHandler = translator[cert.get()];
 
         return CERTSVC_SUCCESS;
     }
@@ -486,8 +484,8 @@ public:
         if (it == m_certificateMap.end()) {
             return CERTSVC_WRONG_ARGUMENT;
         }
-        FILE *out;
-        if (NULL == (out = fopen(location, "w"))) {
+        FILE *out = fopen(location, "w");
+        if (out == NULL) {
             return CERTSVC_FAIL;
         }
         if (0 == i2d_X509_fp(out, it->second->getX509())) {
@@ -635,24 +633,24 @@ public:
     inline int stringNew(
         CertSvcInstance &instance,
         const char *str,
-        int size,
+        size_t size,
         CertSvcString *output)
     {
-        if (!output || size < 0) {
+        if (!output) {
             return CERTSVC_WRONG_ARGUMENT;
         }
 
-        int allocSize = size;
+        size_t allocSize = size;
 
-        if (allocSize == 0 || str[allocSize-1] != 0)
+        if (allocSize == 0 || str[allocSize - 1] != 0)
             allocSize++;
 
         char *ptr = new char[allocSize];
-        if(ptr == NULL) {
+        if (ptr == NULL)
             return CERTSVC_BAD_ALLOC;
-        }
+
         memcpy(ptr, str, size);
-        ptr[allocSize-1] = 0;
+        ptr[allocSize - 1] = 0;
 
         output->privateHandler = ptr;
         output->privateLength = size;
@@ -665,10 +663,10 @@ public:
 
     inline int certificateVerify(
         CertSvcCertificate certificate,
-        CertSvcCertificate *trusted,
-        int trustedSize,
-        CertSvcCertificate *untrusted,
-        int untrustedSize,
+        const CertSvcCertificate *trusted,
+        size_t trustedSize,
+        const CertSvcCertificate *untrusted,
+        size_t untrustedSize,
         int checkCaFlag,
         int *status)
     {
@@ -684,39 +682,41 @@ public:
         X509_STORE *store = X509_STORE_new();
         STACK_OF(X509) *ustore = sk_X509_new_null();
 
-        for (int i=0; i<trustedSize; ++i) {
+        for (size_t i = 0; i < trustedSize; ++i) {
             auto iter = m_certificateMap.find(trusted[i].privateHandler);
             if (iter == m_certificateMap.end()) {
                 X509_STORE_free(store);
                 sk_X509_free(ustore);
                 return CERTSVC_WRONG_ARGUMENT;
             }
+
             X509_STORE_add_cert(store, iter->second->getX509());
         }
 
-        for (int i=0; i<untrustedSize; ++i) {
+        for (size_t i = 0; i < untrustedSize; ++i) {
             auto iter = m_certificateMap.find(untrusted[i].privateHandler);
             if (iter == m_certificateMap.end()) {
                 X509_STORE_free(store);
                 sk_X509_free(ustore);
                 return CERTSVC_WRONG_ARGUMENT;
             }
+
             if (sk_X509_push(ustore, iter->second->getX509()) == 0)
-            {
                 break;
-            }
         }
+
         X509_STORE_CTX context;
         X509_STORE_CTX_init(&context, store, cert, ustore);
         int result = X509_verify_cert(&context);
 
-    	if(result == 1 && checkCaFlag) { // check strictly
+        if (result == 1 && checkCaFlag) { // check strictly
     		STACK_OF(X509) *resultChain = X509_STORE_CTX_get1_chain(&context);
     		X509* tmpCert = NULL;
     		int caFlagValidity;
-    		while((tmpCert = sk_X509_pop(resultChain))) {
+            while ((tmpCert = sk_X509_pop(resultChain))) {
     			caFlagValidity = X509_check_ca(tmpCert);
-    			if(caFlagValidity != 1 && (tmpCert = sk_X509_pop(resultChain)) != NULL) { // the last one is not a CA.
+                if (caFlagValidity != 1 && (tmpCert = sk_X509_pop(resultChain)) != NULL) {
+                    // the last one is not a CA.
     				result = 0;
     				break;
     			}
@@ -735,7 +735,7 @@ public:
         return CERTSVC_SUCCESS;
     }
 
-    int getVisibility(CertSvcCertificate certificate, int* visibility)
+    int getVisibility(CertSvcCertificate certificate, CertSvcVisibility *visibility)
     {
 		int ret = CERTSVC_FAIL;
 		//xmlChar *xmlPathCertificateSet  = (xmlChar*) "CertificateSet"; /*unused variable*/
@@ -832,37 +832,18 @@ out:
 		return ret;
 	}
 
-    inline int pkcsNameIsUnique(
-        CertSvcString pfxIdString,
-        int *is_unique)
-    {
-      gboolean exists;
-      int result = c_certsvc_pkcs12_alias_exists(pfxIdString.privateHandler, &exists);
-      *is_unique = !exists;
-      return result;
-    }
-
-    inline int pkcsImport(
-        CertSvcString path,
-        CertSvcString pass,
-        CertSvcString pfxIdString)
-    {
-      return c_certsvc_pkcs12_import(path.privateHandler, pass.privateHandler, pfxIdString.privateHandler);
-    }
-
     inline int pkcsNameIsUniqueInStore(
         CertStoreType storeType,
         CertSvcString pfxIdString,
         int *is_unique)
     {
-      int result = c_certsvc_pkcs12_alias_exists_in_store(storeType, pfxIdString.privateHandler, is_unique);
-      return result;
+        return c_certsvc_pkcs12_alias_exists_in_store(storeType, pfxIdString.privateHandler, is_unique);
     }
 
     inline int getCertDetailFromStore(CertStoreType storeType,
         CertSvcString gname,
-        char** certBuffer,
-        size_t* certSize)
+        char **certBuffer,
+        size_t *certSize)
     {
         return c_certsvc_pkcs12_get_certificate_buffer_from_store(storeType, gname.privateHandler, certBuffer, certSize);
     }
@@ -875,87 +856,11 @@ out:
         return c_certsvc_pkcs12_delete_certificate_from_store(storeType, gname.privateHandler);
     }
 
-    inline int getPkcsIdList(
-        CertSvcInstance &instance,
-        CertSvcStringList *handler)
-    {
-      gchar **aliases;
-      gsize i, naliases;
-      std::vector<std::string> output;
-      int result;
-
-      result = c_certsvc_pkcs12_aliases_load(&aliases, &naliases);
-      if(result != CERTSVC_SUCCESS)
-        return result;
-      for(i = 0; i < naliases; i++)
-        output.push_back(std::string(aliases[i]));
-      c_certsvc_pkcs12_aliases_free(aliases);
-
-      int position = m_stringListCounter++;
-      m_stringListMap[position] = output;
-
-      handler->privateHandler = position;
-      handler->privateInstance = instance;
-      return CERTSVC_SUCCESS;
-    }
-
     inline int pkcsHasPassword(
         CertSvcString filepath,
         int *has_password)
     {
-      return c_certsvc_pkcs12_has_password(filepath.privateHandler, has_password);
-    }
-
-    inline int getPkcsPrivateKey(
-        CertSvcString pfxIdString,
-        char **buffer,
-        size_t *size)
-    {
-        return c_certsvc_pkcs12_private_key_load(pfxIdString.privateHandler, buffer, size);
-    }
-
-    inline int getPkcsCertificateList(
-        CertSvcInstance &instance,
-        CertSvcString &pfxIdString,
-        CertSvcCertificateList *handler)
-    {
-      gchar **certs;
-      gsize i, ncerts;
-      std::vector<CertificatePtr> certPtrVector;
-      std::vector<int> listId;
-      int result;
-
-      result = c_certsvc_pkcs12_load_certificates(pfxIdString.privateHandler, &certs, &ncerts);
-      if(result != CERTSVC_SUCCESS)
-        return result;
-      for(i = 0; i < ncerts; i++) {
-        ScopedCertCtx context(cert_svc_cert_context_init(), cert_svc_cert_context_final);
-        if(cert_svc_load_file_to_context(context.get(), certs[i]) != CERT_SVC_ERR_NO_ERROR) {
-          c_certsvc_pkcs12_free_certificates(certs);
-          return CERTSVC_IO_ERROR;
-        }
-        else
-          certPtrVector.push_back(CertificatePtr(new Certificate(*(context->certBuf))));
-      }
-      if(ncerts > 0)
-          c_certsvc_pkcs12_free_certificates(certs);
-
-      FOREACH(it, certPtrVector) {
-        listId.push_back(addCert(*it));
-      }
-
-      int position = m_idListCounter++;
-      m_idListMap[position] = listId;
-
-      handler->privateInstance = instance;
-      handler->privateHandler = position;
-
-      return result;
-    }
-
-    inline int pkcsDelete(CertSvcString pfxIdString)
-    {
-      return c_certsvc_pkcs12_delete(pfxIdString.privateHandler);
+        return c_certsvc_pkcs12_has_password(filepath.privateHandler, has_password);
     }
 
     inline int pkcsImportToStore(
@@ -985,14 +890,14 @@ out:
     inline int pkcsGetCertStatusFromStore(
         CertStoreType storeType,
         CertSvcString gname,
-        int *status)
+        CertStatus *status)
     {
         return c_certsvc_pkcs12_get_certificate_status_from_store(storeType, gname.privateHandler, status);
     }
 
     inline int getCertFromStore(CertSvcInstance instance,
         CertStoreType storeType,
-        char *gname,
+        const char *gname,
         CertSvcCertificate *certificate)
     {
 	    return certsvc_get_certificate(instance, storeType, gname, certificate);
@@ -1008,7 +913,7 @@ out:
         CertStoreType storeType,
         int is_root_app,
         CertSvcStoreCertList** certList,
-        int* length)
+        size_t *length)
     {
         return c_certsvc_pkcs12_get_certificate_list_from_store(storeType, is_root_app, certList, length);
     }
@@ -1016,7 +921,7 @@ out:
     inline int getPkcsIdEndUserListFromStore(
         CertStoreType storeType,
         CertSvcStoreCertList** certList,
-        int* length)
+        size_t *length)
     {
         return c_certsvc_pkcs12_get_end_user_certificate_list_from_store(storeType, certList, length);
     }
@@ -1024,7 +929,7 @@ out:
     inline int getPkcsIdRootListFromStore(
         CertStoreType storeType,
         CertSvcStoreCertList** certList,
-        int* length)
+        size_t *length)
     {
         return c_certsvc_pkcs12_get_root_certificate_list_from_store(storeType, certList, length);
     }
@@ -1044,37 +949,31 @@ out:
         CertSvcString &pfxIdString,
         CertSvcCertificateList *handler)
     {
-        char **certs;
-        gsize i, ncerts;
-        std::vector<CertificatePtr> certPtrVector;
-        std::vector<int> listId;
-        char *certBuffer = NULL;
-        size_t certLength = 0;
-        CertSvcString Alias;
-        char* header = NULL;
-        char* trailer = NULL;
-        const char* headEnd = NULL;
-        const char* tailEnd = NULL;
-        int length = 0;
-        int result;
-
-        result = c_certsvc_pkcs12_load_certificates_from_store(storeType, pfxIdString.privateHandler, &certs, &ncerts);
+        char **certs = NULL;
+        size_t ncerts = 0;
+        int result = c_certsvc_pkcs12_load_certificates_from_store(storeType, pfxIdString.privateHandler, &certs, &ncerts);
         if (result != CERTSVC_SUCCESS) {
             LogError("Unable to load certificates from store.");
             return result;
         }
 
-        for (i = 0; i < ncerts; i++) {
+		std::vector<CertificatePtr> certPtrVector;
+        CertSvcString Alias;
+        for (size_t i = 0; i < ncerts; i++) {
             Alias.privateHandler = certs[i];
             Alias.privateLength = strlen(certs[i]);
+            char *certBuffer = NULL;
+            size_t certLength = 0;
             result = certsvc_pkcs12_get_certificate_info_from_store(instance, storeType, Alias, &certBuffer, &certLength);
             if (result != CERTSVC_SUCCESS || !certBuffer) {
                 LogError("Failed to get certificate buffer.");
                 return CERTSVC_FAIL;
             }
 
-            header = strstr(certBuffer, START_CERT);
-            headEnd = START_CERT;
+            const char *header = strstr(certBuffer, START_CERT);
+            const char *headEnd = START_CERT;
+            const char *trailer = NULL;
+            const char *tailEnd = NULL;
             if (!header) {
                 // START_CERT not found. let's find START_TRUSTED.
                 header = strstr(certBuffer, START_TRUSTED);
@@ -1098,24 +997,22 @@ out:
                 return CERTSVC_FAIL;
             }
 
-            length = ((1 + strlen(header)) - (strlen(headEnd) + strlen(tailEnd) + 1));
+            size_t length = ((1 + strlen(header)) - (strlen(headEnd) + strlen(tailEnd) + 1));
             std::string tmpBuffer(certBuffer);
-            tmpBuffer = tmpBuffer.substr(strlen(headEnd),length);
+            tmpBuffer = tmpBuffer.substr(strlen(headEnd), length);
             std::string binary(tmpBuffer.c_str(), length);
-            Certificate::FormType formType = Certificate::FORM_BASE64;
-            certPtrVector.push_back(CertificatePtr(new Certificate(binary, formType)));
+            certPtrVector.push_back(CertificatePtr(new Certificate(binary, Certificate::FORM_BASE64)));
             free(certBuffer);
-            certBuffer = NULL;
         }
 
         if (ncerts > 0)
             c_certsvc_pkcs12_free_certificates(certs);
 
-        FOREACH(it, certPtrVector) {
-            listId.push_back(addCert(*it));
-        }
+        std::vector<size_t> listId;
+        for (const auto &cert : certPtrVector)
+            listId.push_back(addCert(cert));
 
-        int position = m_idListCounter++;
+        size_t position = m_idListCounter++;
         m_idListMap[position] = listId;
 
         handler->privateInstance = instance;
@@ -1133,14 +1030,14 @@ out:
     }
 
 private:
-    int m_certificateCounter;
-    std::map<int, CertificatePtr> m_certificateMap;
+    size_t m_certificateCounter;
+    std::map<size_t, CertificatePtr> m_certificateMap;
 
-    int m_idListCounter;
-    std::map<int, std::vector<int> > m_idListMap;
+    size_t m_idListCounter;
+    std::map<size_t, std::vector<size_t> > m_idListMap;
 
-    int m_stringListCounter;
-    std::map<int, std::vector<std::string> > m_stringListMap;
+    size_t m_stringListCounter;
+    std::map<size_t, std::vector<std::string> > m_stringListMap;
 
     std::set<char *> m_allocatedStringSet;
 };
@@ -1211,7 +1108,7 @@ int certsvc_certificate_new_from_file(
 int certsvc_certificate_new_from_memory(
         CertSvcInstance instance,
         const unsigned char *memory,
-        int len,
+        size_t len,
         CertSvcCertificateForm form,
         CertSvcCertificate *certificate)
 {
@@ -1265,16 +1162,16 @@ int certsvc_certificate_search(
 
 int certsvc_certificate_list_get_one(
         CertSvcCertificateList handler,
-        int position,
+        size_t position,
         CertSvcCertificate *certificate)
 {
     return impl(handler.privateInstance)->
-        getCertFromList(handler,position, certificate);
+        getCertFromList(handler, position, certificate);
 }
 
 int certsvc_certificate_list_get_length(
         CertSvcCertificateList handler,
-        int *size)
+        size_t *size)
 {
     return impl(handler.privateInstance)->getCertListLen(handler, size);
 }
@@ -1335,7 +1232,7 @@ int certsvc_certificate_is_root_ca(CertSvcCertificate certificate, int *status)
 
 int certsvc_string_list_get_one(
         CertSvcStringList handler,
-        int position,
+        size_t position,
         CertSvcString *buffer)
 {
     try {
@@ -1348,7 +1245,7 @@ int certsvc_string_list_get_one(
 
 int certsvc_string_list_get_length(
         CertSvcStringList handler,
-        int *size)
+        size_t *size)
 {
     return impl(handler.privateInstance)->getStringListLen(handler, size);
 }
@@ -1371,7 +1268,7 @@ void certsvc_string_free(CertSvcString string)
 void certsvc_string_to_cstring(
         CertSvcString string,
         const char **buffer,
-        int *len)
+        size_t *len)
 {
     if (buffer) {
         *buffer = string.privateHandler;
@@ -1383,7 +1280,7 @@ void certsvc_string_to_cstring(
 
 int certsvc_certificate_chain_sort(
         CertSvcCertificate *certificate_array,
-        int size)
+        size_t size)
 {
     try {
         if (!certificate_array) {
@@ -1409,49 +1306,6 @@ void certsvc_certificate_free_x509(X509 *x509)
 {
 	if (x509)
 		X509_free(x509);
-}
-
-int certsvc_pkcs12_dup_evp_pkey(
-    CertSvcInstance instance,
-    CertSvcString alias,
-    EVP_PKEY** pkey)
-{
-    char *buffer;
-    size_t size;
-
-    int result = certsvc_pkcs12_private_key_dup(
-        instance,
-        alias,
-        &buffer,
-        &size);
-
-    if (result != CERTSVC_SUCCESS) {
-        LogError("Error in certsvc_pkcs12_private_key_dup");
-        return result;
-    }
-
-    BIO *b = BIO_new(BIO_s_mem());
-
-    if ((int)size != BIO_write(b, buffer, size)) {
-        LogError("Error in BIO_write");
-        BIO_free_all(b);
-        certsvc_pkcs12_private_key_free(buffer);
-        return CERTSVC_FAIL;
-    }
-
-    certsvc_pkcs12_private_key_free(buffer);
-
-    *pkey = PEM_read_bio_PrivateKey(b, NULL, NULL, NULL);
-
-    BIO_free_all(b);
-
-    if (*pkey) {
-        return CERTSVC_SUCCESS;
-    }
-
-    LogError("Result is null. Openssl REASON code is : " << ERR_GET_REASON(ERR_peek_last_error()));
-
-    return CERTSVC_FAIL;
 }
 
 void certsvc_pkcs12_free_evp_pkey(EVP_PKEY* pkey)
@@ -1496,7 +1350,7 @@ int certsvc_base64_decode(CertSvcString base64, CertSvcString *message)
 int certsvc_string_new(
     CertSvcInstance instance,
     const char *url,
-    int size,
+    size_t size,
     CertSvcString *output)
 {
     try {
@@ -1508,7 +1362,7 @@ int certsvc_string_new(
 int certsvc_string_not_managed(
     CertSvcInstance instance,
     const char *url,
-    int size,
+    size_t size,
     CertSvcString *output)
 {
     if (!output) {
@@ -1522,21 +1376,20 @@ int certsvc_string_not_managed(
 
 int certsvc_certificate_verify(
     CertSvcCertificate certificate,
-    CertSvcCertificate *trusted,
-    int trustedSize,
-    CertSvcCertificate *untrusted,
-    int untrustedSize,
+    const CertSvcCertificate *trusted,
+    size_t trustedSize,
+    const CertSvcCertificate *untrusted,
+    size_t untrustedSize,
     int *status)
 {
     try {
-    	int check_caflag_false = 0;
         return impl(certificate.privateInstance)->certificateVerify(
             certificate,
             trusted,
             trustedSize,
             untrusted,
             untrustedSize,
-            check_caflag_false,
+            0,
             status);
     } catch (...) {}
     return CERTSVC_FAIL;
@@ -1544,27 +1397,26 @@ int certsvc_certificate_verify(
 
 int certsvc_certificate_verify_with_caflag(
     CertSvcCertificate certificate,
-    CertSvcCertificate *trusted,
-    int trustedSize,
-    CertSvcCertificate *untrusted,
-    int untrustedSize,
+    const CertSvcCertificate *trusted,
+    size_t trustedSize,
+    const CertSvcCertificate *untrusted,
+    size_t untrustedSize,
     int *status)
 {
     try {
-    	int check_caflag_true = 1;
         return impl(certificate.privateInstance)->certificateVerify(
             certificate,
             trusted,
             trustedSize,
             untrusted,
             untrustedSize,
-            check_caflag_true,
+            1,
             status);
     } catch (...) {}
     return CERTSVC_FAIL;
 }
 
-int certsvc_certificate_get_visibility(CertSvcCertificate certificate, int* visibility)
+int certsvc_certificate_get_visibility(CertSvcCertificate certificate, CertSvcVisibility *visibility)
 {
     try {
         return impl(certificate.privateInstance)->getVisibility(certificate, visibility);
@@ -1575,30 +1427,9 @@ int certsvc_certificate_get_visibility(CertSvcCertificate certificate, int* visi
     return CERTSVC_FAIL;
 }
 
-int certsvc_pkcs12_alias_exists(CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    int *is_unique)
-{
-    try {
-      return impl(instance)->pkcsNameIsUnique(pfxIdString, is_unique);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_import_from_file(CertSvcInstance instance,
-    CertSvcString path,
-    CertSvcString password,
-    CertSvcString pfxIdString)
-{
-    try {
-      return impl(instance)->pkcsImport(path, password, pfxIdString);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
 int certsvc_get_certificate(CertSvcInstance instance,
     CertStoreType storeType,
-    char *gname,
+    const char *gname,
     CertSvcCertificate *certificate)
 {
     int result = CERTSVC_SUCCESS;
@@ -1691,9 +1522,9 @@ int certsvc_pkcs12_check_alias_exists_in_store(CertSvcInstance instance,
 }
 
 int certsvc_pkcs12_free_certificate_list_loaded_from_store(CertSvcInstance instance,
-    CertSvcStoreCertList** certList)
+    CertSvcStoreCertList **certList)
 {
-    if (*certList == NULL) {
+    if (certList == NULL || *certList == NULL) {
         LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
@@ -1707,10 +1538,10 @@ int certsvc_pkcs12_free_certificate_list_loaded_from_store(CertSvcInstance insta
 int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
 	CertStoreType storeType,
     int is_root_app,
-	CertSvcStoreCertList** certList,
-	int* length)
+	CertSvcStoreCertList **certList,
+	size_t *length)
 {
-    if (*certList != NULL) {
+    if (certList == NULL || *certList != NULL) {
         LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
@@ -1729,10 +1560,10 @@ int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
 
 int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance instance,
 	CertStoreType storeType,
-	CertSvcStoreCertList** certList,
-	int* length)
+	CertSvcStoreCertList **certList,
+	size_t *length)
 {
-    if (*certList != NULL) {
+    if (certList == NULL || *certList != NULL) {
         LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
@@ -1750,10 +1581,10 @@ int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance inst
 
 int certsvc_pkcs12_get_root_certificate_list_from_store(CertSvcInstance instance,
 	CertStoreType storeType,
-	CertSvcStoreCertList** certList,
-	int* length)
+	CertSvcStoreCertList **certList,
+	size_t *length)
 {
-    if (*certList != NULL) {
+    if (certList == NULL || *certList != NULL) {
         LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
@@ -1772,10 +1603,10 @@ int certsvc_pkcs12_get_root_certificate_list_from_store(CertSvcInstance instance
 int certsvc_pkcs12_get_certificate_info_from_store(CertSvcInstance instance,
     CertStoreType storeType,
     CertSvcString gname,
-    char**  certBuffer,
-    size_t* certSize)
+    char **certBuffer,
+    size_t *certSize)
 {
-    if (*certBuffer != NULL) {
+    if (certBuffer == NULL || *certBuffer != NULL) {
         LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
@@ -1865,7 +1696,7 @@ int certsvc_pkcs12_get_certificate_status_from_store(
     CertSvcInstance instance,
     CertStoreType storeType,
     CertSvcString gname,
-    int *status)
+    CertStatus *status)
 {
     try {
         if (!impl(instance)->checkValidStoreType(storeType)) {
@@ -1879,7 +1710,7 @@ int certsvc_pkcs12_get_certificate_status_from_store(
 
 int certsvc_pkcs12_get_certificate_from_store(CertSvcInstance instance,
     CertStoreType storeType,
-    char *gname,
+    const char *gname,
     CertSvcCertificate *certificate)
 {
     try {
@@ -1958,18 +1789,6 @@ int certsvc_pkcs12_dup_evp_pkey_from_store(
     return CERTSVC_FAIL;
 }
 
-int certsvc_pkcs12_get_id_list(
-    CertSvcInstance instance,
-    CertSvcStringList *pfxIdStringList)
-{
-    try {
-        return impl(instance)->getPkcsIdList(
-            instance,
-            pfxIdStringList);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
 int certsvc_pkcs12_has_password(
     CertSvcInstance instance,
     CertSvcString filepath,
@@ -1983,45 +1802,8 @@ int certsvc_pkcs12_has_password(
     return CERTSVC_FAIL;
 }
 
-int certsvc_pkcs12_load_certificate_list(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    CertSvcCertificateList *certificateList)
-{
-    try {
-        return impl(instance)->getPkcsCertificateList(
-            instance,
-            pfxIdString,
-            certificateList);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_private_key_dup(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    char **buffer,
-    size_t *size)
-{
-    try {
-        return impl(instance)->getPkcsPrivateKey(pfxIdString, buffer, size);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-void certsvc_pkcs12_private_key_free(
-    char *buffer)
+void certsvc_pkcs12_private_key_free(char *buffer)
 {
     free(buffer);
-}
-
-int certsvc_pkcs12_delete(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString)
-{
-    try {
-        return impl(instance)->pkcsDelete(pfxIdString);
-    } catch (...) {}
-    return CERTSVC_FAIL;
 }
 

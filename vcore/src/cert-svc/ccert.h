@@ -32,12 +32,12 @@ extern "C" {
 #endif
 
 typedef struct CertSvcCertificate_t {
-    int privateHandler;
+    size_t privateHandler;
     CertSvcInstance privateInstance;
 } CertSvcCertificate;
 
 typedef struct CertSvcCertificateList_t {
-    int privateHandler;
+    size_t privateHandler;
     CertSvcInstance privateInstance;
 } CertSvcCertificateList;
 
@@ -51,11 +51,16 @@ typedef enum certImportType_t {
     ALL_STORE    =  VPN_STORE | WIFI_STORE | EMAIL_STORE | SYSTEM_STORE
 } CertStoreType;
 
+typedef enum certStatus_t {
+    DISABLED     =  0,
+    ENABLED      =  1,
+} CertStatus;
+
 typedef struct CertSvcStoreCertList_t{
-    char* gname;             // keyfile group name
-    char* title;             // common Name / Alias provided by the user
-    int status;              // enabled / disabled
-    CertStoreType storeType; // Holds the storetype information
+    char *gname;            // keyfile group name
+    char *title;            // common Name / Alias provided by the user
+    CertStatus status;
+    CertStoreType storeType;
     struct CertSvcStoreCertList_t *next;
 }CertSvcStoreCertList;
 
@@ -67,11 +72,6 @@ typedef enum certType_t {
     P12_PKEY         = 1 << 4,
     INVALID_DATA     = 1 << 5,
 } CertType;
-
-typedef enum certStatus_t {
-    DISABLED     =  0,
-    ENABLED      =  1,
-} CertStatus;
 
 typedef enum CertSvcCertificateForm_t {
 /*    CERTSVC_FORM_PEM, */
@@ -101,13 +101,13 @@ typedef enum CertSvcCertificateField_t {
 } CertSvcCertificateField;
 
 typedef enum CertSvcVisibility_t {
-	CERTSVC_VISIBILITY_DEVELOPER = 1,
-	CERTSVC_VISIBILITY_TEST = 1 << 1,
-	CERTSVC_VISIBILITY_PUBLIC = 1 << 6,
-	CERTSVC_VISIBILITY_PARTNER = 1 << 7,
-	CERTSVC_VISIBILITY_PARTNER_OPERATOR = 1 << 8,
+	CERTSVC_VISIBILITY_DEVELOPER            = 1,
+	CERTSVC_VISIBILITY_TEST                 = 1 << 1,
+	CERTSVC_VISIBILITY_PUBLIC               = 1 << 6,
+	CERTSVC_VISIBILITY_PARTNER              = 1 << 7,
+	CERTSVC_VISIBILITY_PARTNER_OPERATOR     = 1 << 8,
 	CERTSVC_VISIBILITY_PARTNER_MANUFACTURER = 1 << 9,
-	CERTSVC_VISIBILITY_PLATFORM = 1 << 10
+	CERTSVC_VISIBILITY_PLATFORM             = 1 << 10
 } CertSvcVisibility;
 
 /**
@@ -121,7 +121,7 @@ typedef enum CertSvcVisibility_t {
  */
 int certsvc_get_certificate(CertSvcInstance instance,
                             CertStoreType storeType,
-                            char *gname,
+                            const char *gname,
                             CertSvcCertificate *certificate);
 
 /**
@@ -148,7 +148,7 @@ int certsvc_certificate_new_from_file(CertSvcInstance instance,
  */
 int certsvc_certificate_new_from_memory(CertSvcInstance instance,
                                         const unsigned char *memory,
-                                        int len,
+                                        size_t len,
                                         CertSvcCertificateForm form,
                                         CertSvcCertificate *certificate);
 
@@ -196,7 +196,7 @@ int certsvc_certificate_search(CertSvcInstance instance,
  * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
  */
 int certsvc_certificate_list_get_one(CertSvcCertificateList handler,
-                                     int position,
+                                     size_t position,
                                      CertSvcCertificate *certificate);
 
 /**
@@ -207,7 +207,7 @@ int certsvc_certificate_list_get_one(CertSvcCertificateList handler,
  * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
  */
 int certsvc_certificate_list_get_length(CertSvcCertificateList handler,
-                                        int *size);
+                                        size_t *size);
 
 /**
  * This function will free list. It will not free certificates on the list.
@@ -283,7 +283,7 @@ int certsvc_certificate_is_root_ca(CertSvcCertificate certificate, int *status);
  * @param[in] size Size of certificate_array
  * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC
  */
-int certsvc_certificate_chain_sort(CertSvcCertificate *unsortedChain, int size);
+int certsvc_certificate_chain_sort(CertSvcCertificate *unsortedChain, size_t size);
 
 /**
  * Base64 string will be connected with same instance as message.
@@ -341,10 +341,10 @@ int certsvc_message_verify(
  */
 int certsvc_certificate_verify(
     CertSvcCertificate certificate,
-    CertSvcCertificate *trusted,
-    int trustedSize,
-    CertSvcCertificate *untrusted,
-    int untrustedSize,
+    const CertSvcCertificate *trusted,
+    size_t trustedSize,
+    const CertSvcCertificate *untrusted,
+    size_t untrustedSize,
     int *status);
 
 /**
@@ -367,10 +367,10 @@ int certsvc_certificate_verify(
  */
 int certsvc_certificate_verify_with_caflag(
 	    CertSvcCertificate certificate,
-	    CertSvcCertificate *trusted,
-	    int trustedSize,
-	    CertSvcCertificate *untrusted,
-	    int untrustedSize,
+	    const CertSvcCertificate *trusted,
+	    size_t trustedSize,
+	    const CertSvcCertificate *untrusted,
+	    size_t untrustedSize,
 	    int *status);
 
 /**
@@ -381,7 +381,7 @@ int certsvc_certificate_verify_with_caflag(
  * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR
  *
  */
-int certsvc_certificate_get_visibility(CertSvcCertificate certificate, int* visibility);
+int certsvc_certificate_get_visibility(CertSvcCertificate certificate, CertSvcVisibility *visibility);
 
 
 #ifdef __cplusplus

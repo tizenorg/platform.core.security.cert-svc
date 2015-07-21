@@ -28,7 +28,6 @@
 #include <dpl/test/test_runner.h>
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
-#include <glib.h>
 #include <cert-svc/cpkcs12.h>
 #include <cert-svc/cerror.h>
 #include <cert-svc/cprimitives.h>
@@ -54,13 +53,13 @@ RUNNER_TEST(CERTSVC_PKCS12_1001_certsvc_get_root_cert_list) {
 	CertStoreType storeType = SYSTEM_STORE;
 	CertSvcStoreCertList* certList = NULL;
 	CertSvcStoreCertList* tmpNode = NULL;
-	int length = 0;
 	int result;
 	int count = 0;
 	CREATE_INSTANCE
 
 	//start time
 	clock_t tic = clock();
+	size_t length = 0;
 	result = certsvc_pkcs12_get_certificate_list_from_store(instance, storeType, DISABLED, &certList, &length);
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Getting certificate list from system store failed");
 	clock_t toc = clock();
@@ -87,7 +86,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1002_certsvc_set_cert_to_disabled_and_get_status_for_
 	char *gname = "Certum_Root_CA.pem";
 	CertStoreType storeType = SYSTEM_STORE;
 	CertStatus Status;
-	int status = -1;
+	CertStatus status;
 	int result;
 	CertSvcString Alias;
 
@@ -132,7 +131,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1003_add_pem_file_in_individual_store) {
 	char* pass = NULL;
 	CertStoreType type;
 	int result;
-	int length = 0;
+	size_t length = 0;
 	int count = 0;
 
 	CertSvcStoreCertList* certList1 = NULL;
@@ -234,7 +233,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1004_add_pem_file_in_all_store) {
 	CertStoreType type;
 	int result;
 	int count = 0;
-	int length = 0;
+	size_t length = 0;
 
 	CREATE_INSTANCE
 	CertSvcString Alias, Path, Pass;
@@ -280,7 +279,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1005_add_crt_file_in_individual_store) {
 	char *alias = "CRT-TestingCRT1";
 	CertStoreType type;
 	int result;
-	int length = 0;
+	size_t length = 0;
 	int count = 0;
 
 	CertSvcStoreCertList* certList1 = NULL;
@@ -374,7 +373,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1006_add_crt_file_in_all_store) {
 	CertStoreType type;
 	int result;
 	int count = 0;
-	int length = 0;
+	size_t length = 0;
 
 	CREATE_INSTANCE
 	CertSvcString Alias, Path, Pass;
@@ -421,7 +420,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1007_install_p12_file_to_individual_store) {
 	char *alias = "P12-WifiUser";
 	CertStoreType storeType;
 	int result;
-	int length = 0;
+	size_t length = 0;
 	int count = 0;
 
 	CREATE_INSTANCE
@@ -482,7 +481,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1008_install_p12_file_to_all_store) {
 	char *alias = "P12-WifiUser-all-store";
 	CertStoreType storeType;
 	int result;
-	int length = 0;
+	size_t length = 0;
 	int count =0;
 
 	CREATE_INSTANCE
@@ -531,7 +530,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1009_install_pfx_file_to_individual_store) {
 	CertStoreType storeType;
 	int result;
 	int count = 0;
-	int length = 0;
+	size_t length = 0;
 
 	CREATE_INSTANCE
 	CertSvcString Alias, Path, Pass;
@@ -584,7 +583,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1010_install_pfx_file_to_all_store) {
 	CertSvcStoreCertList* certList = NULL;
 	CertSvcStoreCertList* tmpNode = NULL;
 	CertSvcStoreCertList* tmp = NULL;
-	int length = 0;
+	size_t length = 0;
 	int count = 0;
 	int result;
 
@@ -630,7 +629,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1011_get_all_end_user_certificate_from_store) {
 	CertSvcStoreCertList* tmpNode = NULL;
 	CertStoreType storeType = (CertStoreType) (WIFI_STORE);
 	int result;
-	int length;
+	size_t length;
 
 	CREATE_INSTANCE
 
@@ -715,7 +714,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1012_delete_all_cert_from_multiple_store) {
 	CertSvcStoreCertList* certList1 = NULL;
 	CertStoreType storeType = (CertStoreType) (WIFI_STORE | VPN_STORE | EMAIL_STORE);
 	int result;
-	int length;
+	size_t length;
 	CertSvcString gname;
 
 	CREATE_INSTANCE
@@ -747,7 +746,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1013_install_pfx_file_to_one_store_and_get_list_from_
 	CertSvcStoreCertList* certList = NULL;
 	CertSvcStoreCertList* tmpNode = NULL;
 	CertSvcStoreCertList* tmp = NULL;
-	int length = 0;
+	size_t length = 0;
 	int count = 0;
 	int result = -1;
 	gboolean exists = FALSE;
@@ -803,7 +802,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1014_installing_pfx_without_password_to_individual_st
 	char *alias = "PFX-WifiServer-without-password";
 	CertStoreType storeType;
 	int result;
-	gboolean exists = FALSE;
+	int exists;
 
 	CREATE_INSTANCE
 	CertSvcString Alias, Path, Pass;
@@ -833,7 +832,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1015_get_certificate_from_store) {
 	CertSvcStoreCertList* certList1 = NULL;
 	CertStoreType storeType = (CertStoreType) (WIFI_STORE | VPN_STORE | EMAIL_STORE);
 	int result;
-	int length;
+	size_t length;
 	CertSvcString buffer1, gname;
 	CertSvcString buffer2;
 	const char *temp = NULL;
@@ -880,7 +879,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1016_get_certificate_from_system_store) {
 	CertSvcStoreCertList* certList1 = NULL;
 	CertStoreType storeType = (CertStoreType) (SYSTEM_STORE);
 	int result = CERTSVC_SUCCESS;
-	int length = 0;
+	size_t length = 0;
 	int count = 0;
 	CertSvcString buffer1, gname;
 	CertSvcString buffer2;
@@ -930,9 +929,9 @@ RUNNER_TEST(CERTSVC_PKCS12_1017_load_cert_list_from_store) {
 	CertSvcStoreCertList* certList1 = NULL;
 	CertSvcCertificate cert;
 	int result = CERTSVC_SUCCESS;
-	int length = 0;
+	size_t length = 0;
 	int i=0;
-	int certListlength = 0;
+	size_t certListlength = 0;
 	const char *temp = NULL;
 	CertSvcString buffer1,buffer2, gname;
 
@@ -980,9 +979,9 @@ RUNNER_TEST(CERTSVC_PKCS12_1018_get_duplicate_private_key) {
 	CertSvcStoreCertList* certList1 = NULL;
 	FILE *fp = NULL;
 	int result = CERTSVC_SUCCESS;
-	int length = 0;
+	size_t length = 0;
 	CertSvcString gname;
-	gchar *privatekey_path = NULL;
+	char *privatekey_path = NULL;
 	EVP_PKEY *privatekey = NULL;
 
 	CREATE_INSTANCE
@@ -1044,8 +1043,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1020_certsvc_set_cert_to_disabled_and_get_status_for_
 	int result = CERTSVC_SUCCESS;
 	CertSvcString Alias;
 	CertStatus Status;
-	int status = -1;
-	int length = 0;
+	CertStatus status;
+	size_t length = 0;
 	int count = 0;
     int i;
 
@@ -1137,7 +1136,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1022_certsvc_set_cert_to_disabled_and_get_status_for_
 	char* gname = "eb375c3e.0";
 	CertStoreType storeType = (CertStoreType) (DISABLED);
 	CertStatus Status;
-	int status = -1;
+	CertStatus status;
 	int result;
 	CertSvcString Alias;
 
@@ -1178,8 +1177,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1023_certsvc_set_cert_to_disabled_and_get_status_for_
 	CertStoreType storeType =  (CertStoreType) (0);
 	CertSvcStoreCertList* certList = NULL;
 	CertStatus Status;
-	int status = -1;
-	int length;
+	CertStatus status;
+	size_t length;
 	int result;
 	CertSvcString Alias;
 
@@ -1310,8 +1309,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1026_deleting_a_certificate_from_invalid_store) {
 	CertStoreType storeType =  (CertStoreType) (WIFI_STORE);
 	CertSvcStoreCertList* certList = NULL;
 	CertStatus Status;
-	int status = -1;
-	int length;
+	CertStatus status;
+	size_t length;
 	int result;
 	CertSvcString Alias;
 
@@ -1362,19 +1361,19 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
 	CertSvcCertificateList cert_list;
 	CertSvcCertificate ca_certificate;
 	CertSvcCertificate *selected_certificate = NULL;
-	int length;
+	size_t length;
 	int result;
 	int count=1;
 	int validity;
-	int cert_counts = 0;
+	size_t cert_counts = 0;
 	CertSvcString Alias;
 	char *alias = NULL;
 	X509 *x509 = NULL;
 	FILE *fp = NULL;
 	EVP_PKEY *privatekey = NULL;
-	gchar *privatekey_path = NULL;
-	gchar *ca_cert_path = NULL;
-	gchar *user_cert_path = NULL;
+	char *privatekey_path = NULL;
+	char *ca_cert_path = NULL;
+	char *user_cert_path = NULL;
 	int cert_index = 0;
 
 	CREATE_INSTANCE
@@ -1463,8 +1462,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1028_certsvc_set_cert_to_disabled_and_get_status_for_
 	int result = CERTSVC_SUCCESS;
 	CertSvcString Alias;
 	CertStatus Status;
-	int status = -1;
-	int length = 0;
+	CertStatus status;
+	size_t length = 0;
 	int count = 0;
     int i;
 

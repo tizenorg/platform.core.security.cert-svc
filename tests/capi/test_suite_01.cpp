@@ -49,7 +49,7 @@ RUNNER_TEST(test01_certificate_new_from_file)
     const char *ptr = "Samsung";
 
     const char *buffer;
-    int len;
+    size_t len;
 
     certsvc_string_to_cstring(string, &buffer, &len);
 
@@ -280,7 +280,7 @@ RUNNER_TEST(test06_cert_get_field)
 
     RUNNER_ASSERT_MSG(CERTSVC_SUCCESS == result, "Error in reading ISSUER field.");
 
-    int size;
+    size_t size;
     const char *ptr;
 
     certsvc_string_to_cstring(subject, &ptr, &size);

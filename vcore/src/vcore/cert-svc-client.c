@@ -39,8 +39,9 @@ void initialize_res_data(VcoreResponseData *pData)
 	memset(pData->dataBlock, 0, VCORE_MAX_RECV_DATA_SIZE);
 	memset(pData->common_name, 0, VCORE_MAX_FILENAME_SIZE * 2 + 1);
 	pData->dataBlockLen = 0;
-	pData->certStatus = 0;
+	pData->certStatus = DISABLED;
 	pData->result = 0;
+	pData->isAliasUnique = 0;
 	pData->certList = NULL;
 	pData->certCount = 0;
 	pData->certBlockList = NULL;
@@ -54,10 +55,10 @@ void initialize_req_data(VcoreRequestData *pData)
 	memset(pData->private_key_gname, 0, VCORE_MAX_FILENAME_SIZE+1);
 	memset(pData->associated_gname, 0, VCORE_MAX_FILENAME_SIZE+1);
 	memset(pData->dataBlock, 0, VCORE_MAX_SEND_DATA_SIZE);
-	pData->certStatus = 0;
-	pData->storeType = -1;
+	pData->certStatus = DISABLED;
+	pData->storeType = NONE_STORE;
 	pData->reqType = -1;
-	pData->dataBlockLen = -1;
+	pData->dataBlockLen = 0;
 	pData->is_root_app = -1;
 }
 
@@ -87,7 +88,7 @@ VcoreRequestData* set_request_data(
 	const char *pData,
 	size_t dataLen,
 	CertType certType,
-	int certStatus)
+	CertStatus certStatus)
 {
 	VcoreRequestData* pReqData = (VcoreRequestData*)malloc(sizeof(VcoreRequestData));
 	if (!pReqData) {
@@ -161,7 +162,7 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData* pClientData) {
 	int clientLen = 0;
 	int tempSockLen = 0;
 	int read_len = 0;
-	int i = 0;
+	size_t i = 0;
 	struct sockaddr_un clientaddr;
 	VcoreResponseData recvData;
 	initialize_res_data(&recvData);
@@ -329,7 +330,7 @@ int vcore_client_set_certificate_status_to_store(CertStoreType storeType, int is
 	return recvData.result;
 }
 
-int vcore_client_get_certificate_status_from_store(CertStoreType storeType, const char* gname, int *status) {
+int vcore_client_get_certificate_status_from_store(CertStoreType storeType, const char* gname, CertStatus *status) {
 
 	VcoreRequestData* pSendData = NULL;
 	VcoreResponseData recvData;
@@ -352,7 +353,7 @@ int vcore_client_get_certificate_status_from_store(CertStoreType storeType, cons
 	return recvData.result;
 }
 
-int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char* alias, int *status) {
+int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char* alias, int *isUnique) {
 
 	VcoreRequestData* pSendData = NULL;
 	VcoreResponseData recvData;
@@ -371,7 +372,7 @@ int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char*
 
 	recvData = cert_svc_client_comm(pSendData);
 	free(pSendData);
-	*status = recvData.certStatus;
+	*isUnique = recvData.isAliasUnique;
 	return recvData.result;
 }
 
@@ -444,15 +445,15 @@ int vcore_client_delete_certificate_from_store(CertStoreType storeType, const ch
 }
 
 int _vcore_client_get_certificate_list_from_store(int reqType, CertStoreType storeType, int is_root_app, 
-									   CertSvcStoreCertList** certList, int* length)
+									   CertSvcStoreCertList **certList, size_t *length)
 {
 	VcoreRequestData* pSendData = NULL;
 	VcoreResponseData recvData;
 	CertSvcStoreCertList* curr = NULL;
 	CertSvcStoreCertList* prev = NULL;
 	VcoreCertResponseData* cert = NULL;
-	int tmplen = 0;
-	int i=0;
+	size_t tmplen = 0;
+	size_t i=0;
 	initialize_res_data(&recvData);
 
 
@@ -502,21 +503,21 @@ int _vcore_client_get_certificate_list_from_store(int reqType, CertStoreType sto
 }
 
 int vcore_client_get_certificate_list_from_store(CertStoreType storeType, int is_root_app, 
-									   CertSvcStoreCertList** certList, int* length)
+									   CertSvcStoreCertList** certList, size_t *length)
 {
 	return _vcore_client_get_certificate_list_from_store(CERTSVC_GET_CERTIFICATE_LIST, storeType, is_root_app,
 									   certList, length);
 }
 
 int vcore_client_get_root_certificate_list_from_store(CertStoreType storeType,  
-									   CertSvcStoreCertList** certList, int* length)
+									   CertSvcStoreCertList **certList, size_t *length)
 {
 	return _vcore_client_get_certificate_list_from_store(CERTSVC_GET_ROOT_CERTIFICATE_LIST, storeType, 0,
 									   certList, length);
 }
 
 int vcore_client_get_end_user_certificate_list_from_store(CertStoreType storeType,  
-									   CertSvcStoreCertList** certList, int* length)
+									   CertSvcStoreCertList **certList, size_t *length)
 {
 	return _vcore_client_get_certificate_list_from_store(CERTSVC_GET_USER_CERTIFICATE_LIST, storeType, 0,
 									   certList, length);
@@ -546,12 +547,12 @@ int vcore_client_get_certificate_alias_from_store(CertStoreType storeType, const
 	return recvData.result;
 }
 
-int vcore_client_load_certificates_from_store(CertStoreType storeType, const char *gname, char ***certs, int *ncerts)
+int vcore_client_load_certificates_from_store(CertStoreType storeType, const char *gname, char ***certs, size_t *ncerts)
 {
 	VcoreRequestData* pSendData = NULL;
 	VcoreResponseData recvData;
 	ResponseCertBlock* cert = NULL;
-	int i=0;
+	size_t i = 0;
 	initialize_res_data(&recvData);
 
 	pSendData = set_request_data(CERTSVC_LOAD_CERTIFICATES, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, 0, 0);

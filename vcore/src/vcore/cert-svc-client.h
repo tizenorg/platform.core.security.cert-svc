@@ -17,7 +17,7 @@
  * @file        cert-svc-client.h
  * @author      Madhan A K (madhan.ak@samsung.com)
  * @version     1.0
- * @brief       cert-svc client interface for cert-svc server present in secure-storage module.
+ * @brief       cert-svc client interface for cert-server.
  */
 
 #ifndef CERT_SVC_CLIENT_H_
@@ -64,7 +64,7 @@ typedef struct {
     char             associated_gname[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for associated_gname */
     char             dataBlock[VCORE_MAX_SEND_DATA_SIZE];    /* for cert & key buffer */
     size_t           dataBlockLen;
-    int              certStatus;
+    CertStatus       certStatus;
     int              is_root_app;
     CertType         certType;
 } VcoreRequestData;
@@ -72,7 +72,7 @@ typedef struct {
 typedef struct {
     char             gname[VCORE_MAX_FILENAME_SIZE * 2 + 1];
     char             title[VCORE_MAX_FILENAME_SIZE * 2 + 1];
-    int              status;
+    CertStatus       status;
     CertStoreType    storeType;
 } VcoreCertResponseData;
 
@@ -85,29 +85,30 @@ typedef struct {
 typedef struct {
     char                   dataBlock[VCORE_MAX_RECV_DATA_SIZE];
     size_t                 dataBlockLen;
-    int                    certStatus;
+    CertStatus             certStatus;
     char                   common_name[VCORE_MAX_FILENAME_SIZE* 2 + 1]; /*for common_name*/
     int                    result;
-    int                    certCount;
+    int                    isAliasUnique;
+    size_t                 certCount;
     VcoreCertResponseData* certList;
-    int                    certBlockCount;
+    size_t                 certBlockCount;
     ResponseCertBlock*     certBlockList; // array
 } VcoreResponseData;
 
 
 
-int vcore_client_set_certificate_status_to_store(CertStoreType storeType, int is_root_app, const char* gname, CertStatus status);
-int vcore_client_get_certificate_status_from_store(CertStoreType storeType, const char* gname, int *status);
-int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char* alias, int *status);
+int vcore_client_set_certificate_status_to_store(CertStoreType storeType, int is_root_app, const char *gname, CertStatus status);
+int vcore_client_get_certificate_status_from_store(CertStoreType storeType, const char *gname, CertStatus *status);
+int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char *alias, int *isUnique);
 int vcore_client_install_certificate_to_store(CertStoreType storeType, const char *gname, const char *common_name, const char *private_key_gname, const char *associated_gname, const char *dataBlock, size_t dataBlockLen, CertType certType);
-int vcore_client_get_certificate_from_store(CertStoreType storeType, const char* gname, char** certData, size_t* certSize, CertType certType);
-int vcore_client_delete_certificate_from_store(CertStoreType storeType, const char* gname);
-VcoreResponseData cert_svc_client_comm(VcoreRequestData* client_data);
-int vcore_client_get_certificate_list_from_store(CertStoreType storeType, int is_root_app, CertSvcStoreCertList** certList, int* length);
-int vcore_client_get_root_certificate_list_from_store(CertStoreType storeType, CertSvcStoreCertList** certList, int* length);
-int vcore_client_get_end_user_certificate_list_from_store(CertStoreType storeType, CertSvcStoreCertList** certList, int* length);
+int vcore_client_get_certificate_from_store(CertStoreType storeType, const char *gname, char **certData, size_t *certSize, CertType certType);
+int vcore_client_delete_certificate_from_store(CertStoreType storeType, const char *gname);
+VcoreResponseData cert_svc_client_comm(VcoreRequestData *client_data);
+int vcore_client_get_certificate_list_from_store(CertStoreType storeType, int is_root_app, CertSvcStoreCertList **certList, size_t *length);
+int vcore_client_get_root_certificate_list_from_store(CertStoreType storeType, CertSvcStoreCertList **certList, size_t *length);
+int vcore_client_get_end_user_certificate_list_from_store(CertStoreType storeType, CertSvcStoreCertList **certList, size_t *length);
 int vcore_client_get_certificate_alias_from_store(CertStoreType storeType, const char *gname, char **alias);
-int vcore_client_load_certificates_from_store(CertStoreType storeType, const char *gname, char ***certs, int *ncerts);
+int vcore_client_load_certificates_from_store(CertStoreType storeType, const char *gname, char ***certs, size_t *ncerts);
 
 #ifdef __cplusplus
 }

@@ -31,43 +31,6 @@ extern "C" {
 #endif
 
 /**
- * Query PKCS#12 storage to find out whenever new alias proposal is unique.
- *
- * @param[in] instance CertSvcInstance object.
- * @param[in] proposal Desired alias name.
- * @param[out] is_unique CERTSVC_TRUE (if there isn't such alias already) or CERTSVC_FALSE.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
- */
-int certsvc_pkcs12_alias_exists(CertSvcInstance instance,
-                                CertSvcString alias,
-                                int *is_unique);
-
-/**
- * Import PKCS#12 container from file.
- *
- * @param[in] instance CertSvcInstance object.
- * @param[in] path Path to container file.
- * @param[in] password Container password (can be empty or NULL).
- * @param[in] alias Logical name for certificate bundle identification (can't be empty).
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_INVALID_PASSWORD, CERTSVC_WRONG_ARGUMENT, CERTSVC_DUPLICATED_ALIAS
- */
-int certsvc_pkcs12_import_from_file(CertSvcInstance instance,
-                                    CertSvcString path,
-                                    CertSvcString password,
-                                    CertSvcString alias);
-
-/**
- * Get a list of PKCS#12 bundles from storage. This list could be freed by:
- * certsvc_string_list_free, certsvc_instance_reset, certsvc_instance_free.
- *
- * @param[in] instance CertSvcInstance object.
- * @param[out] pfxIdStringList List of PKCS#12 aliases.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL
- */
-int certsvc_pkcs12_get_id_list(CertSvcInstance instance,
-                               CertSvcStringList *pfxIdStringList);
-
-/**
  * Check whenever PKCS#12 container is password protected.
  *
  * @param[in] instance CertSvcInstance object.
@@ -80,51 +43,11 @@ int certsvc_pkcs12_has_password(CertSvcInstance instance,
                                 int *has_password);
 
 /**
- * Get a list of certificates from PKCS#12 bundle. You may free this list by:
- * certsvc_certificate_list_free. You may free certificates from list with:
- * certsvc_certificate_free.
- *
- * @param[in] instance CertSvcInstance object.
- * @param[in] pfxIdString Identification of pfx/pkcs file.
- * @param[out] certificateList List of certificates.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL, CERTSVC_IO_ERROR
- */
-int certsvc_pkcs12_load_certificate_list(CertSvcInstance instance,
-                                         CertSvcString alias,
-                                         CertSvcCertificateList* certificateList);
-
-/**
- * This function will load to memory private file content. This functin will
- * not parse it in any way.
- * This memory must be freed by certsvc_private_key_free.
- *
- * @param[in] instance CertSvcInstance object.
- * @param[in] prfIdString Container bundle identifier.
- * @param[out] buffer Poiner to newly-allocated memory with private key data.
- * @param[out] size Size of the newly-allocated buffer. Zero means there is no key.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT
- */
-int certsvc_pkcs12_private_key_dup(CertSvcInstance instance,
-                                   CertSvcString alias,
-                                   char **buffer,
-                                   size_t *size);
-
-/**
  * Couter-routine for certsvc_pkcs12_private_key_dup.
  *
  * @param[in] pointer Memory claimed by private key.
  */
 void certsvc_pkcs12_private_key_free(char *buffer);
-
-/**
- * Remove logical PKCS#12 container with associated certificates and private key.
- *
- * @param[in] instance CertSvcInstance object.
- * @param[in] alias Container bundle identifier.
- * @return CERTSVC_SUCCESS, CERTSVC_IO_ERROR, CERTSVC_BAD_ALLOC
- */
-int certsvc_pkcs12_delete(CertSvcInstance instance,
-                          CertSvcString alias);
 
 /**
  * This function will load to memory private file content. This functin will
@@ -174,7 +97,7 @@ int certsvc_pkcs12_set_certificate_status_to_store(CertSvcInstance instance,
 int certsvc_pkcs12_get_certificate_status_from_store(CertSvcInstance instance,
                                               CertStoreType storeType,
                                               CertSvcString gname,
-                                              int *status);
+                                              CertStatus *status);
 
 /**
  * This function will get the Alias name, Path to certificate, Certificate status of all
@@ -190,7 +113,7 @@ int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
                                             CertStoreType storeType,
                                             int is_root_app,
                                             CertSvcStoreCertList** certList,
-                                            int* length);
+                                            size_t *length);
 
 /**
  * This function will get the Alias name, Path to certificate, Certificate status of all
@@ -205,7 +128,7 @@ int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
 int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance instance,
                                             CertStoreType storeType,
                                             CertSvcStoreCertList** certList,
-                                            int* length);
+                                            size_t* length);
 
 /**
  * This function will get the Alias name, Path to certificate, Certificate status of all
@@ -220,7 +143,7 @@ int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance inst
 int certsvc_pkcs12_get_root_certificate_list_from_store(CertSvcInstance instance,
                                             CertStoreType storeType,
                                             CertSvcStoreCertList** certList,
-                                            int* length);
+                                            size_t* length);
 
 /**
  * This function will free all the linked list of data structure holding the information about
@@ -245,7 +168,7 @@ int certsvc_pkcs12_free_certificate_list_loaded_from_store(CertSvcInstance insta
  */
 int certsvc_pkcs12_get_certificate_from_store(CertSvcInstance instance,
                                        CertStoreType storeType,
-                                       char *gname,
+                                       const char *gname,
                                        CertSvcCertificate *certificate);
 
 /**

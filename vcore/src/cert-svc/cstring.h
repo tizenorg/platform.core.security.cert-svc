@@ -31,7 +31,7 @@ extern "C" {
 
 
 typedef struct CertSvcStringList_t {
-    int privateHandler;
+    size_t privateHandler;
     CertSvcInstance privateInstance;
 } CertSvcStringList;
 
@@ -41,8 +41,8 @@ typedef struct CertSvcString_t {
      * implementation of strings and it may change at any time without notice!
      * To extract data use certsvc_string_to_cstring function!
      */
-    char* privateHandler;
-    int privateLength;
+    char *privateHandler;
+    size_t privateLength;
     CertSvcInstance privateInstance;
 } CertSvcString;
 
@@ -58,7 +58,7 @@ typedef struct CertSvcString_t {
 int certsvc_string_new(
     CertSvcInstance instance,
     const char *input,
-    int size,
+    size_t size,
     CertSvcString *output);
 
 /**
@@ -74,7 +74,7 @@ int certsvc_string_new(
 int certsvc_string_not_managed(
     CertSvcInstance instance,
     const char *input,
-    int size,
+    size_t size,
     CertSvcString *output);
 
 /**
@@ -89,7 +89,7 @@ int certsvc_string_not_managed(
  * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC
  */
 int certsvc_string_list_get_one(CertSvcStringList hander,
-                                int position,
+                                size_t position,
                                 CertSvcString *buffer);
 
 /**
@@ -99,7 +99,7 @@ int certsvc_string_list_get_one(CertSvcStringList hander,
  * @param[out] size Number of elements on the list.
  * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
  */
-int certsvc_string_list_get_length(CertSvcStringList hander,int *size);
+int certsvc_string_list_get_length(CertSvcStringList hander, size_t *size);
 
 /**
  * Free data.
@@ -124,7 +124,7 @@ void certsvc_string_list_free(CertSvcStringList handler);
  * @param[out] buffer cstring
  * @param[out] len Length of cstring
  */
-void certsvc_string_to_cstring(CertSvcString string, const char **buffer, int *len);
+void certsvc_string_to_cstring(CertSvcString string, const char **buffer, size_t *len);
 
 #ifdef __cplusplus
 }

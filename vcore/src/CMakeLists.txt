@@ -5,13 +5,11 @@ ADD_DEFINITIONS("-Werror")
 
 PKG_CHECK_MODULES(VCORE_DEPS
     REQUIRED
-    glib-2.0
     libxml-2.0
     libpcrecpp
     openssl
     xmlsec1
     dlog
-    secure-storage
     icu-uc
     libsoup-2.4
     db-util
@@ -87,7 +85,6 @@ SET(VCORE_SOURCES
     ${VCORE_SRC_DIR}/CertificateConfigReader.cpp
     ${VCORE_SRC_DIR}/CertificateLoader.cpp
     ${VCORE_SRC_DIR}/CertStoreType.cpp
-    ${VCORE_SRC_DIR}/Config.cpp
     ${VCORE_SRC_DIR}/CryptoHash.cpp
     ${VCORE_SRC_DIR}/OCSPCertMgrUtil.cpp
     ${VCORE_SRC_DIR}/ReferenceValidator.cpp
@@ -99,7 +96,6 @@ SET(VCORE_SOURCES
     ${VCORE_SRC_DIR}/TimeConversion.cpp
     ${VCORE_SRC_DIR}/VerificationStatus.cpp
     ${VCORE_SRC_DIR}/ValidatorFactories.cpp
-    ${VCORE_SRC_DIR}/VCore.cpp
     ${VCORE_SRC_DIR}/WrtSignatureValidator.cpp
     ${VCORE_SRC_DIR}/SignatureValidator.cpp
     ${VCORE_SRC_DIR}/XmlsecAdapter.cpp
@@ -195,7 +191,6 @@ INSTALL(TARGETS ${TARGET_VCORE_LIB}
     )
 
 INSTALL(FILES
-    ${VCORE_SRC_DIR}/VCore.h
     ${VCORE_SRC_DIR}/WrtSignatureValidator.h
     ${VCORE_SRC_DIR}/SignatureValidator.h
     ${VCORE_SRC_DIR}/SignatureFinder.h

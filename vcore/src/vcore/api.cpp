@@ -34,8 +34,6 @@
 #include <string>
 #include <vector>
 
-#include <glib-object.h>
-
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
@@ -832,24 +830,6 @@ out:
 		return ret;
 	}
 
-    inline int pkcsNameIsUnique(
-        CertSvcString pfxIdString,
-        int *is_unique)
-    {
-      gboolean exists;
-      int result = c_certsvc_pkcs12_alias_exists(pfxIdString.privateHandler, &exists);
-      *is_unique = !exists;
-      return result;
-    }
-
-    inline int pkcsImport(
-        CertSvcString path,
-        CertSvcString pass,
-        CertSvcString pfxIdString)
-    {
-      return c_certsvc_pkcs12_import(path.privateHandler, pass.privateHandler, pfxIdString.privateHandler);
-    }
-
     inline int pkcsNameIsUniqueInStore(
         CertStoreType storeType,
         CertSvcString pfxIdString,
@@ -875,87 +855,11 @@ out:
         return c_certsvc_pkcs12_delete_certificate_from_store(storeType, gname.privateHandler);
     }
 
-    inline int getPkcsIdList(
-        CertSvcInstance &instance,
-        CertSvcStringList *handler)
-    {
-      gchar **aliases;
-      gsize i, naliases;
-      std::vector<std::string> output;
-      int result;
-
-      result = c_certsvc_pkcs12_aliases_load(&aliases, &naliases);
-      if(result != CERTSVC_SUCCESS)
-        return result;
-      for(i = 0; i < naliases; i++)
-        output.push_back(std::string(aliases[i]));
-      c_certsvc_pkcs12_aliases_free(aliases);
-
-      int position = m_stringListCounter++;
-      m_stringListMap[position] = output;
-
-      handler->privateHandler = position;
-      handler->privateInstance = instance;
-      return CERTSVC_SUCCESS;
-    }
-
     inline int pkcsHasPassword(
         CertSvcString filepath,
         int *has_password)
     {
       return c_certsvc_pkcs12_has_password(filepath.privateHandler, has_password);
-    }
-
-    inline int getPkcsPrivateKey(
-        CertSvcString pfxIdString,
-        char **buffer,
-        size_t *size)
-    {
-        return c_certsvc_pkcs12_private_key_load(pfxIdString.privateHandler, buffer, size);
-    }
-
-    inline int getPkcsCertificateList(
-        CertSvcInstance &instance,
-        CertSvcString &pfxIdString,
-        CertSvcCertificateList *handler)
-    {
-      gchar **certs;
-      gsize i, ncerts;
-      std::vector<CertificatePtr> certPtrVector;
-      std::vector<int> listId;
-      int result;
-
-      result = c_certsvc_pkcs12_load_certificates(pfxIdString.privateHandler, &certs, &ncerts);
-      if(result != CERTSVC_SUCCESS)
-        return result;
-      for(i = 0; i < ncerts; i++) {
-        ScopedCertCtx context(cert_svc_cert_context_init(), cert_svc_cert_context_final);
-        if(cert_svc_load_file_to_context(context.get(), certs[i]) != CERT_SVC_ERR_NO_ERROR) {
-          c_certsvc_pkcs12_free_certificates(certs);
-          return CERTSVC_IO_ERROR;
-        }
-        else
-          certPtrVector.push_back(CertificatePtr(new Certificate(*(context->certBuf))));
-      }
-      if(ncerts > 0)
-          c_certsvc_pkcs12_free_certificates(certs);
-
-      FOREACH(it, certPtrVector) {
-        listId.push_back(addCert(*it));
-      }
-
-      int position = m_idListCounter++;
-      m_idListMap[position] = listId;
-
-      handler->privateInstance = instance;
-      handler->privateHandler = position;
-
-      return result;
-    }
-
-    inline int pkcsDelete(CertSvcString pfxIdString)
-    {
-      return c_certsvc_pkcs12_delete(pfxIdString.privateHandler);
     }
 
     inline int pkcsImportToStore(
@@ -1045,7 +949,7 @@ out:
         CertSvcCertificateList *handler)
     {
         char **certs;
-        gsize i, ncerts;
+        int i, ncerts;
         std::vector<CertificatePtr> certPtrVector;
         std::vector<int> listId;
         char *certBuffer = NULL;
@@ -1411,49 +1315,6 @@ void certsvc_certificate_free_x509(X509 *x509)
 		X509_free(x509);
 }
 
-int certsvc_pkcs12_dup_evp_pkey(
-    CertSvcInstance instance,
-    CertSvcString alias,
-    EVP_PKEY** pkey)
-{
-    char *buffer;
-    size_t size;
-
-    int result = certsvc_pkcs12_private_key_dup(
-        instance,
-        alias,
-        &buffer,
-        &size);
-
-    if (result != CERTSVC_SUCCESS) {
-        LogError("Error in certsvc_pkcs12_private_key_dup");
-        return result;
-    }
-
-    BIO *b = BIO_new(BIO_s_mem());
-
-    if ((int)size != BIO_write(b, buffer, size)) {
-        LogError("Error in BIO_write");
-        BIO_free_all(b);
-        certsvc_pkcs12_private_key_free(buffer);
-        return CERTSVC_FAIL;
-    }
-
-    certsvc_pkcs12_private_key_free(buffer);
-
-    *pkey = PEM_read_bio_PrivateKey(b, NULL, NULL, NULL);
-
-    BIO_free_all(b);
-
-    if (*pkey) {
-        return CERTSVC_SUCCESS;
-    }
-
-    LogError("Result is null. Openssl REASON code is : " << ERR_GET_REASON(ERR_peek_last_error()));
-
-    return CERTSVC_FAIL;
-}
-
 void certsvc_pkcs12_free_evp_pkey(EVP_PKEY* pkey)
 {
     EVP_PKEY_free(pkey);
@@ -1572,27 +1433,6 @@ int certsvc_certificate_get_visibility(CertSvcCertificate certificate, int* visi
 	{
 		LogError("exception occur");
 	}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_alias_exists(CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    int *is_unique)
-{
-    try {
-      return impl(instance)->pkcsNameIsUnique(pfxIdString, is_unique);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_import_from_file(CertSvcInstance instance,
-    CertSvcString path,
-    CertSvcString password,
-    CertSvcString pfxIdString)
-{
-    try {
-      return impl(instance)->pkcsImport(path, password, pfxIdString);
-    } catch (...) {}
     return CERTSVC_FAIL;
 }
 
@@ -1958,18 +1798,6 @@ int certsvc_pkcs12_dup_evp_pkey_from_store(
     return CERTSVC_FAIL;
 }
 
-int certsvc_pkcs12_get_id_list(
-    CertSvcInstance instance,
-    CertSvcStringList *pfxIdStringList)
-{
-    try {
-        return impl(instance)->getPkcsIdList(
-            instance,
-            pfxIdStringList);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
 int certsvc_pkcs12_has_password(
     CertSvcInstance instance,
     CertSvcString filepath,
@@ -1983,45 +1811,9 @@ int certsvc_pkcs12_has_password(
     return CERTSVC_FAIL;
 }
 
-int certsvc_pkcs12_load_certificate_list(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    CertSvcCertificateList *certificateList)
-{
-    try {
-        return impl(instance)->getPkcsCertificateList(
-            instance,
-            pfxIdString,
-            certificateList);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
-int certsvc_pkcs12_private_key_dup(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString,
-    char **buffer,
-    size_t *size)
-{
-    try {
-        return impl(instance)->getPkcsPrivateKey(pfxIdString, buffer, size);
-    } catch (...) {}
-    return CERTSVC_FAIL;
-}
-
 void certsvc_pkcs12_private_key_free(
     char *buffer)
 {
     free(buffer);
-}
-
-int certsvc_pkcs12_delete(
-    CertSvcInstance instance,
-    CertSvcString pfxIdString)
-{
-    try {
-        return impl(instance)->pkcsDelete(pfxIdString);
-    } catch (...) {}
-    return CERTSVC_FAIL;
 }
 

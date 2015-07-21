@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include <glib.h>
 #include <dirent.h>
 #include <sys/smack.h>
 #include <sys/socket.h>

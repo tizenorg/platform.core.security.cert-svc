@@ -30,25 +30,6 @@ extern "C" {
 #endif
 
 /**
- * Checks if the alias exist in the user store or not.
- *
- * @param[in] Alias Logical name for certificate bundle identification (can't be empty).
- * @param[out] exists A Boolean value which states if the alias exists or not.
- * @return CERTSVC_SUCCESS, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT.
- */
-int  c_certsvc_pkcs12_alias_exists(const gchar *alias, gboolean *exists);
-
-/**
- * To import the p12/pfx file to user store.
- *
- * @param[in] path Path to file.
- * @param[in] password Password for opening the file.
- * @param[in] alias Logical name for certificate bundle identification (can't be empty).
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_DUPLICATED_ALIAS, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC.
- */
-int  c_certsvc_pkcs12_import(const char *path, const char *password, const gchar *alias);
-
-/**
  * To import the p12/pfx/crt/pem file to specified store (WIFI_STORE/VPN_STORE/EMAIL_STORE).
  *
  * @param[in] storeType Refers to WIFI_STORE / VPN_STORE / EMAIL_STORE / ALL_STORE.
@@ -190,40 +171,13 @@ int c_certsvc_pkcs12_get_end_user_certificate_list_from_store(CertStoreType stor
 int c_certsvc_pkcs12_get_root_certificate_list_from_store(CertStoreType storeType, CertSvcStoreCertList** certList, int* length);
 
 /**
- * Function to load all the alias list present in the user store.
- *
- * @param[out] aliases Which holds all the list of aliases present in the store.
- * @param[out] naliases Provides the number of aliases present in the store.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR.
- */
-int  c_certsvc_pkcs12_aliases_load(gchar ***aliases, gsize *naliases);
-
-/**
- * To free all the aliases which were loaded previously from
- * c_certsvc_pkcs12_aliases_load() function.
- *
- * @param[in] aliases Which holds all the list of aliases present in the store.
- */
-void c_certsvc_pkcs12_aliases_free(gchar **aliases);
-
-/**
  * TO check if the p12/pfx file is protected by password or not.
  *
  * @param[in] filePath Where the file is located.
  * @param[out] passworded A boolean value to state if the file is protected by password or not.
  * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT.
  */
-int  c_certsvc_pkcs12_has_password(const char *filepath, gboolean *passworded);
-
-/**
- * To load all the certificates matching the given alias.
- *
- * @param[in] alias Logical name for certificate bundle identification (can't be empty).
- * @param[out] certificates The pointer holding all the certificates buffer in memory.
- * @param[out] ncertificates Holds the number of certificates returned.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT.
- */
-int  c_certsvc_pkcs12_load_certificates(const gchar *alias, gchar ***certificates, gsize *ncertificates);
+int  c_certsvc_pkcs12_has_password(const char *filepath, int *passworded);
 
 /**
  * To free the certificates from memory which was loaded by
@@ -233,43 +187,6 @@ int  c_certsvc_pkcs12_load_certificates(const gchar *alias, gchar ***certificate
  * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR.
  */
 void c_certsvc_pkcs12_free_certificates(gchar **certs);
-
-/**
- * To load the private key for the specified certificate mapped by an Alias.
- *
- * @param[in] alias Logical name for certificate bundle identification (can't be empty).
- * @param[out] pkey Will hold the private key value of the certificate.
- * @param[out] count Will hold the siz of the private key buffer.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC.
- */
-int  c_certsvc_pkcs12_private_key_load(const gchar *alias, char **pkey, gsize *count);
-
-/**
- * To free the private key buffer previously loaded by
- * c_certsvc_pkcs12_private_key_load() function.
- *
- * @param[in] buffer Holding the private key values.
- */
-void c_certsvc_pkcs12_private_key_free(char *buffer);
-
-/**
- * Function to delete the certificate present in the user store.
- *
- * @param[in] alias Logical name for certificate bundle identification (can't be empty).
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC.
- */
-int  c_certsvc_pkcs12_delete(const gchar *alias);
-//static void _delete_from_osp_cert_mgr(const char* path);
-
-/**
- * Function to load the file to buffer.
- *
- * @param[in] filePath Which points to the location where the file is present.
- * @param[out] certBuf Which will hold the certificate information.
- * @param[out] length Which will hold the file size.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERT_SVC_ERR_FILE_IO, CERT_SVC_ERR_MEMORY_ALLOCATION.
- */
-int certsvc_load_file_to_buffer(const char* filePath, unsigned char** certBuf, int* length);
 
 /**
  * Function to get the size of the file passed.

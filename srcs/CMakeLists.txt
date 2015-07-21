@@ -9,7 +9,6 @@ PKG_CHECK_MODULES(CERT_SVC_DEP
     dlog
     glib-2.0
     libxml-2.0
-    secure-storage
     )
 
 SET(CERT_SVC_PATH ${CMAKE_CURRENT_SOURCE_DIR})

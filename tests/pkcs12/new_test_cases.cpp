@@ -28,7 +28,6 @@
 #include <dpl/test/test_runner.h>
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
-#include <glib.h>
 #include <cert-svc/cpkcs12.h>
 #include <cert-svc/cerror.h>
 #include <cert-svc/cprimitives.h>
@@ -982,7 +981,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1018_get_duplicate_private_key) {
 	int result = CERTSVC_SUCCESS;
 	int length = 0;
 	CertSvcString gname;
-	gchar *privatekey_path = NULL;
+	char *privatekey_path = NULL;
 	EVP_PKEY *privatekey = NULL;
 
 	CREATE_INSTANCE
@@ -1372,9 +1371,9 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
 	X509 *x509 = NULL;
 	FILE *fp = NULL;
 	EVP_PKEY *privatekey = NULL;
-	gchar *privatekey_path = NULL;
-	gchar *ca_cert_path = NULL;
-	gchar *user_cert_path = NULL;
+	char *privatekey_path = NULL;
+	char *ca_cert_path = NULL;
+	char *user_cert_path = NULL;
 	int cert_index = 0;
 
 	CREATE_INSTANCE

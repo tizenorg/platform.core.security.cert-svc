@@ -23,9 +23,6 @@
 
 #include <cert-svc/ccert.h>
 
-//#include <vcore/VCore.h>
-//#include <libsoup/soup.h> // includes headers with g_type_init
-
 CertSvcInstance vinstance;
 
 int main (int argc, char *argv[])

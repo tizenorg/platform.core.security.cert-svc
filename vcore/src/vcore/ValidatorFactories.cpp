@@ -23,7 +23,6 @@
 
 #include <vcore/Certificate.h>
 #include <vcore/CertificateConfigReader.h>
-#include <vcore/Config.h>
 #include <dpl/log/log.h>
 
 #include <string>
@@ -36,11 +35,9 @@ const CertificateIdentifier& createCertificateIdentifier()
     static bool initialized = false;
     if (!initialized) {
         CertificateConfigReader reader;
-        std::string file =
-            ConfigSingleton::Instance().getXMLConfigPath();
+        std::string file(FINGERPRINT_LIST_PATH);
         LogDebug("File with fingerprint list is : " << file);
-        std::string schema =
-            ConfigSingleton::Instance().getXMLSchemaPath();
+        std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
         LogDebug("File with fingerprint list schema is : " << schema);
         reader.initialize(file, schema);
         reader.read(certificateIdentifier);

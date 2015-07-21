@@ -17,7 +17,7 @@
  * @file        cert-svc-client.h
  * @author      Madhan A K (madhan.ak@samsung.com)
  * @version     1.0
- * @brief       cert-svc client interface for cert-svc server present in secure-storage module.
+ * @brief       cert-svc client interface for cert-server.
  */
 
 #ifndef CERT_SVC_CLIENT_H_

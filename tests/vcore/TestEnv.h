@@ -16,6 +16,8 @@
 #ifndef _TESTENV_H_
 #define _TESTENV_H_
 
-const char *wrtValidatorErrorToString(int error);
+#include <vcore/SignatureValidator.h>
+
+const char *validatorErrorToString(ValidationCore::SignatureValidator::Result error);
 
 #endif

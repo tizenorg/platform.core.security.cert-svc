@@ -23,8 +23,6 @@
  */
 #include <vcore/CertStoreType.h>
 
-#include <string.h>
-
 namespace ValidationCore {
 namespace CertStoreId {
 
@@ -36,15 +34,48 @@ Set::~Set()
 {
 }
 
-void Set::add(Type second)
+void Set::setType(Type type)
 {
-    m_certificateStorage |= second;
+    m_certificateStorage = type;
 }
 
-
-bool Set::contains(Type second) const
+Type Set::getType() const
 {
-    return static_cast<bool>(m_certificateStorage & second);
+    return m_certificateStorage;
+}
+
+std::string Set::getTypeString() const
+{
+    switch (m_certificateStorage) {
+    case TIZEN_DEVELOPER:
+        return std::string("TIZEN_DEVELOPER");
+    case TIZEN_TEST:
+        return std::string("TIZEN_TEST");
+    case TIZEN_VERIFY:
+        return std::string("TIZEN_VERIFY");
+    case TIZEN_STORE:
+        return std::string("TIZEN_STORE");
+    case VIS_PUBLIC:
+        return std::string("VIS_PUBLIC");
+    case VIS_PARTNER:
+        return std::string("VIS_PARTNER");
+    case VIS_PARTNER_OPERATOR:
+        return std::string("VIS_PARTNER_OPERATOR");
+    case VIS_PARTNER_MANUFACTURER:
+        return std::string("VIS_PARTNER_MANUFACTURER");
+    case VIS_PLATFORM:
+        return std::string("VIS_PLATFORM");
+    default:
+        return std::string();
+    }
+}
+
+bool Set::isVisibilityLevel() const
+{
+    if (m_certificateStorage < VIS_PUBLIC)
+        return false;
+
+    return true;
 }
 
 bool Set::isEmpty() const

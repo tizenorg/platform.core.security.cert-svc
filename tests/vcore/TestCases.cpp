@@ -16,15 +16,10 @@
  */
 #include <string>
 
-
 #include <dpl/test/test_runner.h>
-#include <vcore/CryptoHash.h>
 #include <vcore/SignatureFinder.h>
-#include <vcore/SignatureReader.h>
 #include <vcore/SignatureValidator.h>
-#include <vcore/WrtSignatureValidator.h>
 #include "TestEnv.h"
-#include <vcore/RevocationCheckerBase.h>
 
 namespace {
 
@@ -40,11 +35,6 @@ const std::string widget_partner_path =
     "/usr/apps/widget/tests/vcore_widget_uncompressed_partner/";
 const std::string widget_partner_operator_path =
     "/usr/apps/widget/tests/vcore_widget_uncompressed_partner_operator/";
-
-inline const char* GetSignatureXmlSchema()
-{
-    return "/usr/share/wrt-engine/schema.xsd";
-}
 
 
 const std::string keys_path = "/usr/apps/widget/tests/vcore_keys/";
@@ -230,81 +220,9 @@ const std::string crlExampleCertificate =
 "9p58Enf5DWMrh17SPH586yIJeiWZtPez9G54ftY+XIqfn0X0zso0dnoXNJQYS043"
 "/5vSnoHdRx/EmN8yjeEavZtC48moN0iJ38eB44uKgCD77rZW5s1XqA==";
 
-//class TestCleanup
-//{
-//  public:
-//    explicit TestCleanup(bool bCheckForFakeVerification = false)
-//    {
-//        if (bCheckForFakeVerification) {
-//            bool bUnsetEnvVar = true;
-//
-//            m_strEnvVar = "CHECK_ONLY_DOMAIN_INSTEAD_OF_VALIDATION";
-//            if (getenv(m_strEnvVar.c_str()) != NULL) {
-//                bUnsetEnvVar = false;
-//            } else {
-//                setenv(m_strEnvVar.c_str(), "1", 0);
-//            }
-//        }
-//    }
-//
-//    ~TestCleanup()
-//    {
-//        if (!m_strRootCAPath.empty()) {
-//            removeCertGivenByFilename(m_strRootCAPath.c_str());
-//        }
-//
-//        if (!m_strEnvVar.empty()) {
-//            unsetenv(m_strEnvVar.c_str());
-//        }
-//    }
-//
-//    void setRootCAPath(const std::string& strRootCAPath)
-//    {
-//        m_strRootCAPath = strRootCAPath;
-//    }
-//
-//  private:
-//    std::string           m_strRootCAPath;
-//    std::string           m_strEnvVar;
-//};
-//
-//class PolicyChanger : public VcoreDPL::Event::EventListener<AceUpdateResponseEvent>
-//{
-//  public:
-//    PolicyChanger()
-//    {
-//        VcoreDPL::Event::EventDeliverySystem::AddListener<AceUpdateResponseEvent>(this);
-//    }
-//
-//    ~PolicyChanger()
-//    {
-//        VcoreDPL::Event::EventDeliverySystem::RemoveListener<AceUpdateResponseEvent>(this);
-//    }
-//
-//    void OnEventReceived(const AceUpdateResponseEvent& event)
-//    {
-//        if (0 != event.GetArg0()) {
-//            LogError("Policy change failed");
-//        }
-//        Assert(0 == event.GetArg0() && "Policy change failed");
-//        LoopControl::finish_wait_for_wrt_init();
-//    }
-//
-//    void updatePolicy(const std::string& path)
-//    {
-//        AceUpdateRequestEvent event(path);
-//        VcoreDPL::Event::EventDeliverySystem::Publish(event);
-//        LoopControl::wait_for_wrt_init();
-//    }
-//};
-
 } // namespace anonymous
 
 using namespace ValidationCore;
-
-//////////////////////////////////////////////////
-////////  VALIDATION CORE TEST SUITE  ////////////
-//////////////////////////////////////////////////
 
 /*
  * test: Class SignatureFinder
@@ -335,32 +253,6 @@ RUNNER_TEST(test01_signature_finder)
 }
 
 /*
- * test: Class SignatureReader
- * description: SignatureReader should parse widget digigal signaturesignature
- * without any errors. Path to signature is passed to constructor.
- * param of destructor.
- * expected: SignatureReader should not throw any exception.
- */
-RUNNER_TEST(test02_signature_reader)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(widget_path);
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
-    }
-}
-
-/*
  * test: Integration test of SignatureFinder, SignatureReader,
  * SignatureValidator
  * description: Directory passed to SignatureFinded constructor should be searched
@@ -368,7 +260,7 @@ RUNNER_TEST(test02_signature_reader)
  * expected: Verificator should DISREGARD author signature and VERIFY
  * distrubutor signature.
  */
-RUNNER_TEST(test03t01_wrtsignature_validator)
+RUNNER_TEST(test03t01_signature_validator)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_path);
@@ -376,50 +268,31 @@ RUNNER_TEST(test03t01_wrtsignature_validator)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_path,
+                false,
+                true,
+                data);
 
-        WrtSignatureValidator validator(
-            WrtSignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        if (data.isAuthorSignature()) {
-            RUNNER_ASSERT_MSG(
-                WrtSignatureValidator::SIGNATURE_DISREGARD ==
-                    validator.check(data, widget_path),
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
                 "Validation failed");
-        } else {
+        else
             if (data.getSignatureNumber() == 1)
-            {
-                WrtSignatureValidator::Result temp = validator.check(data, widget_path);
-
-                RUNNER_ASSERT_MSG(
-                    WrtSignatureValidator::SIGNATURE_DISREGARD ==
-                        temp,
-                        "Validation failed");
-
-            }
+                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+                    "Validation failed");
             else
-            {
-                WrtSignatureValidator::Result temp = validator.check(data, widget_path);
-
-                RUNNER_ASSERT_MSG(
-                    WrtSignatureValidator::SIGNATURE_VERIFIED ==
-                        temp,
-                        "Validation failed");
-            }
-        }
+                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
+                    "Validation failed");
     }
 }
 
-RUNNER_TEST(test03t02_wrtsignature_validator_negative_hash_input)
+RUNNER_TEST(test03t02_signature_validator_negative_hash_input)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_negative_hash_path);
@@ -427,29 +300,25 @@ RUNNER_TEST(test03t02_wrtsignature_validator_negative_hash_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_negative_hash_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_negative_hash_path,
+                false,
+                true,
+                data);
 
-        WrtSignatureValidator validator(
-            WrtSignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        int temp = validator.check(data, widget_negative_hash_path);
         RUNNER_ASSERT_MSG(
-            (WrtSignatureValidator::SIGNATURE_INVALID == temp
-                || WrtSignatureValidator::SIGNATURE_DISREGARD == temp),
-            "Wrong input file but success.. Errorcode : " << wrtValidatorErrorToString(temp));
+            valResult == SignatureValidator::SIGNATURE_INVALID
+            || valResult == SignatureValidator::SIGNATURE_DISREGARD,
+            "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
     }
 }
 
-RUNNER_TEST(test03t03_wrtsignature_validator_negative_signature_input)
+RUNNER_TEST(test03t03_signature_validator_negative_signature_input)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_negative_signature_path);
@@ -457,29 +326,25 @@ RUNNER_TEST(test03t03_wrtsignature_validator_negative_signature_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_negative_signature_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_negative_signature_path,
+                false,
+                true,
+                data);
 
-        WrtSignatureValidator validator(
-            WrtSignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        int temp = validator.check(data, widget_negative_signature_path);
         RUNNER_ASSERT_MSG(
-            (WrtSignatureValidator::SIGNATURE_INVALID == temp
-                || WrtSignatureValidator::SIGNATURE_DISREGARD == temp),
-            "Wrong input file but success.. Errorcode : " << wrtValidatorErrorToString(temp));
+            valResult == SignatureValidator::SIGNATURE_INVALID
+            || valResult == SignatureValidator::SIGNATURE_DISREGARD,
+            "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
     }
 }
 
-RUNNER_TEST(test03t04_wrtsignature_validator_partner)
+RUNNER_TEST(test03t04_signature_validator_partner)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_partner_path);
@@ -487,24 +352,20 @@ RUNNER_TEST(test03t04_wrtsignature_validator_partner)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_partner_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_partner_path,
+                false,
+                true,
+                data);
 
-        WrtSignatureValidator validator(
-            WrtSignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        int temp = validator.check(data, widget_partner_path);
         RUNNER_ASSERT_MSG(
-            WrtSignatureValidator::SIGNATURE_VERIFIED == temp,
-            "Wrong input file but success.. Errorcode : " << wrtValidatorErrorToString(temp));
+            valResult == SignatureValidator::SIGNATURE_VERIFIED,
+            "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
         if (!data.isAuthorSignature()) {
             RUNNER_ASSERT_MSG(
                     data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
@@ -512,94 +373,6 @@ RUNNER_TEST(test03t04_wrtsignature_validator_partner)
         }
     }
 }
-/* // no partner_operator certificate in kiran emlulator
-RUNNER_TEST(test03t05_wrtsignature_validator_partner_operator)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(widget_partner_operator_path);
-    LogError("Size: " << signatureSet.size());
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    LogError("Size: " << signatureSet.size());
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_partner_operator_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
-
-        WrtSignatureValidator validator(
-            WrtSignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        if (data.isAuthorSignature()) {
-            LogError("Author");
-            RUNNER_ASSERT_MSG(
-                WrtSignatureValidator::SIGNATURE_VERIFIED ==
-                    validator.check(data, widget_partner_operator_path),
-                "Wrong input file but success..");
-        } else {
-            LogError("Distributor");
-            RUNNER_ASSERT_MSG(
-                WrtSignatureValidator::SIGNATURE_VERIFIED ==
-                    validator.check(data, widget_partner_operator_path),
-                "Wrong input file but success..");
-
-            RUNNER_ASSERT_MSG(
-                    data.getVisibilityLevel() == CertStoreId::VIS_PLATFORM,
-                    "visibility check failed.");
-        }
-    }
-}
-*/
-
-/*
-RUNNER_TEST(test03t04_wrtsignature_validator_negative_certificate_input)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(widget_negative_certificate_path);
-    LogError("Size: " << signatureSet.size());
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    LogError("Size: " << signatureSet.size());
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_negative_certificate_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
-
-        WrtSignatureValidator validator(
-            WrtSignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        if (data.isAuthorSignature()) {
-            LogError("Author");
-            RUNNER_ASSERT_MSG(
-                WrtSignatureValidator::SIGNATURE_INVALID ==
-                    validator.check(data, widget_negative_certificate_path),
-                "Wrong input file but success..");
-        } else {
-            LogError("Distributor");
-            RUNNER_ASSERT_MSG(
-                WrtSignatureValidator::SIGNATURE_DISREGARD ==
-                    validator.check(data, widget_negative_certificate_path),
-                "Wrong input file but success..");
-        }
-    }
-}
-*/
-
 /*
  * test: Integration test of SignatureFinder, SignatureReader,
  * SignatureValidator
@@ -616,45 +389,27 @@ RUNNER_TEST(test04t01_signature_validator)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_path,
+                false,
+                false,
+                data);
 
-        SignatureValidator validator(
-            SignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        if (data.isAuthorSignature()) {
-            RUNNER_ASSERT_MSG(
-                SignatureValidator::SIGNATURE_DISREGARD ==
-                    validator.check(data, widget_path),
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
                 "Validation failed");
-        } else {
+        else
             if (data.getSignatureNumber() == 1)
-            {
-                SignatureValidator::Result temp = validator.check(data, widget_path);
-
-                RUNNER_ASSERT_MSG(
-                    SignatureValidator::SIGNATURE_DISREGARD ==
-                        temp,
+                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
                         "Validation failed");
-            }
             else
-            {
-                SignatureValidator::Result temp = validator.check(data, widget_path);
-
-                RUNNER_ASSERT_MSG(
-                    SignatureValidator::SIGNATURE_VERIFIED ==
-                        temp,
+                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
                         "Validation failed");
-            }
-        }
     }
 }
 
@@ -666,25 +421,21 @@ RUNNER_TEST(test04t02_signature_validator_negative_hash_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_negative_hash_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_negative_hash_path,
+                false,
+                false,
+                data);
 
-        SignatureValidator validator(
-            SignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        int temp = validator.check(data, widget_negative_hash_path);
         RUNNER_ASSERT_MSG(
-            (WrtSignatureValidator::SIGNATURE_INVALID == temp
-                || WrtSignatureValidator::SIGNATURE_DISREGARD == temp),
-                "Wrong input file but success.. Errorcode : " << wrtValidatorErrorToString(temp));
+            valResult == SignatureValidator::SIGNATURE_INVALID
+            || valResult == SignatureValidator::SIGNATURE_DISREGARD,
+                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
     }
 }
 
@@ -696,25 +447,21 @@ RUNNER_TEST(test04t03_signature_validator_negative_signature_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_negative_signature_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_negative_signature_path,
+                false,
+                false,
+                data);
 
-        SignatureValidator validator(
-            SignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        int temp = validator.check(data, widget_negative_signature_path);
         RUNNER_ASSERT_MSG(
-            (WrtSignatureValidator::SIGNATURE_INVALID == temp
-                || WrtSignatureValidator::SIGNATURE_DISREGARD == temp),
-                "Wrong input file but success.. Errorcode : " << wrtValidatorErrorToString(temp));
+            valResult == SignatureValidator::SIGNATURE_INVALID
+            || valResult == SignatureValidator::SIGNATURE_DISREGARD,
+                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
     }
 }
 
@@ -726,118 +473,25 @@ RUNNER_TEST(test04t04_signature_validator_partner)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_partner_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_partner_path,
+                false,
+                false,
+                data);
 
-        SignatureValidator validator(
-            SignatureValidator::TIZEN,
-            false,
-            false,
-            false);
+        RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
+            "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
 
-        int temp = validator.check(data, widget_partner_path);
-            RUNNER_ASSERT_MSG(SignatureValidator::SIGNATURE_VERIFIED == temp,
-                "Wrong input file but success.. Errorcode : " << wrtValidatorErrorToString(temp));
-
-        if (!data.isAuthorSignature()) {
-            RUNNER_ASSERT_MSG(
-                    data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
-                    "visibility check failed.");
-        }
-    }
-}
-/* // no partner_operator certificate in kiran emulator
-RUNNER_TEST(test04t05_signature_validator_partner_operator)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(widget_partner_operator_path);
-    LogError("Size: " << signatureSet.size());
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    LogError("Size: " << signatureSet.size());
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_partner_operator_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
-
-        SignatureValidator validator(
-            SignatureValidator::TIZEN,
-            false,
-            false,
-            false);
-
-        if (data.isAuthorSignature()) {
-            LogError("Author");
-            RUNNER_ASSERT_MSG(
-                SignatureValidator::SIGNATURE_VERIFIED ==
-                    validator.check(data, widget_partner_operator_path),
-                "Wrong input file but success..");
-        } else {
-            LogError("Distributor");
-            RUNNER_ASSERT_MSG(
-                SignatureValidator::SIGNATURE_VERIFIED ==
-                    validator.check(data, widget_partner_operator_path),
-                "Wrong input file but success..");
-
-            RUNNER_ASSERT_MSG(
-                data.getVisibilityLevel() == CertStoreId::VIS_PLATFORM,
+        if (!data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
                 "visibility check failed.");
-        }
     }
 }
-*/
-
-/*
-RUNNER_TEST(test04t04_signature_validator_negative_certificate_input)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(widget_negative_certificate_path);
-    LogError("Size: " << signatureSet.size());
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-    LogError("Size: " << signatureSet.size());
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_negative_certificate_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
-
-        SignatureValidator validator(
-            SignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        if (data.isAuthorSignature()) {
-            LogError("Author");
-            RUNNER_ASSERT_MSG(
-                SignatureValidator::SIGNATURE_DISREGARD ==
-                    validator.check(data, widget_negative_certificate_path),
-                "Wrong input file but success..");
-        } else {
-            LogError("Distributor");
-            RUNNER_ASSERT_MSG(
-                SignatureValidator::SIGNATURE_DISREGARD ==
-                    validator.check(data, widget_negative_certificate_path),
-                "Wrong input file but success..");
-        }
-    }
-}
-*/
 
 /*
  * test: Integration test of SignatureFinder, SignatureReader,
@@ -853,42 +507,27 @@ RUNNER_TEST(test05t01_signature_reference)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
+        iter != signatureSet.rend();
+        ++iter) {
+        SignatureData data;
+        SignatureValidator::Result valResult = SignatureValidator::check(
+                *iter,
+                widget_path,
+                false,
+                false,
+                data);
 
-    for (; iter != signatureSet.rend(); ++iter) {
-        SignatureData data(widget_path + iter->getFileName(),
-                           iter->getFileNumber());
-        SignatureReader xml;
-        xml.initialize(data, GetSignatureXmlSchema());
-        xml.read(data);
-
-        WrtSignatureValidator sval(
-            WrtSignatureValidator::WAC20,
-            false,
-            false,
-            false);
-
-        if (data.isAuthorSignature()) {
-            RUNNER_ASSERT_MSG(
-                WrtSignatureValidator::SIGNATURE_DISREGARD ==
-                    sval.check(data, widget_path),
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
                 "Validation failed");
-        } else {
+        else
             if (data.getSignatureNumber() == 1)
-            {
-                RUNNER_ASSERT_MSG(
-                    WrtSignatureValidator::SIGNATURE_DISREGARD ==
-                        sval.check(data, widget_path),
-                        "Validation failed");
-            }
+                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+                    "Validation failed");
             else
-            {
-                RUNNER_ASSERT_MSG(
-                    WrtSignatureValidator::SIGNATURE_VERIFIED ==
-                        sval.check(data, widget_path),
-                        "Validation failed");
-            }
-        }
+                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
+                    "Validation failed");
 
 /*
         ReferenceValidator val(widget_path);
@@ -1112,132 +751,6 @@ RUNNER_TEST(test08t04_Certificate_isCA)
     RUNNER_ASSERT(cert3.isCA() == 0);
 }
 
-#define CRYPTO_HASH_TEST(text,expected,FUN)                    \
-    do {                                                       \
-        ValidationCore::Crypto::Hash::Base *crypto;            \
-        crypto = new ValidationCore::Crypto::Hash::FUN();      \
-        std::string input = text;                              \
-        crypto->Append(text);                                  \
-        crypto->Finish();                                      \
-        std::string result = crypto->ToBase64String();         \
-        RUNNER_ASSERT_MSG(result == expected,                  \
-            "Hash function failed");                           \
-    } while(0)
-
-/*
- * test: class ValidationCore::Crypto::Hash::MD4
- * description: Test implementation of MD4 hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test80_crypto_md4)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "Rj5V34qqMQmHh2bn3Cb/vQ==",
-        MD4);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::MD5
- * description: Test implementation of hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test81_crypto_md5)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "4y2iI6QtFC7+0xurBOfcsg==",
-        MD5);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::SHA
- * description: Test implementation of hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test82_crypto_sha)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "v7w8XNvzQkZPoID+bbdrLwI6zPA=",
-        SHA);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::SHA1
- * description: Test implementation of hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test83_crypto_sha1)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "Srydq14dzpuLn+xlkGz7ZyFLe1w=",
-        SHA1);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::SHA224
- * description: Test implementation of hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test84_crypto_sha224)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "Ss2MKa2Mxrf0/hrl8bf0fOSz/e5nQv4J/yX6ig==",
-        SHA224);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::SHA256
- * description: Test implementation of hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test85_crypto_sha256)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "Bja/IuUJHLPlHYYB2hBcuuOlRWPy1RdF6gzL0VWxeps=",
-        SHA256);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::SHA384
- * description: Test implementation of hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test86_crypto_sha384)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "5RjtzCnGAt+P6J8h32Dzrmka+5i5MMvDRVz+s9jA7TW508sUZOnKliliad5nUJrj",
-        SHA384);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::SHA512
- * description: Test implementation of hash algorithm
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test87_crypto_sha512)
-{
-    CRYPTO_HASH_TEST("Hi, my name is Bart.",
-        "LxemzcQNf5erjA4a6PnTXfL+putB3uElitOjc5QCQ9Mg4ZuxTpre8VIBAviwRcTnui2Y0/Yg7cB40OG3XJMfbA==",
-        SHA512);
-}
-
-/*
- * test: class ValidationCore::Crypto::Hash::SHA1
- * description: This example was implemented to show how to count SHA1 value from certificate.
- * expected: Value counted by algorithm should be eqal to value encoded in test.
- */
-RUNNER_TEST(test88_crypto_sha1_certificate)
-{
-    Certificate cert(certVerisign, Certificate::FORM_BASE64);
-
-    ValidationCore::Crypto::Hash::SHA1 sha1;
-    sha1.Append(cert.getDER());
-    sha1.Finish();
-    std::string result = sha1.ToBase64String();
-
-    RUNNER_ASSERT_MSG(result == "uXIe1UntvzGE2CcM/gMRGd/CKwo=",
-        "Certificate hash does not match.");
-}
-
 /*
  * test: CertificateIdentifier::find(Fingerprint)
  * description: Check implementation of fingerprint_list.
@@ -1416,15 +929,6 @@ RUNNER_TEST(test95_certificate_identifier_negative)
     CertStoreId::Set domain =
         certIdent.find(cert.getFingerprint(Certificate::FINGERPRINT_SHA1));
 
-    RUNNER_ASSERT(!domain.contains(CertStoreId::WAC_PUBLISHER));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::DEVELOPER));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::WAC_ROOT));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::WAC_MEMBER));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::TIZEN_MEMBER));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::ORANGE_LEGACY));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::VIS_PUBLIC));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::VIS_PARTNER));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::VIS_PARTNER_OPERATOR));
-    RUNNER_ASSERT(!domain.contains(CertStoreId::VIS_PARTNER_MANUFACTURER));
+    RUNNER_ASSERT_MSG(domain.getTypeString().empty(), "Domain should be empty.");
 }
 */

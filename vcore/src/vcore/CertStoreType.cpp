@@ -23,8 +23,6 @@
  */
 #include <vcore/CertStoreType.h>
 
-#include <string.h>
-
 namespace ValidationCore {
 namespace CertStoreId {
 
@@ -41,15 +39,56 @@ void Set::add(Type second)
     m_certificateStorage |= second;
 }
 
-
 bool Set::contains(Type second) const
 {
     return static_cast<bool>(m_certificateStorage & second);
 }
 
+bool Set::isContainsVis() const
+{
+    Type visType = VIS_PUBLIC;
+    visType |= VIS_PARTNER;
+    visType |= VIS_PARTNER_OPERATOR;
+    visType |= VIS_PARTNER_MANUFACTURER;
+    visType |= VIS_PLATFORM;
+
+    visType &= m_certificateStorage;
+
+    if (visType == 0)
+        return false;
+
+    return true;
+}
+
 bool Set::isEmpty() const
 {
     return m_certificateStorage == 0;
+}
+
+std::string Set::typeToString() const
+{
+    std::string ret;
+
+    if (m_certificateStorage & TIZEN_DEVELOPER)
+        ret += "TIZEN_DEVELOPER ";
+    if (m_certificateStorage & TIZEN_TEST)
+        ret += "TIZEN_TEST ";
+    if (m_certificateStorage & TIZEN_VERIFY)
+        ret += "TIZEN_VERIFY ";
+    if (m_certificateStorage & TIZEN_STORE)
+        ret += "TIZEN_STORE ";
+    if (m_certificateStorage & VIS_PUBLIC)
+        ret += "VIS_PUBLIC ";
+    if (m_certificateStorage & VIS_PARTNER)
+        ret += "VIS_PARTNER ";
+    if (m_certificateStorage & VIS_PARTNER_OPERATOR)
+        ret += "VIS_PARTNER_OPERATOR ";
+    if (m_certificateStorage & VIS_PARTNER_MANUFACTURER)
+        ret += "VIS_PARTNER_MANUFACTURER ";
+    if (m_certificateStorage & VIS_PLATFORM)
+        ret += "VIS_PLATFORM ";
+
+    return ret;
 }
 
 } // namespace CertStoreId

@@ -42,6 +42,7 @@ ADD_DEFINITIONS("-DCERTSVC_CRT_FILE_PATH=\"${TZ_SYS_SHARE}/cert-svc/ca-certifica
 ADD_DEFINITIONS("-DFINGERPRINT_LIST_PATH=\"${TZ_SYS_SHARE}/ca-certificates/fingerprint/fingerprint_list.xml\"")
 ADD_DEFINITIONS("-DFINGERPRINT_LIST_SCHEMA_PATH=\"${TZ_SYS_SHARE}/ca-certificates/fingerprint/fingerprint_list.xsd\"")
 ADD_DEFINITIONS("-DROOT_CA_CERTS_DIR=\"${TZ_SYS_SHARE}/ca-certificates/\"")
+ADD_DEFINITIONS("-DSIGNATURE_SCHEMA_PATH=\"${TZ_SYS_RO_WRT_ENGINE}/schema.xsd\"")
 
 ADD_DEFINITIONS("-DCERTSVC_DIR=\"${TZ_SYS_SHARE}/cert-svc/certs/\"")
 ADD_DEFINITIONS("-DCERTSVC_PKCS12_STORAGE_DIR=\"${TZ_SYS_SHARE}/cert-svc/pkcs12/\"")

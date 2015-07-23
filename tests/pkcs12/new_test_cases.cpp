@@ -57,13 +57,9 @@ RUNNER_TEST(CERTSVC_PKCS12_1001_certsvc_get_root_cert_list) {
 	int count = 0;
 	CREATE_INSTANCE
 
-	//start time
-	clock_t tic = clock();
 	size_t length = 0;
 	result = certsvc_pkcs12_get_certificate_list_from_store(instance, storeType, DISABLED, &certList, &length);
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Getting certificate list from system store failed");
-	clock_t toc = clock();
-	//time end
 	if(result == CERTSVC_SUCCESS)
 	{
 	  tmpNode = certList;
@@ -81,9 +77,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1001_certsvc_get_root_cert_list) {
 }
 
 /* Set the status of the certificate to disabled/enabled in system store and get the status */
-RUNNER_TEST(CERTSVC_PKCS12_1002_certsvc_set_cert_to_disabled_and_get_status_for_system_store) {
-
-	char *gname = "Certum_Root_CA.pem";
+RUNNER_TEST(CERTSVC_PKCS12_1002_certsvc_set_cert_to_disabled_and_get_status_for_system_store)
+{
 	CertStoreType storeType = SYSTEM_STORE;
 	CertStatus Status;
 	CertStatus status;
@@ -92,8 +87,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1002_certsvc_set_cert_to_disabled_and_get_status_for_
 
 	CREATE_INSTANCE
 
-	Alias.privateHandler = gname;
-	Alias.privateLength = strlen((const char*)gname);
+	result = certsvc_string_new(instance, "Certum_Root_CA.pem", strlen("Certum_Root_CA.pem"), &Alias);
+	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "certsvc_string_new failed. result : " << result);
 
 	result = certsvc_pkcs12_get_certificate_status_from_store(instance, storeType, Alias, &status);
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Get certificate status from system store failed.");
@@ -118,17 +113,17 @@ RUNNER_TEST(CERTSVC_PKCS12_1002_certsvc_set_cert_to_disabled_and_get_status_for_
 	result = certsvc_pkcs12_get_certificate_status_from_store(instance, storeType, Alias, &status);
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Get certificate status from system store failed.");
 
+	certsvc_string_free(Alias);
+
 	FREE_INSTANCE
 }
 
 /* Install a CRT file to individual stores */
-RUNNER_TEST(CERTSVC_PKCS12_1003_add_pem_file_in_individual_store) {
-
-	char path[] = "/usr/share/cert-svc/tests/wifi-server.pem";
+RUNNER_TEST(CERTSVC_PKCS12_1003_add_pem_file_in_individual_store)
+{
 	CertSvcStoreCertList* certList = NULL;
 	CertSvcStoreCertList* tmpNode = NULL;
 	CertSvcStoreCertList* tmp = NULL;
-	char* pass = NULL;
 	CertStoreType type;
 	int result;
 	size_t length = 0;
@@ -140,30 +135,43 @@ RUNNER_TEST(CERTSVC_PKCS12_1003_add_pem_file_in_individual_store) {
 	const char *temp = NULL;
 	CertSvcCertificate certificate;
 
-	CREATE_INSTANCE
-	CertSvcString Alias, Path, Pass;
+	CertSvcString Alias;
+	CertSvcString Path;
+	CertSvcString Pass;
 
-	Pass.privateHandler = pass;
-	Path.privateHandler = path;
-	Path.privateLength = strlen(path);
+	CREATE_INSTANCE
+
+	Pass.privateHandler = NULL;
+
+	const char *path = "/usr/share/cert-svc/tests/wifi-server.pem";
+	result = certsvc_string_new(instance, path, strlen(path), &Path);
+	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "certsvc_string_new failed. result : " << result);
 
 	type = WIFI_STORE;
-	Alias.privateHandler = "PEM-wifi-server-1";
-	Alias.privateLength = strlen(Alias.privateHandler);
+	const char *cAlias = "PEM-wifi-server-1";
+	result = certsvc_string_new(instance, cAlias, strlen(cAlias), &Alias);
+	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "certsvc_string_new failed. result : " << result);
+
 	result = certsvc_pkcs12_import_from_file_to_store(instance, type, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Importing PEM file to WIFI store failed.");
+	certsvc_string_free(Alias);
 
 	type = VPN_STORE;
-	Alias.privateHandler = "PEM-wifi-server-2";
-	Alias.privateLength = strlen(Alias.privateHandler);
+	cAlias = "PEM-wifi-server-2";
+	result = certsvc_string_new(instance, cAlias, strlen(cAlias), &Alias);
+	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "certsvc_string_new failed. result : " << result);
 	result = certsvc_pkcs12_import_from_file_to_store(instance, type, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Importing PEM file to VPN store failed.");
+	certsvc_string_free(Alias);
 
 	type = EMAIL_STORE;
-	Alias.privateHandler = "PEM-wifi-server-3";
-	Alias.privateLength = strlen(Alias.privateHandler);
+	cAlias = "PEM-wifi-server-3";
+	result = certsvc_string_new(instance, cAlias, strlen(cAlias), &Alias);
+	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "certsvc_string_new failed. result : " << result);
+
 	result = certsvc_pkcs12_import_from_file_to_store(instance, type, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Importing PEM file to EMAIL store failed.");
+	certsvc_string_free(Alias);
 
 	type = (CertStoreType) (WIFI_STORE | VPN_STORE | EMAIL_STORE);
 	result = certsvc_pkcs12_get_certificate_list_from_store(instance, type, DISABLED, &certList, &length);
@@ -190,10 +198,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1003_add_pem_file_in_individual_store) {
 	RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Getting certificate list from store failed.");
 	certList1=certList;
 	count = 0;
-	while(certList!=NULL)
-	{
-		gname.privateHandler = (char *)certList->gname;
-		gname.privateLength = strlen(certList->gname);
+	while (certList) {
 		result = certsvc_pkcs12_get_certificate_from_store(instance, certList->storeType, certList->gname, &certificate);
 		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get certificate from store.");
 
@@ -217,6 +222,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1003_add_pem_file_in_individual_store) {
 
 	certList=NULL;
 	certList1=NULL;
+
+	certsvc_string_free(Path);
 
 	FREE_INSTANCE
 }
@@ -981,7 +988,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1018_get_duplicate_private_key) {
 	int result = CERTSVC_SUCCESS;
 	size_t length = 0;
 	CertSvcString gname;
-	char *privatekey_path = NULL;
+	const char *privatekey_path = "/usr/share/cert-svc/pkcs12/temp.txt";
 	EVP_PKEY *privatekey = NULL;
 
 	CREATE_INSTANCE
@@ -996,7 +1003,6 @@ RUNNER_TEST(CERTSVC_PKCS12_1018_get_duplicate_private_key) {
 		result = certsvc_pkcs12_dup_evp_pkey_from_store(instance, storeType, gname, &privatekey);
 		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Getting duplicate private key from store failed.");
 
-		privatekey_path = g_strdup_printf("%s", "/usr/share/cert-svc/pkcs12/temp.txt");
 		if ((fp = fopen(privatekey_path, "w")) == NULL) {
 			result = CERTSVC_FAIL;
 			RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to open file for writing.");
@@ -1371,9 +1377,9 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
 	X509 *x509 = NULL;
 	FILE *fp = NULL;
 	EVP_PKEY *privatekey = NULL;
-	char *privatekey_path = NULL;
-	char *ca_cert_path = NULL;
-	char *user_cert_path = NULL;
+	char privatekey_path[512];
+	char ca_cert_path[512];
+	char user_cert_path[512];
 	int cert_index = 0;
 
 	CREATE_INSTANCE
@@ -1394,7 +1400,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
         result = certsvc_certificate_list_get_length(cert_list, &cert_counts);
         RUNNER_ASSERT_MSG(cert_counts >= 1, "there is no certificates");
 
-        selected_certificate = g_try_new0(CertSvcCertificate, cert_counts);
+        selected_certificate = new CertSvcCertificate[cert_counts];
         RUNNER_ASSERT_MSG(selected_certificate != NULL, "failed to allocate memory");
 
         result = certsvc_certificate_list_get_one(cert_list, 0, &user_certificate);
@@ -1402,7 +1408,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
 
 		result = certsvc_certificate_dup_x509(user_certificate, &x509);
 
-        user_cert_path = g_strdup_printf("/usr/share/cert-svc/pkcs12/file_%d", count++);
+        sprintf(user_cert_path, "/usr/share/cert-svc/pkcs12/file_%d", count++);
         fp = fopen(user_cert_path, "w");
         RUNNER_ASSERT_MSG(fp != NULL, "Failed to open the file for writing");
 
@@ -1416,7 +1422,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
 		cert_index = cert_counts - 1;
 		selected_certificate[0] = user_certificate;
 
-        ca_cert_path = g_strdup_printf("%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_CA_CERT_PATH);
+        sprintf(ca_cert_path, "%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_CA_CERT_PATH);
         while (cert_index) {
                 result = certsvc_certificate_list_get_one(cert_list, cert_index, &ca_certificate);
                 RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to certsvc_certificate_list_get_one");
@@ -1440,8 +1446,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
         result = certsvc_pkcs12_dup_evp_pkey_from_store(instance, WIFI_STORE, Alias, &privatekey);
         RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to duplicate the private key for a certificate from wifi store");
 
-        privatekey_path = g_strdup_printf("%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_PRIVATEKEY_PATH);
-
+        sprintf(privatekey_path, "%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_PRIVATEKEY_PATH);
         fp = fopen(privatekey_path, "w");
         RUNNER_ASSERT_MSG(fp != NULL, "Failed to open the file for writing");
 
@@ -1449,6 +1454,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store) {
         fclose(fp);
         certsvc_pkcs12_free_evp_pkey(privatekey);
 	}
+
+    delete []selected_certificate;
 
 	FREE_INSTANCE
 }

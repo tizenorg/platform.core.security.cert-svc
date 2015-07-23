@@ -29,13 +29,11 @@ INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/include
     )
 
-ADD_EXECUTABLE(${TARGET_VCOREC_TEST} ${VCOREC_TESTS_SOURCES})
+ADD_EXECUTABLE(${TARGET_VCOREC_TEST} ${VCOREC_TESTS_SOURCES} ${DPL_TEST_SOURCES})
 
 TARGET_LINK_LIBRARIES(${TARGET_VCOREC_TEST}
     ${TARGET_VCORE_LIB}
-    ${TARGET_CERT_SVC_LIB}
-    ${VCORE_TEST_DEP_LIBRARIES}
-    -ldl
+    ${TEST_DEP_LIBRARIES}
     )
 
 INSTALL(TARGETS ${TARGET_VCOREC_TEST}
@@ -64,9 +62,9 @@ INSTALL(FILES
     ${PROJECT_SOURCE_DIR}/tests/capi/data/cert1.der
     ${PROJECT_SOURCE_DIR}/tests/capi/data/cert2fake.pem
     ${PROJECT_SOURCE_DIR}/tests/capi/data/cert3fake.der
+    ${PROJECT_SOURCE_DIR}/tests/capi/data/root_cacert0.pem
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/cert-type/
     PERMISSIONS OWNER_READ
                 GROUP_READ
                 WORLD_READ
     )
-

@@ -18,7 +18,6 @@
 #include <openssl/x509.h>
 
 #include <dpl/test/test_runner.h>
-#include <dpl/log/log.h>
 #include <memory>
 
 #include <api_tests.h>

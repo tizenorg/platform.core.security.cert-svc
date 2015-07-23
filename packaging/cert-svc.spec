@@ -21,7 +21,6 @@ BuildRequires: pkgconfig(libsystemd-daemon)
 BuildRequires: pkgconfig(key-manager)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(libsystemd-journal)
-BuildRequires: boost-devel
 Requires: pkgconfig(libtzplatform-config)
 Requires: ca-certificates-tizen
 Requires: ca-certificates-mozilla
@@ -43,8 +42,6 @@ Certification service (development files)
 %package test
 Summary:  Certification service (tests)
 Group:    Security/Testing
-BuildRequires: pkgconfig(dpl-test-efl)
-Requires: boost-devel
 Requires: ca-certificates-tizen
 Requires: %{name} = %{version}-%{release}
 
@@ -75,13 +72,11 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 cmake . -DPREFIX=%{_prefix} \
         -DEXEC_PREFIX=%{_exec_prefix} \
         -DLIBDIR=%{_libdir} \
-        -DBINDIR=%{_bindir} \
         -DINCLUDEDIR=%{_includedir} \
         -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
         -DTZ_SYS_BIN=%TZ_SYS_BIN \
         -DTZ_SYS_ETC=%TZ_SYS_ETC \
         -DTZ_SYS_RO_WRT_ENGINE=%TZ_SYS_RO_WRT_ENGINE \
-        -DTZ_SYS_DB=%TZ_SYS_DB \
 %if 0%{?certsvc_test_build}
         -DCERTSVC_TEST_BUILD=1 \
         -DTZ_SYS_RO_APP=%TZ_SYS_RO_APP \
@@ -180,22 +175,10 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %files test
 %defattr(644,system,system,755)
 %attr(755,root,root) %{TZ_SYS_BIN}/cert-svc-test*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_hash/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_signature/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_certificate/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_partner/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_partner_operator/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_keys/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_certs/*
-%{TZ_SYS_RO_APP}/widget/tests/vcore_config/*
-%{TZ_SYS_RO_APP}/widget/tests/pkcs12/*
-%{TZ_SYS_RO_APP}/widget/tests/reference/*
+%{TZ_SYS_RO_APP}/widget/tests/*
 %{TZ_SYS_ETC}/ssl/certs/8956b9bc.0
-%{TZ_SYS_SHARE}/ca-certificates/wac/root_cacert0.pem
 %{TZ_SYS_SHARE}/cert-svc/pkcs12/*
 %{TZ_SYS_SHARE}/cert-svc/cert-type/*
-%{TZ_SYS_SHARE}/cert-svc/tests/orig_c/data/caflag/*
 %{TZ_SYS_SHARE}/cert-svc/certs/root_ca*.der
 %{TZ_SYS_SHARE}/cert-svc/tests/*
 %endif

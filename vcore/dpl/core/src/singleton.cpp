@@ -14,12 +14,18 @@
  *    limitations under the License.
  */
 /*
- * @file        api_tests.h
- * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @file        singleton.cpp
+ * @author      Przemyslaw Dobrowolski (p.dobrowolsk@samsung.com)
  * @version     1.0
- * @brief       This file is the implementation file of main
+ * @brief       This file is the implementation file of singleton
  */
+#include <stddef.h>
+#include <dpl/singleton.h>
 
-#include <cert-svc/cinstance.h>
-
-extern CertSvcInstance vinstance;
+//
+// Note:
+//
+// The file here is left blank to enable precompilation
+// of templates in corresponding header file.
+// Do not remove this file.
+//

@@ -14,11 +14,13 @@
  *    limitations under the License.
  */
 #include <string>
-
+#include <cstring>
 #include <openssl/x509.h>
-
 #include <dpl/test/test_runner.h>
-#include <dpl/log/log.h>
+
+#include <cert-svc/ccert.h>
+#include <cert-svc/cpkcs12.h>
+#include <cert-svc/cprimitives.h>
 
 #include <api_tests.h>
 
@@ -35,7 +37,7 @@ RUNNER_TEST(test01_certificate_new_from_file)
     CertSvcCertificate cert;
     int result = certsvc_certificate_new_from_file(
         vinstance,
-        "/usr/share/ca-certificates/wac/root_cacert0.pem",
+        "/usr/share/cert-svc/cert-type/root_cacert0.pem",
         &cert);
     RUNNER_ASSERT_MSG(CERTSVC_TRUE == result, "Error reading certificate");
 
@@ -688,7 +690,6 @@ RUNNER_TEST(test14_certificate_verify)
     int result, status;
 
     for (int i=0; i<MAXC; ++i) {
-        LogDebug("Reading certificate: " << i);
         int result = certsvc_certificate_new_from_memory(
             vinstance,
             (const unsigned char*)cert[i].c_str(),
@@ -778,8 +779,6 @@ RUNNER_TEST(test15_cprimitives)
     X509_NAME_oneline(name, buffer, MAXB);
     std::string expected = "/C=US/O=VeriSign, Inc./OU=Class 3 Public Primary Certification Authority";
 
-    LogDebug("NAME: " << buffer);
-
     RUNNER_ASSERT_MSG(expected == buffer, "Content does not match");
 
     certsvc_certificate_free_x509(x509);
@@ -833,7 +832,6 @@ RUNNER_TEST(test16_certificate_verify_with_caflag_selfsign_root)
     int result, status;
 
     for (int i=0; i<MAXC; ++i) {
-        LogDebug("Reading certificate: " << i);
         int result = certsvc_certificate_new_from_memory(
             vinstance,
             (const unsigned char*)cert[i].c_str(),

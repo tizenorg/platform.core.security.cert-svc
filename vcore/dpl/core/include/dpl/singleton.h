@@ -14,12 +14,38 @@
  *    limitations under the License.
  */
 /*
- * @file        api_tests.h
- * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @file        singleton.h
+ * @author      Przemyslaw Dobrowolski (p.dobrowolsk@samsung.com)
  * @version     1.0
- * @brief       This file is the implementation file of main
+ * @brief       This file is the implementation file of singleton
  */
+#ifndef DPL_SINGLETON_H
+#define DPL_SINGLETON_H
 
-#include <cert-svc/cinstance.h>
+namespace VcoreDPL {
+template<typename Class>
+class Singleton :
+    private Class
+{
+    //
+    // Note:
+    //
+    // To remove posibility of instantiating directly Class,
+    // make Class' default constructor protected
+    //
 
-extern CertSvcInstance vinstance;
+  private:
+    Singleton()
+    {}
+
+    static Singleton &InternalInstance();
+
+  public:
+    virtual ~Singleton()
+    {}
+
+    static Class &Instance();
+};
+} // namespace VcoreDPL
+
+#endif // DPL_SINGLETON_H

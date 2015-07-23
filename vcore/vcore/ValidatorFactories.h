@@ -14,12 +14,23 @@
  *    limitations under the License.
  */
 /*
- * @file        api_tests.h
+ * @file
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
- * @brief       This file is the implementation file of main
+ * @brief
  */
+#ifndef _WRT_ENGINE_SRC_INSTALLER_CORE_VALIDATION_CORE_VALIDATORFACTORY_H_
+#define _WRT_ENGINE_SRC_INSTALLER_CORE_VALIDATION_CORE_VALIDATORFACTORY_H_
 
-#include <cert-svc/cinstance.h>
+#include <vcore/CertificateIdentifier.h>
 
-extern CertSvcInstance vinstance;
+namespace ValidationCore {
+// First use of CertificateIdentificator should initialized it.
+// We do not want to create cyclic dependencies between
+// CertificateConfigReader and CertificateIdentificator so
+// we are using factory method to create CertificateIdentificator.
+
+const CertificateIdentifier& createCertificateIdentifier();
+} // namespace ValidationCore
+
+#endif // _WRT_ENGINE_SRC_INSTALLER_CORE_VALIDATION_CORE_VALIDATORFACTORY_H_

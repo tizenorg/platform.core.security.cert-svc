@@ -31,12 +31,10 @@ INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/tests/vcore
     )
 
-ADD_EXECUTABLE(${TARGET_VCORE_TEST} ${VCORE_TESTS_SOURCES})
+ADD_EXECUTABLE(${TARGET_VCORE_TEST} ${VCORE_TESTS_SOURCES} ${DPL_TEST_SOURCES})
 TARGET_LINK_LIBRARIES(${TARGET_VCORE_TEST}
-    ${SYS_EFL_LIBRARIES}
     ${TARGET_VCORE_LIB}
-    ${VCORE_TEST_DEP_LIBRARIES}
-    -ldl
+    ${TEST_DEP_LIBRARIES}
     )
 
 INSTALL(TARGETS ${TARGET_VCORE_TEST}
@@ -48,12 +46,6 @@ INSTALL(TARGETS ${TARGET_VCORE_TEST}
                 GROUP_EXECUTE
                 WORLD_READ
                 WORLD_EXECUTE
-    )
-
-ADD_CUSTOM_COMMAND(TARGET ${TARGET_VCORE_TEST} POST_BUILD
-    COMMAND ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/create_certs.sh
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/
-    COMMENT "Generate certificate chains"
     )
 
 INSTALL(FILES
@@ -118,46 +110,4 @@ INSTALL(FILES
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/reference
     )
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/operator.root.cert.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/root_cacert0.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/CAbundle.crt
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_keys
-    )
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/config/fin_list.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/config/fin_list.xsd
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_config/
-)
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/keys/root_cacert0.pem
-    DESTINATION
-    ${TZ_SYS_SHARE}/ca-certificates/wac/
-    )
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/demoCA/cacert.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/1second_level.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/1third_level.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/2second_level.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/2third_level.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/3second_level.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/3third_level.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/respcert.pem
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/respcert.key
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/openssl.cnf
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_certs/
-)
-
-INSTALL(DIRECTORY
-    ${PROJECT_SOURCE_DIR}/tests/vcore/certificate-generator/demoCA
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_certs/
-)
 

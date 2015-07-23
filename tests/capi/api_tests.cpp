@@ -14,21 +14,22 @@
  *    limitations under the License.
  */
 /*
- * @file        main.cpp
+ * @file        api_tests.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
  * @brief       This file is the implementation file of main
  */
+
 #include <dpl/test/test_runner.h>
 
-#include <cert-svc/ccert.h>
+#include <api_tests.h>
 
 CertSvcInstance vinstance;
 
 int main (int argc, char *argv[])
 {
     certsvc_instance_new(&vinstance);
-    int status = DPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
+    int status = VcoreDPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
     certsvc_instance_free(vinstance);
     return status;
 }

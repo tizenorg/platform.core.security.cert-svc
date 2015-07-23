@@ -14,12 +14,24 @@
  *    limitations under the License.
  */
 /*
- * @file        api_tests.h
+ * @file        TimeConversion.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
- * @version     1.0
- * @brief       This file is the implementation file of main
+ * @version     0.1
+ * @brief
  */
+#ifndef _VALIDATION_CORE_TIMECONVERSION_H_
+#define _VALIDATION_CORE_TIMECONVERSION_H_
 
-#include <cert-svc/cinstance.h>
+#include <ctime>
+#include <openssl/asn1.h>
 
-extern CertSvcInstance vinstance;
+namespace ValidationCore {
+// from OpenSSL asn1/a_utctm.c code
+int asn1TimeToTimeT(ASN1_TIME *t, time_t *res);
+
+int asn1GeneralizedTimeToTimeT(ASN1_GENERALIZEDTIME *tm,
+                               time_t *res);
+} // namespace ValidationCore
+
+#endif // _VALIDATION_CORE_TIMECONVERSION_H_
+

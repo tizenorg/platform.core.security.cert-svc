@@ -13,17 +13,41 @@
 #    limitations under the License.
 #
 
-PKG_CHECK_MODULES(VCORE_TEST_DEP
+SET(TARGET_VCOREC_TEST "cert-svc-tests-capi")
+SET(TARGET_TEST_CERT_SVC_OGIG "cert-svc-tests-orig")
+SET(TARGET_PKCS12_TEST "cert-svc-tests-pkcs12")
+SET(TARGET_VCORE_TEST "cert-svc-tests-vcore")
+
+PKG_CHECK_MODULES(TEST_DEP
     REQUIRED
-    dpl-test-efl
-    sqlite3
+    libpcrecpp
+    )
+
+SET(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(DPL_TEST_SOURCES
+    ${TEST_DIR}/dpl/src/assert.cpp
+    ${TEST_DIR}/dpl/src/binary_queue.cpp
+    ${TEST_DIR}/dpl/src/colors.cpp
+    ${TEST_DIR}/dpl/src/errno_string.cpp
+    ${TEST_DIR}/dpl/src/exception.cpp
+    ${TEST_DIR}/dpl/src/noncopyable.cpp
+    ${TEST_DIR}/dpl/src/singleton.cpp
+    ${TEST_DIR}/dpl/src/test_results_collector.cpp
+    ${TEST_DIR}/dpl/src/test_runner.cpp
+    ${TEST_DIR}/dpl/src/test_runner_child.cpp
+    ${TEST_DIR}/dpl/src/test_runner_multiprocess.cpp
+    ${TEST_DIR}/dpl/src/value_separated_policies.cpp
+    ${TEST_DIR}/dpl/src/value_separated_tokens.cpp
+
     )
 
 INCLUDE_DIRECTORIES(
     SYSTEM
-    ${VCORE_TEST_DEP_INCLUDE_DIRS}
+    ${TEST_DEP_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/vcore/src
+    ${PROJECT_SOURCE_DIR}/vcore
+    ${TEST_DIR}/dpl/include
     )
 
 ADD_SUBDIRECTORY(capi)

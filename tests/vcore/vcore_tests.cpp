@@ -23,7 +23,7 @@
 
 int main (int argc, char *argv[])
 {
-	DPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
+	VcoreDPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
 
 	return 0;
 }

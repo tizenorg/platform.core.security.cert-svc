@@ -20,13 +20,13 @@
  * @brief       PKCS#12 test runner.
  */
 #include <dpl/test/test_runner.h>
-#include <cert-svc/ccert.h>
+#include <cert-svc/cinstance.h>
 
 CertSvcInstance vinstance;
 
 int main (int argc, char *argv[]) {
     certsvc_instance_new(&vinstance);
-    int status = DPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
+    int status = VcoreDPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
     certsvc_instance_free(vinstance);
     return status;
 }

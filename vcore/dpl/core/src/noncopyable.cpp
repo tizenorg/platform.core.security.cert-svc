@@ -14,12 +14,18 @@
  *    limitations under the License.
  */
 /*
- * @file        api_tests.h
- * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @file        noncopyable.cpp
+ * @author      Przemyslaw Dobrowolski (p.dobrowolsk@samsung.com)
  * @version     1.0
- * @brief       This file is the implementation file of main
+ * @brief       This file is the implementation file of noncopyable
  */
+#include <stddef.h>
+#include <dpl/noncopyable.h>
 
-#include <cert-svc/cinstance.h>
+namespace VcoreDPL {
+Noncopyable::Noncopyable()
+{}
 
-extern CertSvcInstance vinstance;
+Noncopyable::~Noncopyable()
+{}
+} // namespace VcoreDPL

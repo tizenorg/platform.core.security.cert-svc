@@ -19,14 +19,22 @@
  * @version     0.1
  * @brief
  */
-#include <vcore/CertificateCollection.h>
 
-#include <vcore/Base64.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+
+#include <algorithm>
+
+#include <cert-svc/cinstance.h>
+#include <cert-svc/ccert.h>
+#include <cert-svc/cprimitives.h>
+
 #include <dpl/binary_queue.h>
 #include <dpl/foreach.h>
 #include <dpl/log/log.h>
+#include <vcore/Base64.h>
 
-#include <algorithm>
+#include <vcore/CertificateCollection.h>
 
 namespace {
 
@@ -39,6 +47,63 @@ inline std::string toBinaryString(int data)
     return std::string(buffer, sizeof(int));
 }
 
+CertificatePtr getCertFromStore(X509_NAME *subject)
+{
+    if (!subject) {
+        LogError("Invalid input!");
+        return CertificatePtr();
+    }
+
+    CertSvcInstance instance;
+    if (certsvc_instance_new(&instance) != CERTSVC_SUCCESS) {
+        LogError("Failed to make instance");
+		return CertificatePtr();
+    }
+
+    char buffer[1024];
+    X509_NAME_oneline(subject, buffer, 1024);
+
+    LogDebug("Search certificate with subject: " << buffer);
+	CertSvcCertificateList certList;
+	int result = certsvc_certificate_search(instance, CERTSVC_SUBJECT, buffer, &certList);
+    if (result != CERTSVC_SUCCESS) {
+        LogError("Error during certificate search. result : " << result);
+		certsvc_instance_free(instance);
+        return CertificatePtr();
+    }
+
+	int listSize = 0;
+	result = certsvc_certificate_list_get_length(certList, &listSize);
+	if (result != CERTSVC_SUCCESS || listSize <= 0) {
+		LogError("Error in certsvc_certificate_list_get_length. result : " << result);
+		certsvc_instance_free(instance);
+		return CertificatePtr();
+	}
+
+	CertSvcCertificate cert;
+	result = certsvc_certificate_list_get_one(certList, 0, &cert);
+	if (result != CERTSVC_SUCCESS) {
+		LogError("Failed to get cert from cert list. result : " << result);
+		certsvc_certificate_list_all_free(certList);
+		certsvc_instance_free(instance);
+		return CertificatePtr();
+	}
+
+	X509 *pCertX509 = NULL;
+	result = certsvc_certificate_dup_x509(cert, &pCertX509);
+	certsvc_certificate_list_all_free(certList);
+	certsvc_instance_free(instance);
+
+    if (result != CERTSVC_SUCCESS || !pCertX509) {
+        LogError("Error during certificate dup x509. result : " << result);
+        return CertificatePtr();
+    }
+
+    CertificatePtr parentCert(new Certificate(pCertX509));
+    X509_free(pCertX509);
+
+    return parentCert;
+}
 } // namespace
 
 namespace ValidationCore {
@@ -146,6 +211,7 @@ CertificateList CertificateCollection::getChain() const
     if (COLLECTION_SORTED != m_collectionStatus)
         VcoreThrowMsg(CertificateCollection::Exception::WrongUsage,
                       "You must sort certificates first");
+
     return m_certList;
 }
 
@@ -206,6 +272,28 @@ void CertificateCollection::sortCollection()
 
     m_collectionStatus = COLLECTION_SORTED;
     m_certList = sorted;
+}
+
+/*
+ *  Precondition : cert list sorted and has more than one cert
+ */
+bool CertificateCollection::completeCertificateChain()
+{
+    CertificatePtr last = m_certList.back();
+    if (last->isSignedBy(last))
+        return true;
+
+    /* TODO Add getIssuerName function to Certificate.h */
+    CertificatePtr parent = getCertFromStore(X509_get_issuer_name(last->getX509()));
+
+    if (!parent.get())
+        return false;
+
+    m_certList.push_back(parent);
+    if (!parent->isSignedBy(parent))
+        return false;
+
+    return true;
 }
 
 size_t CertificateCollection::size() const {

@@ -143,6 +143,22 @@ public:
             m_idListMap.erase(iter);
     }
 
+    inline void removeCertListAll(const CertSvcCertificateList &handler) {
+        auto iter = m_idListMap.find(handler.privateHandler);
+        if (iter == m_idListMap.end())
+            return;
+
+        for (size_t pos = 0; pos < iter->second.size(); ++pos) {
+            auto iterCert = m_certificateMap.find((iter->second)[pos]);
+            if (iterCert == m_certificateMap.end())
+                return;
+
+            m_certificateMap.erase(iterCert);
+        }
+
+        m_idListMap.erase(iter);
+    }
+
     inline int isSignedBy(const CertSvcCertificate &child,
                           const CertSvcCertificate &parent,
                           int *status)
@@ -1058,7 +1074,7 @@ inline CertSvcInstanceImpl *impl(CertSvcInstance instance) {
 int certsvc_instance_new(CertSvcInstance *instance) {
     static int init = 1;
     if (init) {
-        SSL_library_init();     // required by message verification
+        OpenSSL_add_ssl_algorithms();
         OpenSSL_add_all_digests();
         init = 0;
     }
@@ -1186,6 +1202,11 @@ int certsvc_certificate_list_get_length(
 void certsvc_certificate_list_free(CertSvcCertificateList handler)
 {
     impl(handler.privateInstance)->removeCertList(handler);
+}
+
+void certsvc_certificate_list_all_free(CertSvcCertificateList handler)
+{
+    impl(handler.privateInstance)->removeCertListAll(handler);
 }
 
 int certsvc_certificate_is_signed_by(

@@ -52,10 +52,10 @@ public:
     Set();
     virtual ~Set();
 
-    void add(Type second);
-
-
-    bool contains(Type second) const;
+    void setType(Type type);
+    Type getType() const;
+    std::string getTypeString() const;
+    bool isVisibilityLevel() const;
     bool isEmpty() const;
 
 private:

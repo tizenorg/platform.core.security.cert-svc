@@ -45,7 +45,7 @@ public:
     void add(const Certificate::Fingerprint &fingerprint,
             CertStoreId::Type domain)
     {
-        fingerPrintMap[fingerprint].add(domain);
+        fingerPrintMap[fingerprint].setType(domain);
     }
 
     CertStoreId::Set find(const Certificate::Fingerprint &fingerprint) const

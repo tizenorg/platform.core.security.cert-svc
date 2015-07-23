@@ -10,15 +10,11 @@ PKG_CHECK_MODULES(VCORE_DEPS
     openssl
     xmlsec1
     dlog
-    icu-uc
-    libsoup-2.4
-    db-util
     libsystemd-journal
     )
 
 ADD_DEFINITIONS(${VCORE_DEPS_CFLAGS})
 ADD_DEFINITIONS(${VCORE_DEPS_CFLAGS_OTHER})
-ADD_DEFINITIONS("-DSEPARATED_SINGLETON_IMPLEMENTATION")
 
 SET(VCORE_DIR
     ${PROJECT_SOURCE_DIR}/vcore
@@ -53,16 +49,6 @@ SET(VCORE_DPL_CORE_SOURCES
     ${VCORE_DPL_CORE_SRC_DIR}/waitable_handle_watch_support.cpp
     )
 
-SET(VCORE_DPL_DB_SRC_DIR
-    ${VCORE_DPL_DIR}/db/src
-    )
-SET(VCORE_DPL_DB_SOURCES
-    ${VCORE_DPL_DB_SRC_DIR}/naive_synchronization_object.cpp
-    ${VCORE_DPL_DB_SRC_DIR}/orm.cpp
-    ${VCORE_DPL_DB_SRC_DIR}/sql_connection.cpp
-    ${VCORE_DPL_DB_SRC_DIR}/thread_database_support.cpp
-    )
-
 SET(VCORE_DPL_LOG_SRC_DIR
     ${VCORE_DPL_DIR}/log/src
     )
@@ -85,8 +71,6 @@ SET(VCORE_SOURCES
     ${VCORE_SRC_DIR}/CertificateConfigReader.cpp
     ${VCORE_SRC_DIR}/CertificateLoader.cpp
     ${VCORE_SRC_DIR}/CertStoreType.cpp
-    ${VCORE_SRC_DIR}/CryptoHash.cpp
-    ${VCORE_SRC_DIR}/OCSPCertMgrUtil.cpp
     ${VCORE_SRC_DIR}/ReferenceValidator.cpp
     ${VCORE_SRC_DIR}/RevocationCheckerBase.cpp
     ${VCORE_SRC_DIR}/SaxReader.cpp
@@ -96,7 +80,6 @@ SET(VCORE_SOURCES
     ${VCORE_SRC_DIR}/TimeConversion.cpp
     ${VCORE_SRC_DIR}/VerificationStatus.cpp
     ${VCORE_SRC_DIR}/ValidatorFactories.cpp
-    ${VCORE_SRC_DIR}/WrtSignatureValidator.cpp
     ${VCORE_SRC_DIR}/SignatureValidator.cpp
     ${VCORE_SRC_DIR}/XmlsecAdapter.cpp
     ${VCORE_SRC_DIR}/pkcs12.cpp
@@ -191,16 +174,8 @@ INSTALL(TARGETS ${TARGET_VCORE_LIB}
     )
 
 INSTALL(FILES
-    ${VCORE_SRC_DIR}/WrtSignatureValidator.h
     ${VCORE_SRC_DIR}/SignatureValidator.h
     ${VCORE_SRC_DIR}/SignatureFinder.h
-    ${VCORE_SRC_DIR}/SignatureReader.h
-    ${VCORE_SRC_DIR}/CertificateCollection.h
-    ${VCORE_SRC_DIR}/CryptoHash.h
-    ${VCORE_SRC_DIR}/Base64.h
-
-    ${VCORE_SRC_DIR}/ParserSchema.h
-    ${VCORE_SRC_DIR}/SaxReader.h
 
     ${VCORE_SRC_DIR}/Certificate.h
     ${VCORE_SRC_DIR}/SignatureData.h

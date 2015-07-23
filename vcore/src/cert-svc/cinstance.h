@@ -34,8 +34,7 @@ typedef struct CertSvcInstance_t {
 
 /**
  * Allocate internal data of CertSvc library and put it in the CertSvcInstance structure.
- * Initialize Openssl interanal structures, initialize all structures required by libsoup
- * (libsoup is used by ocps and crl functions).
+ * Initialize Openssl interanal structures.
  *
  * @param[out] instance Pointer to CertSvcInstance.
  * @return CERTSVC_SUCCESS or CERTSVC_FAIL.

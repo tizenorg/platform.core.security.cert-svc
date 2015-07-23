@@ -109,6 +109,11 @@ const CertStoreId::Set& SignatureData::getStorageType() const
 
 CertStoreId::Type SignatureData::getVisibilityLevel() const
 {
+    if (!m_storeIdSet.isContainsVis()) {
+        LogWarning("Visibility level was broken.");
+        return 0;
+    }
+
     if (m_storeIdSet.contains(CertStoreId::VIS_PLATFORM))
         return CertStoreId::VIS_PLATFORM;
     else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER))
@@ -117,12 +122,8 @@ CertStoreId::Type SignatureData::getVisibilityLevel() const
         return CertStoreId::VIS_PLATFORM;
     else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER))
         return CertStoreId::VIS_PARTNER;
-    else if (m_storeIdSet.contains(CertStoreId::VIS_PUBLIC))
+    else
         return CertStoreId::VIS_PUBLIC;
-    else {
-        LogWarning("Visibility level was broken.");
-        return 0;
-    }
 }
 
 const SignatureData::IMEIList& SignatureData::getIMEIList() const

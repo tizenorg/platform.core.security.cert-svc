@@ -29,6 +29,9 @@
 
 #include <pcrecpp.h>
 
+namespace {
+
+}
 
 namespace ValidationCore {
 static const char *SIGNATURE_AUTHOR = "author-signature.xml";
@@ -47,33 +50,46 @@ public:
     Result find(SignatureFileInfoSet &set);
 
 private:
+    std::string getFullPath(const std::string &file);
+
     std::string m_dir;
     pcrecpp::RE m_signatureRegexp;
 };
+
+std::string SignatureFinder::Impl::getFullPath(const std::string &file)
+{
+    std::string fullPath = m_dir;
+
+    if (fullPath.back() != '/')
+        fullPath += "/";
+
+    fullPath += file;
+
+    return fullPath;
+}
 
 SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
 {
     DIR *dp;
     struct dirent *dirp;
 
-    /*
-     * find a dir
-     */
     if ((dp = opendir(m_dir.c_str())) == NULL) {
         LogError("Error opening directory: " << m_dir);
         return ERROR_OPENING_DIR;
     }
 
     for (errno = 0; (dirp = readdir(dp)) != NULL; errno = 0) {
-        /**
-         * check if it's author signature
-         */
+        /* number for author signature is -1 */
         if (!strcmp(dirp->d_name, SIGNATURE_AUTHOR)) {
-            set.insert(SignatureFileInfo(std::string(dirp->d_name), -1));
+            std::string fullPath = getFullPath(std::string(dirp->d_name));
+            LogDebug("Found author signature file full path : " << fullPath);
+            set.insert(SignatureFileInfo(fullPath, -1));
             continue;
         }
 
-        std::string sig, num, xml;
+        std::string sig;
+        std::string num;
+        std::string xml; /* just for cutting out .xml */
         if (m_signatureRegexp.FullMatch(dirp->d_name, &sig, &num, &xml)) {
             std::istringstream stream(num);
             int number;
@@ -84,7 +100,9 @@ SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
                 return ERROR_ISTREAM;
             }
 
-            set.insert(SignatureFileInfo(std::string(dirp->d_name), number));
+            std::string fullPath = getFullPath(std::string(dirp->d_name));
+            LogDebug("Found signature file full path : " << fullPath);
+            set.insert(SignatureFileInfo(fullPath, number));
         }
     }
 

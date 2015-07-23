@@ -218,6 +218,14 @@ int certsvc_certificate_list_get_length(CertSvcCertificateList handler,
 void certsvc_certificate_list_free(CertSvcCertificateList handler);
 
 /**
+ * This function will free list. It will free all certificates on the list.
+ * You should ""NOT"" free each certificate with certsvc_certificate_free.
+ *
+ * @param[in] handler Handler to search result.
+ */
+void certsvc_certificate_list_all_free(CertSvcCertificateList handler);
+
+/**
  * Compare parent certificate subject with child issuer field.
  *
  * @param[in] child

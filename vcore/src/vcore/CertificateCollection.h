@@ -105,6 +105,12 @@ public:
     bool sort();
 
     /*
+     * Precondition : cert list sorted and has more than on cert.
+     * This function add root cert in cert list to complete cert chain
+     */
+    bool completeCertificateChain();
+
+    /*
      * This function will return Certificate chain.
      *
      * First certificate on the list is EndEntity certificate.

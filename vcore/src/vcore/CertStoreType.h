@@ -53,10 +53,11 @@ public:
     virtual ~Set();
 
     void add(Type second);
-
-
     bool contains(Type second) const;
+    bool isContainsVis() const;
     bool isEmpty() const;
+
+    std::string typeToString() const;
 
 private:
     Type m_certificateStorage;

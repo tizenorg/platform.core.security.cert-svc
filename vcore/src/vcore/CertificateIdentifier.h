@@ -59,8 +59,7 @@ public:
 
     CertStoreId::Set find(const CertificatePtr &certificate) const
     {
-        return
-            find(certificate->getFingerprint(Certificate::FINGERPRINT_SHA1));
+        return find(certificate->getFingerprint(Certificate::FINGERPRINT_SHA1));
     }
 
 private:

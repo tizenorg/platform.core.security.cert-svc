@@ -55,29 +55,33 @@ Certificate::Certificate(cert_svc_mem_buff &buffer)
                       "Internal Openssl error in d2i_X509 function.");
 }
 
-Certificate::Certificate(const std::string &der,
+Certificate::Certificate(const std::string &data,
                          Certificate::FormType form)
 {
-    Assert(der.size());
+    Assert(data.size());
 
     int size;
     const unsigned char *ptr;
-    std::string tmp;
+    std::string tmp = data;
 
+    // transform to DER format
     if (FORM_BASE64 == form) {
-        Base64Decoder base64;
-        base64.reset();
-        base64.append(der);
-        if (!base64.finalize()) {
-            LogWarning("Error during decoding");
+        try {
+            Base64Decoder base64;
+            base64.reset();
+            base64.append(data);
+            if (!base64.finalize()) {
+                LogWarning("Error during decoding");
+            }
+            tmp = base64.get();
+        } catch (const Base64Decoder::Exception::Base &e) {
+            LogError("Exception in Certificate constructor : " << e.DumpToString());
+            VcoreThrowMsg(Certificate::Exception::Base64Error, "Failed to Base64Decoder");
         }
-        tmp = base64.get();
-        ptr = reinterpret_cast<const unsigned char*>(tmp.c_str());
-        size = static_cast<int>(tmp.size());
-    } else {
-        ptr = reinterpret_cast<const unsigned char*>(der.c_str());
-        size = static_cast<int>(der.size());
     }
+
+    ptr = reinterpret_cast<const unsigned char*>(tmp.c_str());
+    size = static_cast<int>(tmp.size());
 
     m_x509 = d2i_X509(NULL, &ptr, size);
     if (!m_x509)
@@ -111,9 +115,14 @@ std::string Certificate::getDER(void) const
 std::string Certificate::getBase64(void) const
 {
     Base64Encoder base64;
-    base64.reset();
-    base64.append(getDER());
-    base64.finalize();
+    try {
+        base64.reset();
+        base64.append(getDER());
+        base64.finalize();
+    } catch (const Base64Encoder::Exception::Base &e) {
+        LogError("Exception in Certificate getBase64 : " << e.DumpToString());
+        VcoreThrowMsg(Certificate::Exception::Base64Error, "Failed to Base64Encoder");
+    }
     return base64.get();
 }
 

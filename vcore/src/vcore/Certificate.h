@@ -55,6 +55,7 @@ public:
     public:
         VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, Base64Error);
     };
 
     typedef std::vector<unsigned char> Fingerprint;
@@ -84,7 +85,7 @@ public:
 
     explicit Certificate(cert_svc_mem_buff &buffer);
 
-    explicit Certificate(const std::string &der,
+    explicit Certificate(const std::string &data,
                          FormType form = FORM_DER);
 
     ~Certificate();

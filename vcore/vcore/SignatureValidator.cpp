@@ -20,7 +20,8 @@
  * @brief       Implementatin of tizen signature validation protocol.
  */
 
-#include <vcore/SignatureValidator.h>
+#include <dpl/log/log.h>
+
 #include <vcore/CertificateCollection.h>
 #include <vcore/Certificate.h>
 #include <vcore/ReferenceValidator.h>
@@ -28,8 +29,9 @@
 #include <vcore/XmlsecAdapter.h>
 #include <vcore/SignatureReader.h>
 #include <vcore/SignatureFinder.h>
+#include <vcore/Ocsp.h>
 
-#include <dpl/log/log.h>
+#include <vcore/SignatureValidator.h>
 
 namespace {
 
@@ -248,21 +250,16 @@ static int makeDataBySignature(
  *  Same logic (check, checkList) is functionalized here.
  *
  *  [in]  fileInfo  : file info of signature to check
- *  [in]  checkOcsp : If on, check ocsp.
  *  [out] disregard : distributor signature disregard flag.
  *  [out] context   : xml sec for validating.
  *  [out] data      : signature data for validationg and will be finally returned to client.
  */
 static SignatureValidator::Result checkInternal(
 	const SignatureFileInfo &fileInfo,
-	bool checkOcsp,
 	bool &disregard,
 	XmlSec::XmlSecContext &context,
 	SignatureData &data)
 {
-	// TODO: impl ocsp check
-	(void) checkOcsp;
-
 	if (makeDataBySignature(fileInfo, true, data))
 		return SignatureValidator::SIGNATURE_INVALID;
 
@@ -330,7 +327,7 @@ SignatureValidator::Result SignatureValidator::check(
 
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(fileInfo, checkOcsp, disregard, context, outData);
+		Result result = checkInternal(fileInfo, disregard, context, outData);
 		if (result != SIGNATURE_VERIFIED)
 			return result;
 
@@ -354,12 +351,23 @@ SignatureValidator::Result SignatureValidator::check(
 				}
 			}
 		}
+
+		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED)
+			return SIGNATURE_REVOKED;
+
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return SIGNATURE_INVALID;
 	} catch (const XmlSec::Exception::Base &e) {
 		LogError("XmlSec exception : " << e.DumpToString());
 		return SIGNATURE_INVALID;
+	} catch (const Ocsp::Exception::Base &e) {
+		LogError("Ocsp exception : " << e.DumpToString());
+		/*
+		 *  Don't care ocsp exception here.
+		 *  just return signature disregard or verified
+		 *  because exception case will be handled by cert-checker after app installed
+		 */
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::check");
 		return SIGNATURE_INVALID;
@@ -380,7 +388,7 @@ SignatureValidator::Result SignatureValidator::checkList(
 
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(fileInfo, checkOcsp, disregard, context, outData);
+		Result result = checkInternal(fileInfo, disregard, context, outData);
 		if (result != SIGNATURE_VERIFIED)
 			return result;
 
@@ -412,12 +420,23 @@ SignatureValidator::Result SignatureValidator::checkList(
 				return SIGNATURE_INVALID;
 			}
 		}
+
+		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED)
+			return SIGNATURE_REVOKED;
+
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return SIGNATURE_INVALID;
 	} catch (const XmlSec::Exception::Base &e) {
 		LogError("XmlSec exception : " << e.DumpToString());
 		return SIGNATURE_INVALID;
+	} catch (const Ocsp::Exception::Base &e) {
+		LogError("Ocsp exception : " << e.DumpToString());
+		/*
+		 *  Don't care ocsp exception here.
+		 *  just return signature disregard or verified
+		 *  because exception case will be handled by cert-checker after app installed
+		 */
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::checkList");
 		return SIGNATURE_INVALID;

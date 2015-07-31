@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,11 +13,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-#ifndef _TESTENV_H_
-#define _TESTENV_H_
+/*
+ * @file        CryptoInit.h
+ * @author      Kyungwook Tak (k.tak@samsung.com)
+ * @version     1.0
+ * @brief       Initialize openssl functions by singleton
+ */
+#pragma once
 
-#include <vcore/SignatureValidator.h>
+#include <dpl/noncopyable.h>
+#include <dpl/singleton.h>
 
-const char *validatorErrorToString(ValidationCore::SignatureValidator::Result error);
+namespace ValidationCore {
 
-#endif
+class CryptoInit : public VcoreDPL::Noncopyable
+{
+public:
+	CryptoInit();
+	virtual ~CryptoInit();
+};
+
+typedef VcoreDPL::Singleton<CryptoInit> CryptoInitSingleton;
+
+} // namespace ValidationCore

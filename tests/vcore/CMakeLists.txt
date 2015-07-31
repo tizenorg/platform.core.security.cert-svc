@@ -16,22 +16,28 @@
 # @author      Przemyslaw Dobrowolski (p.dobrowolsk@samsung.com)
 # @author      Pawel Sikorski (p.sikorski@samsung.com)
 # @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+# @author      Kyungwook Tak (k.tak@samsung.com)
 # @version     1.0
 # @brief
 #
+SET(CERT_SVC_VCORE_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(VCORE_TESTS_SOURCES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/vcore_tests.cpp
-    ${PROJECT_SOURCE_DIR}/tests/vcore/TestCases.cpp
-    ${PROJECT_SOURCE_DIR}/tests/vcore/TestEnv.cpp
+    ${CERT_SVC_VCORE_TESTS_DIR}/main.cpp
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-common.cpp
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-signature-validator.cpp
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-ocsp-check.cpp
     )
 
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/vcore/src
-    ${PROJECT_SOURCE_DIR}/tests/vcore
+    ${CERT_SVC_VCORE_TESTS_DIR}
     )
 
-ADD_EXECUTABLE(${TARGET_VCORE_TEST} ${VCORE_TESTS_SOURCES} ${DPL_TEST_SOURCES})
+ADD_EXECUTABLE(${TARGET_VCORE_TEST}
+    ${VCORE_TESTS_SOURCES}
+    ${DPL_TEST_SOURCES})
+
 TARGET_LINK_LIBRARIES(${TARGET_VCORE_TEST}
     ${TARGET_VCORE_LIB}
     ${TEST_DEP_LIBRARIES}
@@ -49,70 +55,70 @@ INSTALL(TARGETS ${TARGET_VCORE_TEST}
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget/author-signature.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget/signature1.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget/signature22.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget/config.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget/index.html
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/author-signature.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/signature1.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/signature22.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/config.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/index.html
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_hash/author-signature.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_hash/signature1.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_hash/signature22.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_hash/config.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_hash/index.html
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/author-signature.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/signature1.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/signature22.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/config.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/index.html
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_hash
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_signature/author-signature.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_signature/signature1.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_signature/signature22.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_signature/config.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_signature/index.html
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/author-signature.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/signature1.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/signature22.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/config.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/index.html
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_signature
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_certificate/author-signature.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_certificate/signature1.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_certificate/config.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_negative_certificate/index.html
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/author-signature.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/signature1.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/config.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/index.html
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_certificate
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner/author-signature.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner/signature1.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner/config.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner/index.html
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/author-signature.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/signature1.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/config.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/index.html
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_partner
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner_operator/author-signature.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner_operator/signature1.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner_operator/config.xml
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/widget_partner_operator/index.html
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/author-signature.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/signature1.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/config.xml
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/index.html
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_partner_operator
     )
 
 INSTALL(FILES
-    "${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/reference/encoding test.empty"
+    "${CERT_SVC_VCORE_TESTS_DIR}/test-cases/reference/encoding test.empty"
     DESTINATION
     ${TZ_SYS_RO_APP}/widget/tests/reference
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/root_cacert0.pem
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/root_cacert0.pem
     DESTINATION
     ${TZ_SYS_SHARE}/ca-certificates/tizen
     )

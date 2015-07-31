@@ -111,3 +111,8 @@ INSTALL(FILES
     ${TZ_SYS_RO_APP}/widget/tests/reference
     )
 
+INSTALL(FILES
+    ${PROJECT_SOURCE_DIR}/tests/vcore/test-cases/root_cacert0.pem
+    DESTINATION
+    ${TZ_SYS_SHARE}/ca-certificates/tizen
+    )

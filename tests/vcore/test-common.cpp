@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
+#include "test-common.h"
+
+#define SIGNATURE_ERRORDESCRIBE(name) case ValidationCore::SignatureValidator::name: return #name
+const char *validatorErrorToString(ValidationCore::SignatureValidator::Result error)
+{
+    switch (error) {
+        SIGNATURE_ERRORDESCRIBE(SIGNATURE_VALID);
+        SIGNATURE_ERRORDESCRIBE(SIGNATURE_INVALID);
+        SIGNATURE_ERRORDESCRIBE(SIGNATURE_VERIFIED);
+        SIGNATURE_ERRORDESCRIBE(SIGNATURE_DISREGARD);
+        SIGNATURE_ERRORDESCRIBE(SIGNATURE_REVOKED);
+    default:
+        return "Invalid error code.";
+    }
+}
+#undef SIGNATURE_ERRORDESCRIBE
+
+const std::string TestData::certEE =
+    "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";
+
+const std::string TestData::certIM =
+    "MIIFKzCCBBOgAwIBAgIQfuFKb2/v8tN/P61lTTratDANBgkqhkiG9w0BAQsFADCB\n"
+    "yjELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQL\n"
+    "ExZWZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJp\n"
+    "U2lnbiwgSW5jLiAtIEZvciBhdXRob3JpemVkIHVzZSBvbmx5MUUwQwYDVQQDEzxW\n"
+    "ZXJpU2lnbiBDbGFzcyAzIFB1YmxpYyBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0\n"
+    "aG9yaXR5IC0gRzUwHhcNMTMxMDMxMDAwMDAwWhcNMjMxMDMwMjM1OTU5WjB3MQsw\n"
+    "CQYDVQQGEwJVUzEdMBsGA1UEChMUU3ltYW50ZWMgQ29ycG9yYXRpb24xHzAdBgNV\n"
+    "BAsTFlN5bWFudGVjIFRydXN0IE5ldHdvcmsxKDAmBgNVBAMTH1N5bWFudGVjIENs\n"
+    "YXNzIDMgRVYgU1NMIENBIC0gRzMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n"
+    "AoIBAQDYoWV0I+grZOIy1zM3PY71NBZI3U9/hxz4RCMTjvsR2ERaGHGOYBYmkpv9\n"
+    "FwvhcXBC/r/6HMCqo6e1cej/GIP23xAKE2LIPZyn3i4/DNkd5y77Ks7Imn+Hv9hM\n"
+    "BBUyydHMlXGgTihPhNk1++OGb5RT5nKKY2cuvmn2926OnGAE6yn6xEdC0niY4+wL\n"
+    "pZLct5q9gGQrOHw4CVtm9i2VeoayNC6FnpAOX7ddpFFyRnATv2fytqdNFB5suVPu\n"
+    "IxpOjUhVQ0GxiXVqQCjFfd3SbtICGS97JJRL6/EaqZvjI5rq+jOrCiy39GAI3Z8c\n"
+    "zd0tAWaAr7MvKR0juIrhoXAHDDQPAgMBAAGjggFdMIIBWTAvBggrBgEFBQcBAQQj\n"
+    "MCEwHwYIKwYBBQUHMAGGE2h0dHA6Ly9zMi5zeW1jYi5jb20wEgYDVR0TAQH/BAgw\n"
+    "BgEB/wIBADBlBgNVHSAEXjBcMFoGBFUdIAAwUjAmBggrBgEFBQcCARYaaHR0cDov\n"
+    "L3d3dy5zeW1hdXRoLmNvbS9jcHMwKAYIKwYBBQUHAgIwHBoaaHR0cDovL3d3dy5z\n"
+    "eW1hdXRoLmNvbS9ycGEwMAYDVR0fBCkwJzAloCOgIYYfaHR0cDovL3MxLnN5bWNi\n"
+    "LmNvbS9wY2EzLWc1LmNybDAOBgNVHQ8BAf8EBAMCAQYwKQYDVR0RBCIwIKQeMBwx\n"
+    "GjAYBgNVBAMTEVN5bWFudGVjUEtJLTEtNTMzMB0GA1UdDgQWBBQBWavn3ToLWaZk\n"
+    "Y9bPIAdX1ZHnajAfBgNVHSMEGDAWgBR/02Wnwt3su/AwCfNDOfoCrzMxMzANBgkq\n"
+    "hkiG9w0BAQsFAAOCAQEAQgFVe9AWGl1Y6LubqE3X89frE5SG1n8hC0e8V5uSXU8F\n"
+    "nzikEHzPg74GQ0aNCLxq1xCm+quvL2GoY/Jl339MiBKIT7Np2f8nwAqXkY9W+4nE\n"
+    "qLuSLRtzsMarNvSWbCAI7woeZiRFT2cAQMgHVHQzO6atuyOfZu2iRHA0+w7qAf3P\n"
+    "eHTfp61Vt19N9tY/4IbOJMdCqRMURDVLtt/JYKwMf9mTIUvunORJApjTYHtcvNUw\n"
+    "LwfORELEC5n+5p/8sHiGUW3RLJ3GlvuFgrsEL/digO9i2n/2DqyQuFa9eT/ygG6j\n"
+    "2bkPXToHHZGThkspTOHcteHgM52zyzaRS/6htO7w+Q==";
+
+const std::string TestData::certRoot =
+    "MIIE0zCCA7ugAwIBAgIQGNrRniZ96LtKIVjNzGs7SjANBgkqhkiG9w0BAQUFADCB\n"
+    "yjELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQL\n"
+    "ExZWZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJp\n"
+    "U2lnbiwgSW5jLiAtIEZvciBhdXRob3JpemVkIHVzZSBvbmx5MUUwQwYDVQQDEzxW\n"
+    "ZXJpU2lnbiBDbGFzcyAzIFB1YmxpYyBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0\n"
+    "aG9yaXR5IC0gRzUwHhcNMDYxMTA4MDAwMDAwWhcNMzYwNzE2MjM1OTU5WjCByjEL\n"
+    "MAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQLExZW\n"
+    "ZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTowOAYDVQQLEzEoYykgMjAwNiBWZXJpU2ln\n"
+    "biwgSW5jLiAtIEZvciBhdXRob3JpemVkIHVzZSBvbmx5MUUwQwYDVQQDEzxWZXJp\n"
+    "U2lnbiBDbGFzcyAzIFB1YmxpYyBQcmltYXJ5IENlcnRpZmljYXRpb24gQXV0aG9y\n"
+    "aXR5IC0gRzUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvJAgIKXo1\n"
+    "nmAMqudLO07cfLw8RRy7K+D+KQL5VwijZIUVJ/XxrcgxiV0i6CqqpkKzj/i5Vbex\n"
+    "t0uz/o9+B1fs70PbZmIVYc9gDaTY3vjgw2IIPVQT60nKWVSFJuUrjxuf6/WhkcIz\n"
+    "SdhDY2pSS9KP6HBRTdGJaXvHcPaz3BJ023tdS1bTlr8Vd6Gw9KIl8q8ckmcY5fQG\n"
+    "BO+QueQA5N06tRn/Arr0PO7gi+s3i+z016zy9vA9r911kTMZHRxAy3QkGSGT2RT+\n"
+    "rCpSx4/VBEnkjWNHiDxpg8v+R70rfk/Fla4OndTRQ8Bnc+MUCH7lP59zuDMKz10/\n"
+    "NIeWiu5T6CUVAgMBAAGjgbIwga8wDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8E\n"
+    "BAMCAQYwbQYIKwYBBQUHAQwEYTBfoV2gWzBZMFcwVRYJaW1hZ2UvZ2lmMCEwHzAH\n"
+    "BgUrDgMCGgQUj+XTGoasjY5rw8+AatRIGCx7GS4wJRYjaHR0cDovL2xvZ28udmVy\n"
+    "aXNpZ24uY29tL3ZzbG9nby5naWYwHQYDVR0OBBYEFH/TZafC3ey78DAJ80M5+gKv\n"
+    "MzEzMA0GCSqGSIb3DQEBBQUAA4IBAQCTJEowX2LP2BqYLz3q3JktvXf2pXkiOOzE\n"
+    "p6B4Eq1iDkVwZMXnl2YtmAl+X6/WzChl8gGqCBpH3vn5fJJaCGkgDdk+bW48DW7Y\n"
+    "5gaRQBi5+MHt39tBquCWIMnNZBU4gcmU7qKEKQsTb47bDN0lAtukixlE0kF6BWlK\n"
+    "WE9gyn6CagsCqiUXObXbf+eEZSqVir2G3l6BFoMtEMze/aiCKm0oHw0LxOXnGiYZ\n"
+    "4fQRbxC1lfznQgUy286dUV4otp6F01vvpX1FQHKOtw5rDgb7MzVIcbidJ4vEZV8N\n"
+    "hnacRHr2lVz2XTIIM6RUthg/aFzyQkqFOFSDX9HoLPKsEdao7WNq";

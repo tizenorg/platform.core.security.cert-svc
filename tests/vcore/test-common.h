@@ -13,20 +13,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-#include "TestEnv.h"
+#pragma once
 
-#define SIGNATURE_ERRORDESCRIBE(name) case ValidationCore::SignatureValidator::name: return #name
-const char *validatorErrorToString(ValidationCore::SignatureValidator::Result error)
-{
-    switch (error) {
-        SIGNATURE_ERRORDESCRIBE(SIGNATURE_VALID);
-        SIGNATURE_ERRORDESCRIBE(SIGNATURE_INVALID);
-        SIGNATURE_ERRORDESCRIBE(SIGNATURE_VERIFIED);
-        SIGNATURE_ERRORDESCRIBE(SIGNATURE_DISREGARD);
-        SIGNATURE_ERRORDESCRIBE(SIGNATURE_REVOKED);
-    default:
-        return "Invalid error code.";
-    }
+#include <string>
+
+#include <vcore/SignatureValidator.h>
+
+const char *validatorErrorToString(ValidationCore::SignatureValidator::Result error);
+
+namespace TestData {
+
+extern const std::string certEE;   /* MBANK,    signed by SYMANTEC, expires 04 Feb 2016 */
+extern const std::string certIM;   /* SYMANTEC, signed by VERISIGN, expires 30 Oct 2023 */
+extern const std::string certRoot; /* VERISIGN, signed by self,     expires 30 Oct 2023 */
+
 }
-#undef SIGNATURE_ERRORDESCRIBE
-

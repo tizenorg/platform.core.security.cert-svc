@@ -102,6 +102,11 @@ void SignatureData::setStorageType(const CertStoreId::Set &storeIdSet)
     m_storeIdSet = storeIdSet;
 }
 
+bool SignatureData::isCertListSorted() const
+{
+    return m_certificateSorted;
+}
+
 const CertStoreId::Set& SignatureData::getStorageType() const
 {
     return m_storeIdSet;

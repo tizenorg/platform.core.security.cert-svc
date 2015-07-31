@@ -51,6 +51,8 @@ SET(VCORE_SOURCES
     ${VCORE_DIR}/vcore/exception.cpp
     ${VCORE_DIR}/vcore/utils.c
     ${VCORE_DIR}/vcore/cert-svc-client.c
+    ${VCORE_DIR}/vcore/Ocsp.cpp
+    ${VCORE_DIR}/vcore/CryptoInit.cpp
     )
 
 SET(VCORE_INCLUDES

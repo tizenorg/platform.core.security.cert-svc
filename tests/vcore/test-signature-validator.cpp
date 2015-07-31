@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@
 #include <dpl/test/test_runner.h>
 #include <vcore/SignatureFinder.h>
 #include <vcore/SignatureValidator.h>
-#include "TestEnv.h"
+
+#include "test-common.h"
 
 namespace {
 
@@ -132,6 +133,8 @@ const std::string certVerisign =
 
 using namespace ValidationCore;
 
+RUNNER_TEST_GROUP_INIT(T0010_SIGNATURE_VALIDATOR)
+
 /*
  * test: Class SignatureFinder
  * description: SignatureFinder should search directory passed as
@@ -139,7 +142,7 @@ using namespace ValidationCore;
  * expected: Signature finder should put information about 3
  * signture files in SinatureFileInfoSet.
  */
-RUNNER_TEST(test01_signature_finder)
+RUNNER_TEST(T0011_signature_finder)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_path);
@@ -189,7 +192,7 @@ RUNNER_TEST(test01_signature_finder)
  * expected: Verificator should DISREGARD author signature and VERIFY
  * distrubutor signature.
  */
-RUNNER_TEST(test03t01_signature_validator)
+RUNNER_TEST(T0012_signature_validator)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_path);
@@ -221,7 +224,7 @@ RUNNER_TEST(test03t01_signature_validator)
     }
 }
 
-RUNNER_TEST(test03t02_signature_validator_negative_hash_input)
+RUNNER_TEST(T00121_signature_validator_negative_hash_input)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_negative_hash_path);
@@ -248,7 +251,7 @@ RUNNER_TEST(test03t02_signature_validator_negative_hash_input)
     }
 }
 
-RUNNER_TEST(test03t03_signature_validator_negative_signature_input)
+RUNNER_TEST(T00122_signature_validator_negative_signature_input)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_negative_signature_path);
@@ -276,7 +279,7 @@ RUNNER_TEST(test03t03_signature_validator_negative_signature_input)
     }
 }
 
-RUNNER_TEST(test03t04_signature_validator_partner)
+RUNNER_TEST(T00123_signature_validator_partner)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_partner_path);
@@ -312,7 +315,7 @@ RUNNER_TEST(test03t04_signature_validator_partner)
  * expected: Verificator should DISREGARD author signature and VERIFY
  * distrubutor signature.
  */
-RUNNER_TEST(test04t01_signature_validator)
+RUNNER_TEST(T0013_signature_validator)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_path);
@@ -344,7 +347,7 @@ RUNNER_TEST(test04t01_signature_validator)
     }
 }
 
-RUNNER_TEST(test04t02_signature_validator_negative_hash_input)
+RUNNER_TEST(T00131_signature_validator_negative_hash_input)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_negative_hash_path);
@@ -372,7 +375,7 @@ RUNNER_TEST(test04t02_signature_validator_negative_hash_input)
     }
 }
 
-RUNNER_TEST(test04t03_signature_validator_negative_signature_input)
+RUNNER_TEST(T00132_signature_validator_negative_signature_input)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_negative_signature_path);
@@ -400,7 +403,7 @@ RUNNER_TEST(test04t03_signature_validator_negative_signature_input)
     }
 }
 
-RUNNER_TEST(test04t04_signature_validator_partner)
+RUNNER_TEST(T00133_signature_validator_partner)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_partner_path);
@@ -434,7 +437,7 @@ RUNNER_TEST(test04t04_signature_validator_partner)
  * description: As above but this test also checks reference from signatures.
  * expected: All reference checks should return NO_ERROR.
  */
-RUNNER_TEST(test05t01_signature_reference)
+RUNNER_TEST(T0014_signature_reference)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(widget_path);
@@ -481,7 +484,7 @@ RUNNER_TEST(test05t01_signature_reference)
  * expected: checkReference should return NO_ERROR.
  */
 /*
-RUNNER_TEST(test05t02_signature_reference_encoding_dummy)
+RUNNER_TEST(T00141_signature_reference_encoding_dummy)
 {
     ReferenceSet referenceSet;
     SignatureData data;
@@ -501,7 +504,7 @@ RUNNER_TEST(test05t02_signature_reference_encoding_dummy)
  * expected: checkReference should return ERROR_REFERENCE_NOT_FOUND
  */
 /*
-RUNNER_TEST(test05t03_signature_reference_encoding_negative)
+RUNNER_TEST(T00142_signature_reference_encoding_negative)
 {
     ReferenceSet referenceSet;
     SignatureData data;
@@ -522,7 +525,7 @@ RUNNER_TEST(test05t03_signature_reference_encoding_negative)
  * expected: checkReference should return NO_ERROR
  */
 /*
-RUNNER_TEST(test05t04_signature_reference_encoding_space)
+RUNNER_TEST(T00143_signature_reference_encoding_space)
 {
     ReferenceSet referenceSet;
     SignatureData data;
@@ -543,7 +546,7 @@ RUNNER_TEST(test05t04_signature_reference_encoding_space)
  * expected: checkReference should return ERROR_REFERENCE_NOT_FOUND
  */
 /*
-RUNNER_TEST(test05t05_signature_reference_encoding_space_negative)
+RUNNER_TEST(T00144_signature_reference_encoding_space_negative)
 {
     ReferenceSet referenceSet;
     SignatureData data;
@@ -564,7 +567,7 @@ RUNNER_TEST(test05t05_signature_reference_encoding_space_negative)
  * expected: checkReference should return NO_ERROR
  */
 /*
-RUNNER_TEST(test05t06_signature_reference_encoding)
+RUNNER_TEST(T00145_signature_reference_encoding)
 {
     ReferenceSet referenceSet;
     SignatureData data;
@@ -585,7 +588,7 @@ RUNNER_TEST(test05t06_signature_reference_encoding)
  * expected: checkReference should return ERROR_DECODING_URL
  */
 /*
-RUNNER_TEST(test05t07_signature_reference_encoding_negative)
+RUNNER_TEST(T00146_signature_reference_encoding_negative)
 {
     ReferenceSet referenceSet;
     SignatureData data;
@@ -599,12 +602,15 @@ RUNNER_TEST(test05t07_signature_reference_encoding_negative)
 }
 */
 
+
+RUNNER_TEST_GROUP_INIT(T0020_Certificate)
+
 /*
  * test: class Certificate
  * description: Certificate should parse data passed to object constructor.
  * expected: Getters should be able to return certificate information.
  */
-RUNNER_TEST(test08t01_Certificate)
+RUNNER_TEST(T0021_Certificate)
 {
     Certificate cert(certVerisign, Certificate::FORM_BASE64);
     std::string result;
@@ -628,7 +634,7 @@ RUNNER_TEST(test08t01_Certificate)
  * description: Certificate should parse data passed to object constructor.
  * expected: Function fingerprint should return valid fingerprint.
  */
-RUNNER_TEST(test08t02_Certificate)
+RUNNER_TEST(T0022_Certificate)
 {
     Certificate cert(certVerisign, Certificate::FORM_BASE64);
 
@@ -653,7 +659,7 @@ RUNNER_TEST(test08t02_Certificate)
  * expected: Function getAlternativeNameDNS should return list of
  * alternativeNames hardcoded in certificate.
  */
-RUNNER_TEST(test08t03_Certificate)
+RUNNER_TEST(T0023_Certificate)
 {
     Certificate cert(certVerisign, Certificate::FORM_BASE64);
 
@@ -674,7 +680,7 @@ RUNNER_TEST(test08t03_Certificate)
  * description: Certificate should parse data passed to object constructor.
  * expected: 1st and 2nd certificate should be identified as CA.
  */
-RUNNER_TEST(test08t04_Certificate_isCA)
+RUNNER_TEST(T0024_Certificate_isCA)
 {
     Certificate cert1(googleCA, Certificate::FORM_BASE64);
     RUNNER_ASSERT(cert1.isCA() > 0);

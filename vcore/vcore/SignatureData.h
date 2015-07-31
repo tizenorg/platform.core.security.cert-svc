@@ -47,6 +47,7 @@ public:
     void setReference(const ReferenceSet &referenceSet);
     void setSortedCertificateList(const CertificateList &list);
     void setStorageType(const CertStoreId::Set &storeIdSet);
+    bool isCertListSorted() const;
 
     const ReferenceSet& getReferenceSet() const;
     CertificateList getCertList() const;

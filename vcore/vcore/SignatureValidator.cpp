@@ -175,7 +175,7 @@ static struct tm getMidTime(const struct tm &tb, const struct tm &ta)
 	return tMid;
 }
 
-} // namespace anonymouse
+} // namespace anonymous
 
 
 
@@ -184,14 +184,10 @@ namespace ValidationCore {
 /*
  *  Prepare to check / checklist. parse xml and save info to signature data.
  *
- *  [in]  fileInfo : signature file information to check. file path should be absolute path
- *                   which is made by SignatureFinder.
  *  [out] outData  : signature data for validating and will be finally returned to client.
  */
-int prepareToCheck(const SignatureFileInfo &fileInfo, SignatureData &outData)
+int prepareToCheck(SignatureData &outData)
 {
-	outData = SignatureData(fileInfo.getFileName(), fileInfo.getFileNumber());
-
 	try {
 		SignatureReader xml;
 		xml.initialize(outData, SIGNATURE_SCHEMA_PATH);
@@ -205,33 +201,61 @@ int prepareToCheck(const SignatureFileInfo &fileInfo, SignatureData &outData)
 }
 
 /*
+ *  Make SignatureData by parsing signature file.
+ *  and get certificate chain with attached certificate in signature
+ */
+static int makeDataBySignature(const SignatureFileInfo &fileInfo, SignatureData &data)
+{
+	data = SignatureData(fileInfo.getFileName(), fileInfo.getFileNumber());
+
+	if (prepareToCheck(data)) {
+		LogError("Failed to prepare to check.");
+		return -1;
+	}
+
+	if (!checkRoleURI(data) || !checkProfileURI(data))
+		return -1;
+
+	try {
+		CertificateCollection collection;
+		collection.load(data.getCertList());
+
+		if (!collection.sort() || collection.empty() || !collection.completeCertificateChain()) {
+			LogWarning("Certificates do not form valid chain.");
+			return -1;
+		}
+
+		data.setSortedCertificateList(collection.getChain());
+		return 0;
+
+	} catch (const CertificateCollection::Exception::Base &e) {
+		LogError("CertificateCollection exception : " << e.DumpToString());
+		return -1;
+	} catch (...) {
+		LogError("Unknown exception in SignatureValidator::makeChainBySignature");
+		return -1;
+	}
+}
+
+/*
  *  Same logic (check, checkList) is functionalized here.
  *
+ *  [in]  fileInfo  : file info of signature to check
  *  [out] disregard : distributor signature disregard flag.
  *  [out] context   : xml sec for validating.
  *  [out] data      : signature data for validationg and will be finally returned to client.
  */
 static SignatureValidator::Result checkInternal(
+	const SignatureFileInfo &fileInfo,
 	bool &disregard,
 	XmlSec::XmlSecContext &context,
 	SignatureData &data)
 {
-	if (!checkRoleURI(data) || !checkProfileURI(data))
+	if (makeDataBySignature(fileInfo, data))
 		return SignatureValidator::SIGNATURE_INVALID;
-
-	CertificateCollection collection;
-	collection.load(data.getCertList());
-
-	if (!collection.sort() || collection.empty() || !collection.completeCertificateChain()) {
-		LogWarning("Certificates do not form valid chain.");
-		return SignatureValidator::SIGNATURE_INVALID;
-	}
-
-	CertificateList sortedCertificateList = collection.getChain();
-	CertificatePtr root = sortedCertificateList.back();
 
 	// Is Root CA certificate trusted?
-	CertStoreId::Set storeIdSet = createCertificateIdentifier().find(root);
+	CertStoreId::Set storeIdSet = createCertificateIdentifier().find(data.getCertList().back());
 
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
 	if (data.isAuthorSignature()) {
@@ -255,14 +279,13 @@ static SignatureValidator::Result checkInternal(
 	}
 
 	data.setStorageType(storeIdSet);
-	data.setSortedCertificateList(sortedCertificateList);
 
 	/*
 	 * We add only Root CA certificate because the rest
 	 * of certificates are present in signature files ;-)
 	 */
 	context.signatureFile = data.getSignatureFileName();
-	context.certificatePtr = root;
+	context.certificatePtr = data.getCertList().back();
 
 	/* certificate time check */
 	ASN1_TIME* notAfterTime = data.getEndEntityCertificatePtr()->getNotAfterTime();
@@ -291,17 +314,12 @@ SignatureValidator::Result SignatureValidator::check(
 	bool checkReferences,
 	SignatureData &outData)
 {
-	if (prepareToCheck(fileInfo, outData)) {
-		LogError("Failed to prepare to check.");
-		return SIGNATURE_INVALID;
-	}
-
 	bool disregard = false;
 
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(disregard, context, outData);
-		if (result != SIGNATURE_VERIFIED)
+		Result result = checkInternal(fileInfo, disregard, context, outData);
+		if (result != SIGNATURE_VALID)
 			return result;
 
 		if (!outData.isAuthorSignature()) {
@@ -357,15 +375,11 @@ SignatureValidator::Result SignatureValidator::checkList(
 	bool checkReferences,
 	SignatureData &outData)
 {
-	if (prepareToCheck(fileInfo, outData)) {
-		LogError("Failed to prepare to check.");
-		return SIGNATURE_INVALID;
-	}
-
 	bool disregard = false;
+
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(disregard, context, outData);
+		Result result = checkInternal(fileInfo, disregard, context, outData);
 		if (result != SIGNATURE_VERIFIED)
 			return result;
 
@@ -420,6 +434,19 @@ SignatureValidator::Result SignatureValidator::checkList(
 	}
 
 	return disregard ? SIGNATURE_DISREGARD : SIGNATURE_VERIFIED;
+}
+
+SignatureValidator::Result SignatureValidator::makeChainBySignature(
+	const SignatureFileInfo &fileInfo,
+	CertificateList &certList)
+{
+	SignatureData data;
+	if (makeDataBySignature(fileInfo, data))
+		return SIGNATURE_INVALID;
+
+	certList = data.getCertList();
+
+	return SIGNATURE_VALID;
 }
 
 

@@ -24,6 +24,7 @@
 
 #include <string>
 #include <list>
+#include <vcore/Certificate.h>
 #include <vcore/SignatureData.h>
 #include <vcore/SignatureFinder.h>
 
@@ -60,6 +61,14 @@ public:
         bool checkOcsp,
         bool checkReferences,
         SignatureData &outData);
+
+    /*
+     *  return Result::SIGNATURE_VALID if success
+     *  return Result::SIGNATURE_INVALID otherwise
+     */
+    static Result makeChainBySignature(
+        const SignatureFileInfo &fileInfo,
+        CertificateList &certList);
 };
 
 } // namespace ValidationCore

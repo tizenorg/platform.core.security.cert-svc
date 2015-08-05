@@ -24,6 +24,7 @@
 
 #include <string>
 #include <list>
+#include <vcore/Certificate.h>
 #include <vcore/SignatureData.h>
 #include <vcore/SignatureFinder.h>
 
@@ -60,6 +61,18 @@ public:
         bool checkOcsp,
         bool checkReferences,
         SignatureData &outData);
+
+    /*
+     *  @Remarks : cert list isn't completed with self-signed root CA system cert
+     *             if completeWithSystemCert is false.
+     *
+     *  return Result::SIGNATURE_VALID if success
+     *  return Result::SIGNATURE_INVALID otherwise
+     */
+    static Result makeChainBySignature(
+        const SignatureFileInfo &fileInfo,
+        bool completeWithSystemCert,
+        CertificateList &certList);
 };
 
 } // namespace ValidationCore

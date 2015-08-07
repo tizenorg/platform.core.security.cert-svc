@@ -177,6 +177,7 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %attr(755,root,root) %{TZ_SYS_BIN}/cert-svc-test*
 %{TZ_SYS_RO_APP}/widget/tests/*
 %{TZ_SYS_ETC}/ssl/certs/8956b9bc.0
+%{TZ_SYS_SHARE}/ca-certificates/tizen/*
 %{TZ_SYS_SHARE}/cert-svc/pkcs12/*
 %{TZ_SYS_SHARE}/cert-svc/cert-type/*
 %{TZ_SYS_SHARE}/cert-svc/certs/root_ca*.der

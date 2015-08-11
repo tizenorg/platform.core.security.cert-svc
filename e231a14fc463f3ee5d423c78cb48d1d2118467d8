@@ -1,0 +1,9 @@
+Code-Review+1: Janusz Kozerski <j.kozerski@samsung.com>
+Verified+1: kyungwook tak <k.tak@samsung.com>
+Code-Review+2: Dong Sun Lee <ds73.lee@samsung.com>
+Verified+1: Dong Sun Lee <ds73.lee@samsung.com>
+Submitted-by: Dong Sun Lee <ds73.lee@samsung.com>
+Submitted-at: Tue, 11 Aug 2015 00:09:48 -0700
+Reviewed-on: https://review.tizen.org/gerrit/45352
+Project: platform/core/security/cert-svc
+Branch: refs/heads/tizen

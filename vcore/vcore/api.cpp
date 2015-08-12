@@ -45,6 +45,8 @@
 
 #include <dpl/log/log.h>
 
+#include <cert-service.h>
+
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
 #include <cert-svc/cpkcs12.h>

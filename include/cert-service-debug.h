@@ -19,17 +19,13 @@
  *
  */
 
-/* To prevent inadvertently including a header twice */
 #ifndef CERT_SERVICE_DEBUG_H
 #define CERT_SERVICE_DEBUG_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif	// __cplusplus
+#endif
 
-/*********************************************************************************/
-/* Logging                                                                       */
-/*********************************************************************************/
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
@@ -39,6 +35,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif	// __cplusplus
+#endif
 
-#endif	// CERT_SERVICE_DEBUG_H
+#endif // CERT_SERVICE_DEBUG_H

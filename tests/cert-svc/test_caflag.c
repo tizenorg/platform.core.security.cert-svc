@@ -75,7 +75,6 @@ int test_verify_certificate_succ_nocaflag_cert() {
     int ret = CERT_SVC_ERR_NO_ERROR;
 	CERT_CONTEXT* ctx = cert_svc_cert_context_init();
 
-	// load certificate to context
 	ret = cert_svc_load_file_to_context(ctx, CERT_FILE_SIGNER_V1);
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
 		printf("....fail..cert_svc_load_file_to_context. ret=%d\n", ret); fflush(stderr);
@@ -104,7 +103,6 @@ int test_verify_certificate_with_caflag_succ() {
     int ret = CERT_SVC_ERR_NO_ERROR;
 	CERT_CONTEXT* ctx = cert_svc_cert_context_init();
 
-	// load certificate to context
 	ret = cert_svc_load_file_to_context(ctx, CERT_FILE_SIGNER_AIA);
 	if(ret != CERT_SVC_ERR_NO_ERROR) {
 		printf("....fail..cert_svc_load_file_to_context. ret=%d\n", ret); fflush(stderr);

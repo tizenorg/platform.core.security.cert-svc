@@ -27,8 +27,10 @@
 #include <sys/types.h>
 #include <fts.h>
 #include <unistd.h>
+
+#include <openssl/crypto.h>
 #include <openssl/ssl.h>
-#include <openssl/ocsp.h>
+#include <openssl/x509v3.h>
 
 #include "cert-service.h"
 #include "cert-service-util.h"
@@ -38,17 +40,6 @@
 #define get_ASN1_INTEGER(x)	ASN1_INTEGER_get((x))
 #define get_ASN1_OBJECT(x)	OBJ_nid2ln(OBJ_obj2nid((x)))
 #define get_X509_NAME(x)	X509_NAME_oneline((x), NULL, 0)
-
-
-struct verify_context {
-	int depth;
-};
-
-typedef struct {
-	char* unitName;
-	char* address;
-	int len;
-} name_field;
 
 static unsigned char** __get_field_by_tag(unsigned char* str, int *tag_len, cert_svc_name_fld_data* fld)
 {
@@ -77,6 +68,12 @@ static unsigned char** __get_field_by_tag(unsigned char* str, int *tag_len, cert
 		}
 	}
 	return field;
+}
+
+static X509 *_d2i_X509(cert_svc_mem_buff *certBuf, X509 **out)
+{
+	const unsigned char *certContent = certBuf->data;
+	return d2i_X509(out, &certContent, certBuf->size);
 }
 
 /*SURC k.astrakhant 2011.07.14 : this version can parse info string with any order of tags*/
@@ -291,97 +288,6 @@ int sort_cert_chain(cert_svc_linked_list** unsorted, cert_svc_linked_list** sort
 	return sort_cert_chain(unsorted, sorted);
 }
 
-int is_CACert(cert_svc_mem_buff* cert, int* isCA)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	X509* x = NULL;
-	const unsigned char* p = NULL;
-
-	p = cert->data;
-	d2i_X509(&x, &p, cert->size);
-
-	if(x == NULL) {
-		SLOGE("[ERR][%s] Certificate cannot be parsed.", __func__);
-		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
-		goto err;
-	}
-
-	if(X509_check_ca(x) > 0)
-		(*isCA) = 1;
-	else
-		(*isCA) = 0;
-
-err:
-	if(x != NULL)
-		X509_free(x);
-
-	return ret;
-}
-
-int VerifyCallbackfunc(int ok, X509_STORE_CTX* store)
-{
-	char buf[256] = {0, };
-	struct verify_context* verify_context = (struct verify_context*)X509_STORE_CTX_get_app_data(store);
-
-	if(verify_context != NULL) {
-		verify_context->depth += 1;
-	}
-
-	if(store->current_cert != NULL)
-		X509_NAME_oneline(X509_get_subject_name(store->current_cert), buf, 256);
-	else
-		strncpy(buf, "test", 4);
-
-	if(verify_context != NULL) {
-		SLOGD("[%s] Certificate %i: %s", __func__, verify_context->depth, buf);
-	}
-
-	return ok;
-}
-
-int _is_default_sdk_author(cert_svc_mem_buff* signer_cert, int *is_default)
-{
-	static const char* _sdk_default_author_cert =
-		"MIIClTCCAX2gAwIBAgIGAUX+iaC6MA0GCSqGSIb3DQEBBQUAMFYxGjAYBgNVBAoMEVRpemVuIEFz"
-		"c29jaWF0aW9uMRowGAYDVQQLDBFUaXplbiBBc3NvY2lhdGlvbjEcMBoGA1UEAwwTVGl6ZW4gRGV2"
-		"ZWxvcGVycyBDQTAeFw0xMjExMDEwMDAwMDBaFw0xOTAxMDEwMDAwMDBaMBExDzANBgNVBAMMBmF1"
-		"dGhvcjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAgKCL2LL2sZ9wpS9IMO5GKXCSPAz5oKD0"
-		"o5HMsGMQThCKmSTFPm9J4qj+MYomrufm2RMA8xp1KyJ79KK2BKg4/DE/5vvWLf1Fh8Jwut9JpkfW"
-		"1b8vNul87ft5NJ7ji5cu7wtQYvxC55BcaXAu3yv0AB0/oXVCRuvluSK5X7lvLHsCAwEAAaMyMDAw"
-		"DAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUHAwMwDQYJKoZIhvcN"
-		"AQEFBQADggEBADVYof211H9txSG7Bkmcv0erP4gu7uJt61A+4BYu7g2Gv0sVme8NTvu4289Kpdb8"
-		"pR5nosBnEL81eHJBuiCopWl1Yf12gc1hx/+nhlD8vdE3idXQUewCACLdaWNxJ5FO6RYZa3Stp6nO"
-		"y5U/hTktDpUMlq+ByR7DhjfIFd4D9O4IbQmp7VbsoGrMh8Jqm+q+mSQh6hth0qK2//Z5kHZLQGfi"
-		"m1q/W0L6BlE1+zPo8RdeLxEbsoRMYnvOzTYg2dgq5yPT64SCBEamRYeUdIOjbF+y86/1h6NMhmFu"
-		"12NOMj/hg9MfgsXIksRvusRX16blD7uOUz3DwsASa5YnlBdts48=";
-
-	int encodeLen = (((signer_cert->size + 2) / 3) * 4) + 1;
-	int encodedLen = 0;
-	unsigned char *encodedBuffer = (unsigned char *)malloc(sizeof(unsigned char) * encodeLen);
-    if (encodedBuffer == NULL)
-        return CERT_SVC_ERR_MEMORY_ALLOCATION;
-
-	int ret = cert_svc_util_base64_encode(signer_cert->data, signer_cert->size, encodedBuffer, &encodedLen);
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-	{
-		SLOGE("Failed to encode certificate");
-		free(encodedBuffer);
-		return CERT_SVC_ERR_INVALID_CERTIFICATE;
-	}
-
-	if(!memcmp(_sdk_default_author_cert, encodedBuffer, encodedLen))
-	{
-		SLOGE("Error! Author signature signed by SDK default certificate.");
-		*is_default = 1;
-		free(encodedBuffer);
-		return CERT_SVC_ERR_INVALID_SDK_DEFAULT_AUTHOR_CERT;
-	}
-
-	free(encodedBuffer);
-	*is_default = 0;
-	return CERT_SVC_ERR_NO_ERROR;
-}
-
 int _remove_selfsigned_cert_in_chain(cert_svc_linked_list** certList)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
@@ -448,266 +354,199 @@ err:
 	return ret;
 }
 
-int _verify_certificate_with_caflag(cert_svc_mem_buff* certBuf, cert_svc_linked_list** certList, int checkCaFlag, cert_svc_filename_list* rootPath, int* validity)
+int _verify_certificate_with_caflag(
+	cert_svc_mem_buff *certBuf,
+	cert_svc_linked_list **certList,
+	int checkCaFlag,
+	cert_svc_filename_list *rootPath,
+	int *validity)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
 	cert_svc_linked_list* sorted = NULL;
-	cert_svc_linked_list* p = NULL;
-	cert_svc_linked_list* q = NULL;
+	cert_svc_linked_list* tempNode = NULL;
 	cert_svc_cert_descriptor* findRoot = NULL;
 	cert_svc_filename_list* fileNames = NULL;
 	cert_svc_mem_buff* CACert = NULL;
-	int isCA = -1;
-	// variables for verification
+
 	int certNum = 0;
 	int certIndex = 0, i = 0;
-	const unsigned char* certContent = NULL;
 	X509_STORE_CTX* storeCtx = NULL;
 	X509* rootCert = NULL;
 	X509** interCert = NULL;
 	X509* targetCert = NULL;
 	STACK_OF(X509) *tchain, *uchain;
-	STACK_OF(X509) *resultChain;
-	X509* tmpCert = NULL;
 	int caFlagValidity;
-	int is_default_author = 0;
 
 	OpenSSL_add_all_algorithms();
 	tchain = sk_X509_new_null();
 	uchain = sk_X509_new_null();
-	
-	ret = _is_default_sdk_author(certBuf, &is_default_author);
-	if(ret == CERT_SVC_ERR_INVALID_SDK_DEFAULT_AUTHOR_CERT && is_default_author)
-		return CERT_SVC_ERR_INVALID_SDK_DEFAULT_AUTHOR_CERT;
-
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-		return CERT_SVC_ERR_INVALID_CERTIFICATE;	
 
 	findRoot = (cert_svc_cert_descriptor*)malloc(sizeof(cert_svc_cert_descriptor));
-	if(findRoot == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory for certificate descriptor.", __func__);
+	if (findRoot == NULL) {
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
 
 	memset(findRoot, 0x00, sizeof(cert_svc_cert_descriptor));
 
-	if((*certList) != NULL) {
+	if (*certList != NULL) {
 		/* remove self-signed certificate in certList */
-		if((ret = _remove_selfsigned_cert_in_chain(certList)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to remove self-signed certificate in chain.", __func__);
-			goto err;
-		}
-		/* sort certList */
-		if((ret = sort_cert_chain(certList, &sorted)) != CERT_SVC_ERR_NO_ERROR) {
-			SLOGE("[ERR][%s] Fail to sort certificate chain.", __func__);
+		ret = _remove_selfsigned_cert_in_chain(certList);
+		if (ret != CERT_SVC_ERR_NO_ERROR) {
+			SLOGE("Fail to remove self-signed certificate in chain.");
 			goto err;
 		}
 
-		/* find root cert from store, the SUBJECT field of root cert is same with ISSUER field of certList[0] */
-		p = sorted;
-		while(p->next != NULL) {
+		/* sort certList */
+		ret = sort_cert_chain(certList, &sorted);
+		if (ret != CERT_SVC_ERR_NO_ERROR) {
+			SLOGE("Fail to sort certificate chain.");
+			goto err;
+		}
+
+		/*
+		 *  find root cert from store, the SUBJECT field of root cert
+		 *  is same with ISSUER field of certList[0]
+		 */
+		tempNode = sorted;
+		while (tempNode->next != NULL) {
 			certNum++;
-			p = p->next;
+			tempNode = tempNode->next;
 		}
 		certNum++;
 
-		ret = _extract_certificate_data(p->certificate, findRoot);
-	}
-	else
+		ret = _extract_certificate_data(tempNode->certificate, findRoot);
+	} else {
 		ret = _extract_certificate_data(certBuf, findRoot);
+	}
 
-	if(ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to extract certificate data", __func__);
+	if (ret != CERT_SVC_ERR_NO_ERROR) {
+		SLOGE("Fail to extract certificate data");
 		goto err;
 	}
 
-	if((ret = _search_certificate(&fileNames, SUBJECT_STR, (char*)findRoot->info.issuerStr)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to search root certificate", __func__);
+	ret = _search_certificate(&fileNames, SUBJECT_STR, (char*)findRoot->info.issuerStr);
+	if (ret != CERT_SVC_ERR_NO_ERROR) {
+		SLOGE("Fail to search root certificate");
 		goto err;
 	}
 
-	if(fileNames->filename == NULL) {
-		SLOGE("[ERR][%s] There is no CA certificate.", __func__);
+	if (fileNames->filename == NULL) {
 		ret = CERT_SVC_ERR_NO_ROOT_CERT;
 		goto err;
 	}
 
 	CACert = (cert_svc_mem_buff*)malloc(sizeof(cert_svc_mem_buff));
-	if(CACert == NULL) {
-		SLOGE("[ERR][%s] Failed to allocate memory for ca cert.", __func__);
+	if (CACert == NULL) {
 		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 		goto err;
 	}
 
 	memset(CACert, 0x00, sizeof(cert_svc_mem_buff));
 
-	// use the first found CA cert - ignore other certificate(s). assume that there is JUST one CA cert
-	if((ret = cert_svc_util_load_file_to_buffer(fileNames->filename, CACert)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to load CA cert to buffer.", __func__);
+	/* use the first found CA cert - ignore other certificate(s). */
+	ret = cert_svc_util_load_file_to_buffer(fileNames->filename, CACert);
+	if (ret != CERT_SVC_ERR_NO_ERROR) {
+		SLOGE("Fail to load CA cert to buffer.");
 		goto err;
 	}
 
-	// store root certicate path into ctx
+	/* store root certicate path into ctx */
 	strncpy(rootPath->filename, fileNames->filename, CERT_SVC_MAX_FILE_NAME_SIZE - 1);
 	rootPath->filename[CERT_SVC_MAX_FILE_NAME_SIZE - 1] = '\0';
 
-	if((ret = is_CACert(CACert, &isCA)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] CA certificate is invalid.", __func__);
-		goto err;
-	}
-
-	if(isCA != 1) {	// NOT CA certificate
-		SLOGE("[ERR][%s] Found certificate is NOT CA certificate.", __func__);
-		ret = CERT_SVC_ERR_NO_ROOT_CERT;
-		goto err;
-	}
-
-	/* verify */
-	// insert root certificate into trusted chain
-	certContent = CACert->data;
-	d2i_X509(&rootCert, &certContent, CACert->size);
-	if(!(sk_X509_push(tchain, rootCert))) {
-		SLOGE("[ERR][%s] Fail to push certificate into stack.", __func__);
+	/* insert root certificate into trusted chain */
+	_d2i_X509(CACert, &rootCert);
+	if (!sk_X509_push(tchain, rootCert)) {
+		SLOGE("Fail to push certificate into stack.");
 		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}
 
-	certContent = certBuf->data;
-	d2i_X509(&targetCert, &certContent, certBuf->size);
+	_d2i_X509(certBuf, &targetCert);
 
-	q = sorted; // first item is the certificate that user want to verify
-
-	// insert all certificate(s) into chain
-	if(q != NULL) {	// has 2 or more certificates
-		certIndex = 0;
+	if (sorted != NULL) {
 		interCert = (X509**)malloc(sizeof(X509*) * certNum);
-		if(interCert == NULL) {
-			SLOGE("[ERR][%s] Failed to allocate memory for interim certificate.", __func__);
+		if (interCert == NULL) {
 			ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
 			goto err;
 		}
 
 		memset(interCert, 0x00, (sizeof(X509*) * certNum));
-		while(1) {
-			certContent = q->certificate->data;
-			if(!d2i_X509(&interCert[certIndex], &certContent, q->certificate->size)) {
-				SLOGE("[ERR][%s] Fail to load certificate into memory.", __func__);
+		for (tempNode = sorted, certIndex = 0;
+				tempNode != NULL;
+				tempNode = tempNode->next, certIndex++) {
+
+			_d2i_X509(tempNode->certificate, &interCert[certIndex]);
+			if (interCert[certIndex] == NULL) {
+				SLOGE("Invalid certificate. failed to parse certificate.");
 				ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
 				goto err;
 			}
-			if(!(sk_X509_push(uchain, interCert[certIndex]))) {
-				SLOGE("[ERR][%s] Fail to push certificate into stack.", __func__);
+
+			/* insert all certificate(s) into chain */
+			if (!sk_X509_push(uchain, interCert[certIndex])) {
+				SLOGE("Fail to push certificate into stack.");
 				ret = CERT_SVC_ERR_INVALID_OPERATION;
 				goto err;
-			}
-
-			if(q->next == NULL)
-				break;
-			else {
-				q = q->next;
-				certIndex++;
 			}
 		}
 	}
 
 	storeCtx = X509_STORE_CTX_new();
 
-	if(!X509_STORE_CTX_init(storeCtx, 0, targetCert, uchain)) {
-		SLOGE("[ERR][%s] Fail to initialize X509 store context.", __func__);
+	if (!X509_STORE_CTX_init(storeCtx, 0, targetCert, uchain)) {
+		SLOGE("Fail to initialize X509 store context.");
+		ret = CERT_SVC_ERR_INVALID_OPERATION;
 		goto err;
 	}
-	struct verify_context verify_context = { 0 };
-	X509_STORE_CTX_set_app_data(storeCtx, &verify_context);
-	X509_STORE_CTX_set_verify_cb(storeCtx, VerifyCallbackfunc);
+
 	X509_STORE_CTX_trusted_stack(storeCtx, tchain);
 
-	SLOGD("verify signer certificate");
-	if(((*validity) = X509_verify_cert(storeCtx)) != 1) {
+	*validity = X509_verify_cert(storeCtx);
+	if (*validity != 1) {
 		int error = X509_STORE_CTX_get_error(storeCtx);
 
-		SLOGE("[ERR][%s] Fail to verify certificate chain, validity: [%d]", __func__, (*validity));
 		SLOGE("err str: [%s]", X509_verify_cert_error_string(error));
-
-		// check level
-		int cert_type=0;
-		char *fingerprint = NULL;
-		unsigned char *certdata = NULL;
-		int certSize = 0;
-
-		certdata = CACert->data;
-		certSize = CACert->size;
-
-		ret = get_certificate_fingerprint(certdata, certSize, &fingerprint);
-		if(ret != CERT_SVC_ERR_NO_ERROR)
-		{
-			SLOGE("Failed to get fingerprint data! %d", ret);
-			goto err;
-		}
-
-		ret = get_type_by_fingerprint(fingerprint, &cert_type);
-		if(ret != CERT_SVC_ERR_NO_ERROR)
-		{
-			SLOGE("Failed to get level! %d", ret);
-			goto err;
-		}
-
-		SLOGD("cert_type = %d", cert_type);
-		if(cert_type != CERT_SVC_TYPE_TEST && cert_type != CERT_SVC_TYPE_VERIFY){
-
-			SLOGD("Level is not Test or Verity");
-			if( error == X509_V_ERR_CERT_NOT_YET_VALID               ||
-		        error == X509_V_ERR_CERT_HAS_EXPIRED                 ||
-		        error == X509_V_ERR_CRL_NOT_YET_VALID                ||
-		        error == X509_V_ERR_CRL_HAS_EXPIRED                  ||
-		        error == X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD   ||
-		        error == X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD    ||
-		        error == X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD   ||
-		        error == X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD)	{
-
-				SLOGD("Skip checking valid time of signer cert");
-				(*validity) = 1;
-		    }
-		}
-		else{
-			ret = CERT_SVC_ERR_IS_EXPIRED;
-			goto err;
-		}
+		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
+		goto err;
 	}
 
-	if(checkCaFlag) { // check strictly
-		resultChain = X509_STORE_CTX_get1_chain(storeCtx);
-		while((tmpCert = sk_X509_pop(resultChain))) {
-			caFlagValidity = X509_check_ca(tmpCert);
-			if(caFlagValidity != 1 && (sk_X509_pop(resultChain)) != NULL) { // the last one is not a CA.
-				(*validity) = 0;
-				SLOGE("[ERR][%s] Invalid CA Flag for CA Certificate, validity: [%d]", __func__, (*validity));
-				break;
-			}
+	if (checkCaFlag) {
+		caFlagValidity = X509_check_ca(rootCert);
+		if (caFlagValidity != 1) {
+			*validity = 0;
+			SLOGE("Invalid CA Flag for CA Certificate, caFlagValidity: [%d]", caFlagValidity);
 		}
 	}
 
 err:
-	if(rootCert != NULL)
+	if (ret != CERT_SVC_ERR_NO_ERROR)
+		SLOGE("Error in cert-service-process. code[%d]", ret);
+
+	if (rootCert != NULL)
 		X509_free(rootCert);
-	if(targetCert != NULL)
+
+	if (targetCert != NULL)
 		X509_free(targetCert);
-	if(storeCtx != NULL)
+
+	if (storeCtx != NULL)
 		X509_STORE_CTX_free(storeCtx);
-	if(tchain != NULL)
+
+	if (tchain != NULL)
 		sk_X509_free(tchain);
-	if(uchain != NULL)
+
+	if (uchain != NULL)
 		sk_X509_free(uchain);
 
-	if(interCert != NULL) {
-		for(i = 0; i < certNum; i++) {
-			if(interCert[i] != NULL)
+	if (interCert != NULL) {
+		for (i = 0; i < certNum; i++) {
+			if (interCert[i] != NULL)
 				X509_free(interCert[i]);
 		}
 		free(interCert);
 	}
 
-	//EVP_cleanup();
 	release_certificate_buf(CACert);
 	release_certificate_data(findRoot);
 	release_filename_list(fileNames);
@@ -716,108 +555,10 @@ err:
 	return ret;
 }
 
-int _verify_signature(cert_svc_mem_buff* certBuf, unsigned char* message, int msgLen, unsigned char* signature, char* algo, int* validity)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	X509* x = NULL;
-	const unsigned char* p = NULL;
-	// hash
-	EVP_MD_CTX* mdctx = NULL;
-	const EVP_MD* md = NULL;
-	// signature
-	unsigned char* decodedSig = NULL;
-	int decodedSigLen = 0;
-	int sigLen = 0;
-	// public key
-	EVP_PKEY *pkey = NULL;
-
-	OpenSSL_add_all_digests();
-
-	/* load certificate into buffer */
-	p = certBuf->data;
-	d2i_X509(&x, &p, certBuf->size);
-	if(x == NULL) {
-		SLOGE("[ERR][%s] Fail to allocate X509 structure.", __func__);
-		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
-		goto err;
-	}
-
-	/* load signature and decode */
-	sigLen = strlen((const char*)signature);
-	decodedSigLen = ((sigLen / 4) * 3) + 1;
-
-	if(!(decodedSig = (unsigned char*)malloc(sizeof(unsigned char) * decodedSigLen))) {
-		SLOGE("[ERR][%s] Fail to allocate memory.", __func__);
-		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
-		goto err;
-	}
-	memset(decodedSig, 0x00, decodedSigLen);
-	if((ret = cert_svc_util_base64_decode(signature, sigLen, decodedSig, &decodedSigLen)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to base64 decode.", __func__);
-		ret = CERT_SVC_ERR_INVALID_OPERATION;
-		goto err;
-	}
-
-	/* get public key */
-	pkey = X509_get_pubkey(x);
-
-	/* make EVP_MD_CTX */
-	if(!(mdctx = EVP_MD_CTX_create())) {
-		ret = CERT_SVC_ERR_MEMORY_ALLOCATION;
-		goto err;
-	}
-
-	if(algo == NULL) {	// if hash algorithm is not defined,
-		if(!(md = EVP_get_digestbyobj(x->cert_info->signature->algorithm))) {	// get hash algorithm
-			SLOGE("[ERR][%s] Fail to get hash algorithm.", __func__);
-			ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
-			goto err;
-		}
-	}
-	else {	// if hash algorithm is defined,
-		if(!(md = EVP_get_digestbyname(algo))) {	// get hash algorithm
-			SLOGE("[ERR][%s] Fail to get hash algorithm.", __func__);
-			ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
-			goto err;
-		}
-	}
-
-	/* initialization */
-	if(EVP_VerifyInit_ex(mdctx, md, NULL) != 1) {
-		SLOGE("[ERR][%s] Fail to execute EVP_VerifyInit_ex().", __func__);
-		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
-		goto err;
-	}
-	if(EVP_VerifyUpdate(mdctx, message, msgLen) != 1) {
-		SLOGE("[ERR][%s] Fail to execute EVP_VerifyUpdate().", __func__);
-		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
-		goto err;
-	}
-	if(((*validity) = EVP_VerifyFinal(mdctx, decodedSig, decodedSigLen, pkey)) != 1) {
-		SLOGE("[ERR][%s] Fail to verify signature.", __func__);
-		ret = CERT_SVC_ERR_INVALID_SIGNATURE;
-		goto err;
-	}
-
-err:
-	if(x != NULL)
-		X509_free(x);
-	if(decodedSig != NULL)
-		free(decodedSig);
-	if(pkey != NULL)
-		EVP_PKEY_free(pkey);
-	if(mdctx != NULL)
-		EVP_MD_CTX_destroy(mdctx);
-	//EVP_cleanup();
-
-	return ret;
-}
-
 int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor* certDesc)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
 	X509* x = NULL;
-	const unsigned char* p = NULL;
 	int i = 0;
 	// get signature algorithm
 	char* signatureAlgo = NULL;
@@ -852,8 +593,7 @@ int _extract_certificate_data(cert_svc_mem_buff* cert, cert_svc_cert_descriptor*
 
 	memset(certDesc, 0x00, sizeof(cert_svc_cert_descriptor));
 
-	p = cert->data;
-	d2i_X509(&x, &p, cert->size);
+	_d2i_X509(cert, &x);
 	if(x == NULL) {
 		SLOGE("[ERR][%s] Fail to allocate X509 structure.", __func__);
 		ret = CERT_SVC_ERR_INVALID_CERTIFICATE;
@@ -1330,11 +1070,12 @@ out:
 int get_all_certificates(cert_svc_filename_list** allCerts)
 {
     int ret;
-    char *buffer[3];
+    char *buffer[4];
 
     buffer[0] = ROOT_CA_CERTS_DIR;
     buffer[1] = CERTSVC_DIR;
-    buffer[2] = NULL;
+    buffer[2] = SYSTEM_CERT_DIR;
+    buffer[3] = NULL;
 
     if (!allCerts) {
         SLOGE("[ERR][%s] Invalid argument.", __func__);
@@ -1660,92 +1401,3 @@ int release_filename_list(cert_svc_filename_list* fileNames)
 
 	return ret;
 }
-
-int get_visibility(CERT_CONTEXT* context, int* visibility)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	unsigned char * cert = NULL;
-	int certSize = 0;
-	char *fingerprint = NULL;
-
-	if(!context->certBuf)
-	{
-		SLOGE("certBuf is NULL!");
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-	if(!context->certBuf->size)
-	{
-		SLOGE("certBuf size is wrong");
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	cert = context->certBuf->data;
-	certSize = context->certBuf->size;
-
-	if(cert == NULL || !certSize)
-	{
-		SLOGE("cert is or invalid!");
-		return CERT_SVC_ERR_INVALID_CERTIFICATE;
-	}
-
-	ret = get_certificate_fingerprint(cert, certSize, &fingerprint);
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-	{
-		SLOGE("Failed to get fingerprint data! %d", ret);
-		return ret;
-	}
-
-	ret = get_visibility_by_fingerprint(fingerprint, visibility);
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-	{
-		SLOGE("Failed to get visibility! %d", ret);
-		return ret;
-	}
-
-	return CERT_SVC_ERR_NO_ERROR;
-}
-
-int get_certificate_type(CERT_CONTEXT* context, int* cert_type)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-	unsigned char * cert = NULL;
-	int certSize = 0;
-	char *fingerprint = NULL;
-
-	if(!context->certBuf)
-	{
-		SLOGE("certBuf is NULL!");
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-	if(!context->certBuf->size)
-	{
-		SLOGE("certBuf size is wrong");
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	cert = context->certBuf->data;
-	certSize = context->certBuf->size;
-
-	if(cert == NULL || !certSize)
-	{
-		SLOGE("cert is or invalid!");
-		return CERT_SVC_ERR_INVALID_CERTIFICATE;
-	}
-
-	ret = get_certificate_fingerprint(cert, certSize, &fingerprint);
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-	{
-		SLOGE("Failed to get fingerprint data! %d", ret);
-		return ret;
-	}
-	
-	ret = get_type_by_fingerprint(fingerprint, cert_type);
-	if(ret != CERT_SVC_ERR_NO_ERROR)
-	{
-		SLOGE("Failed to get visibility! %d", ret);
-		return ret;
-	}
-
-	return CERT_SVC_ERR_NO_ERROR;
-}
-

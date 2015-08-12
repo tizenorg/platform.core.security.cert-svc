@@ -554,7 +554,7 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
             goto free_memory;
         }
 
-        res = X509_STORE_load_locations(cert_store, NULL, CERTSVC_SSL_CERTS_DIR);
+        res = X509_STORE_load_locations(cert_store, NULL, SYSTEM_CERT_DIR);
         if (res != 1) {
             SLOGE("P12 load certificate store failed");
             result = CERTSVC_FAIL;

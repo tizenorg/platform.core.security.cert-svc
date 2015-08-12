@@ -40,7 +40,6 @@ ADD_DEFINITIONS("-DSIGNATURE_SCHEMA_PATH=\"${TZ_SYS_RO_WRT_ENGINE}/schema.xsd\""
 ADD_DEFINITIONS("-DCERTSVC_DIR=\"${TZ_SYS_SHARE}/cert-svc/certs/\"")
 ADD_DEFINITIONS("-DCERTSVC_PKCS12_STORAGE_DIR=\"${TZ_SYS_SHARE}/cert-svc/pkcs12/\"")
 ADD_DEFINITIONS("-DSYSTEM_CERT_DIR=\"${TZ_SYS_ETC}/ssl/certs/\"")
-ADD_DEFINITIONS("-DCERTSVC_SSL_CERTS_DIR=\"${TZ_SYS_SHARE}/cert-svc/certs/ssl/\"")
 
 CONFIGURE_FILE(cert-svc.pc.in cert-svc.pc @ONLY)
 CONFIGURE_FILE(cert-svc-vcore.pc.in cert-svc-vcore.pc @ONLY)

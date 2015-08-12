@@ -102,8 +102,6 @@ mkdir -p %{buildroot}%{_unitdir}/sockets.target.wants
 ln -s ../cert-server.service %{buildroot}%{_unitdir}/multi-user.target.wants/
 ln -s ../cert-server.socket %{buildroot}%{_unitdir}/sockets.target.wants/
 
-ln -sf %{TZ_SYS_ETC}/ssl/certs %{buildroot}%{TZ_SYS_SHARE}/cert-svc/certs/ssl
-
 %clean
 rm -rf %{buildroot}
 
@@ -161,7 +159,6 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %{TZ_SYS_SHARE}/cert-svc/certs/trusteduser
 %{TZ_SYS_SHARE}/cert-svc/pkcs12
 %{TZ_SYS_SHARE}/cert-svc/dbspace
-%{TZ_SYS_SHARE}/cert-svc/certs/ssl
 
 
 %files devel

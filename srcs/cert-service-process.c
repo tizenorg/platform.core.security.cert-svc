@@ -1289,7 +1289,8 @@ int _get_all_certificates(char *const *paths, cert_svc_filename_list **lst) {
             continue;
 
         len = strlen((const char *)(ftsent->fts_path));
-        if (strcmp((ftsent->fts_path + len - strlen(".pem")), ".pem") != 0)
+        if (strcmp((ftsent->fts_path + len - strlen(".pem")), ".pem") != 0
+            && strcmp((ftsent->fts_path + len - strlen(".der")), ".der") != 0)
             continue;
 
         el = (cert_svc_filename_list*)malloc(sizeof(cert_svc_filename_list));
@@ -1329,10 +1330,11 @@ out:
 int get_all_certificates(cert_svc_filename_list** allCerts)
 {
     int ret;
-    char *buffer[2];
+    char *buffer[3];
 
     buffer[0] = ROOT_CA_CERTS_DIR;
-    buffer[1] = NULL;
+    buffer[1] = CERTSVC_DIR;
+    buffer[2] = NULL;
 
     if (!allCerts) {
         SLOGE("[ERR][%s] Invalid argument.", __func__);

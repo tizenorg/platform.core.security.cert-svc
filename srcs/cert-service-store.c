@@ -60,7 +60,7 @@ int get_file_full_path(char* originalName, const char* location, char* outBuf)
 	memset(pathLocation, 0x00, sizeof(pathLocation));
 
 	if(location == NULL) { 	// use default path
-		strncpy(buf, CERTSVC_SSL_CERTS_DIR, sizeof(buf) - 1);
+		strncpy(buf, SYSTEM_CERT_DIR, sizeof(buf) - 1);
 	}
 	else {
 		int locSize = strlen(location) + strlen(CERTSVC_DIR);

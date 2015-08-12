@@ -32,7 +32,7 @@
 #include "cert-service-debug.h"
 #include "cert-service-store.h"
 
-int get_file_full_path(char* originalName, const char* location, char* outBuf)
+static int get_file_full_path(char* originalName, const char* location, char* outBuf)
 {
 	int ret = CERT_SVC_ERR_NO_ERROR;
 	char pathLocation[CERT_SVC_MAX_FILE_NAME_SIZE];

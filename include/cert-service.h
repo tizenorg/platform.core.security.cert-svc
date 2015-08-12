@@ -17,54 +17,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * @file     cert-service.h
+ * @author   Kyungwook Tak (k.tak@samsung.com)
+ * @version  1.0
+ * @brief    cert-svc CAPI header
  */
 
-/* To prevent inadvertently including a header twice */
 #ifndef CERT_SERVICE_H
 #define CERT_SERVICE_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif	// __cplusplus
+#endif
 
-/*********************************************************************************/
-/* Constants                                                                     */
-/*********************************************************************************/
 /* max size */
 #define CERT_SVC_MAX_CERT_TYPE_SIZE	50
 #define CERT_SVC_MAX_FILE_NAME_SIZE	256
 #define CERT_SVC_MAX_BUFFER_SIZE	(4 * 1024)
-/* error codes */
-#define CERT_SVC_ERR_NO_ERROR	0
-#define CERT_SVC_ERR_UNKNOWN_ERROR	-1
-#define CERT_SVC_ERR_BROKEN_CHAIN	-2
-#define CERT_SVC_ERR_NO_ROOT_CERT	-3
-#define CERT_SVC_ERR_INVALID_SIGNATURE	-4
-#define CERT_SVC_ERR_INVALID_CERTIFICATE	-5
-#define CERT_SVC_ERR_FILE_IO	-6
-#define CERT_SVC_ERR_UNSUPPORTED_HASH_TYPE	-7
-#define CERT_SVC_ERR_UNSUPPORTED_KEY_TYPE	-8
-#define CERT_SVC_ERR_INVALID_OPERATION	-9
-#define CERT_SVC_ERR_BUFFER_TOO_SMALL	-10
-#define CERT_SVC_ERR_NO_MORE_CERTIFICATE	-11
-#define CERT_SVC_ERR_DUPLICATED_CERTIFICATE	-12
-#define CERT_SVC_ERR_SYSTEM_CALL	-13
-#define CERT_SVC_ERR_MEMORY_ALLOCATION	-14
-#define CERT_SVC_ERR_INVALID_PARAMETER	-15
-#define CERT_SVC_ERR_PERMISSION_DENIED	-16
-#define CERT_SVC_ERR_IS_EXPIRED	-17
 
-#define CERT_SVC_ERR_INVALID_NO_DEVICE_PROFILE      -25
-#define CERT_SVC_ERR_INVALID_DEVICE_UNIQUE_ID       -26
-#define CERT_SVC_ERR_INVALID_SDK_DEFAULT_AUTHOR_CERT -27
-#define CERT_SVC_ERR_IN_DISTRIBUTOR_CASE_AUTHOR_CERT -28
-#define CERT_SVC_ERR_IN_AUTHOR_CASE_DISTRIBUTOR_CERT -29
+/* error codes */
+#define CERT_SVC_ERR_NO_ERROR                  0
+#define CERT_SVC_ERR_UNKNOWN_ERROR             (-1)
+#define CERT_SVC_ERR_BROKEN_CHAIN              (-2)
+#define CERT_SVC_ERR_NO_ROOT_CERT              (-3)
+#define CERT_SVC_ERR_INVALID_SIGNATURE         (-4)
+#define CERT_SVC_ERR_INVALID_CERTIFICATE       (-5)
+#define CERT_SVC_ERR_FILE_IO                   (-6)
+#define CERT_SVC_ERR_UNSUPPORTED_HASH_TYPE     (-7)
+#define CERT_SVC_ERR_UNSUPPORTED_KEY_TYPE      (-8)
+#define CERT_SVC_ERR_INVALID_OPERATION         (-9)
+#define CERT_SVC_ERR_BUFFER_TOO_SMALL          (-10)
+#define CERT_SVC_ERR_NO_MORE_CERTIFICATE       (-11)
+#define CERT_SVC_ERR_DUPLICATED_CERTIFICATE    (-12)
+#define CERT_SVC_ERR_SYSTEM_CALL               (-13)
+#define CERT_SVC_ERR_MEMORY_ALLOCATION         (-14)
+#define CERT_SVC_ERR_INVALID_PARAMETER         (-15)
+#define CERT_SVC_ERR_PERMISSION_DENIED         (-16)
+#define CERT_SVC_ERR_IS_EXPIRED                (-17)
+#define CERT_SVC_ERR_INVALID_NO_DEVICE_PROFILE (-25)
+#define CERT_SVC_ERR_INVALID_DEVICE_UNIQUE_ID  (-26)
 
 #define CERT_SVC_STORE_PATH "/usr/share/cert-svc/certs/"
 
-/*********************************************************************************/
-/* Type definitions                                                              */
-/*********************************************************************************/
 typedef enum {
 	SEARCH_FIELD_START = 0,
 	ISSUER_COUNTRY = 0,
@@ -85,22 +79,6 @@ typedef enum {
 	SUBJECT_STR,
 	SEARCH_FIELD_END = 16,
 } search_field;
-
-typedef enum cert_svc_visibility_t {
-	CERT_SVC_VISIBILITY_DEVELOPER = 1,
-	CERT_SVC_VISIBILITY_PUBLIC = 1 << 6,
-	CERT_SVC_VISIBILITY_PARTNER = 1 << 7,
-	CERT_SVC_VISIBILITY_PARTNER_OPERATOR = 1 << 8,
-	CERT_SVC_VISIBILITY_PARTNER_MANUFACTURER = 1 << 9,
-	CERT_SVC_VISIBILITY_PLATFORM = 1 << 10
-} cert_svc_visibility;
-
-typedef enum cert_svc_type_t {
-	CERT_SVC_TYPE_NO_TYPE = 0,
-	CERT_SVC_TYPE_TEST = 	1 << 1,
-	CERT_SVC_TYPE_VERIFY =	1 << 2,
-	CERT_SVC_TYPE_STORE =	1 << 3
-} cert_svc_type;
 
 typedef struct {
 	unsigned int firstSecond;
@@ -186,9 +164,6 @@ typedef struct {
 	cert_svc_filename_list* fileNames;
 } CERT_CONTEXT;
 
-/*********************************************************************************/
-/* Function definitions                                                          */
-/*********************************************************************************/
 CERT_CONTEXT* cert_svc_cert_context_init();
 int cert_svc_cert_context_final(CERT_CONTEXT* ctx);
 
@@ -201,19 +176,16 @@ int cert_svc_push_file_into_context(CERT_CONTEXT* ctx, const char* filePath);
 int cert_svc_add_certificate_to_store(const char* filePath, const char* location);
 int cert_svc_delete_certificate_from_store(const char* fileName, const char* location);
 int cert_svc_verify_certificate(CERT_CONTEXT* ctx, int* validity);
-int cert_svc_verify_package_certificate(CERT_CONTEXT* ctx, int* validity, const char* signatureFile);
 int cert_svc_verify_certificate_with_caflag(CERT_CONTEXT* ctx, int* validity);
-int cert_svc_verify_signature(CERT_CONTEXT* ctx, unsigned char* message, int msgLen, unsigned char* signature, char* algo, int* validity);
 int cert_svc_extract_certificate_data(CERT_CONTEXT* ctx);
 int cert_svc_search_certificate(CERT_CONTEXT* ctx, search_field fldName, char* fldData);
-int cert_svc_get_visibility(CERT_CONTEXT* ctx, int* visibility);
-int cert_svc_get_visibility_by_root_certificate(const char* cert_data, int data_len, int* visibility);
 
-char* cert_svc_get_certificate_crt_file_path(void);
+char *cert_svc_get_certificate_crt_file_path(void);
 int cert_svc_util_parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld);
+
 
 #ifdef __cplusplus
 }
-#endif	// __cplusplus
+#endif
 
-#endif	// CERT_SERVICE_H
+#endif // CERT_SERVICE_H

@@ -19,20 +19,18 @@
  *
  */
 
-/* To prevent inadvertently including a header twice */
 #ifndef CERT_SERVICE_STORE_H
 #define CERT_SERVICE_STORE_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif	// __cplusplus
+#endif
 
-int get_file_full_path(char* originalName, const char* location, char* outBuf);
 int _add_certificate_to_store(const char* filePath, const char* location);
 int _delete_certificate_from_store(const char* filePath, const char* location);
 
 #ifdef __cplusplus
 }
-#endif	// __cplusplus
+#endif
 
-#endif	// CERT_SERVICE_STORE_H
+#endif // CERT_SERVICE_STORE_H

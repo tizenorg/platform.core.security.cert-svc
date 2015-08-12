@@ -197,8 +197,6 @@ err:
 	return ret;
 }
 
-
-
 CERT_SVC_API
 int cert_svc_add_certificate_to_store(const char* filePath, const char* location)
 {
@@ -274,46 +272,6 @@ int cert_svc_delete_certificate_from_store(const char* fileName, const char* loc
 	return CERT_SVC_ERR_NO_ERROR;
 }
 
-
-CERT_SVC_API
-int cert_svc_verify_package_certificate(CERT_CONTEXT* ctx, int* validity, const char* signatureFile)
-{
-	SLOGD("cert_svc_verify_package_certificate");
-	int ca_cflag_check_false = 0;
-
-	int ret = _cert_svc_verify_certificate_with_caflag(ctx, ca_cflag_check_false, validity);
-	if (ret != CERT_SVC_ERR_NO_ERROR)
-		return ret;
-
-	int visibility = 0;
-	ret = cert_svc_get_visibility(ctx, &visibility);
-	if (ret != CERT_SVC_ERR_NO_ERROR)
-		return ret;
-
-	char* sig_file_name = NULL;
-	if ((sig_file_name = strstr(signatureFile, AUTHOR_SIGNATURE))) {
-		SLOGD("signature file : %s %d", sig_file_name, visibility);
-		if (strncmp(sig_file_name, AUTHOR_SIGNATURE, strlen(sig_file_name)) == 0) {
-			if (visibility != CERT_SVC_VISIBILITY_DEVELOPER) {
-				SLOGE("Author signature signed as distributor signature. Invalid!");
-				*validity = 0;
-				return CERT_SVC_ERR_IN_AUTHOR_CASE_DISTRIBUTOR_CERT;
-			}
-		}
-	} else if ((sig_file_name = strstr(signatureFile, DISTRIBUTOR_SIGNATURE))) {
-		SLOGD("signature file : %s %d", sig_file_name, visibility);
-		if (strncmp(sig_file_name, DISTRIBUTOR_SIGNATURE, strlen(sig_file_name)) == 0) {
-			if (visibility == CERT_SVC_VISIBILITY_DEVELOPER) {
-				SLOGE("Distributor signature signed as author signature. Invalid!");
-				*validity = 0;
-				return CERT_SVC_ERR_IN_DISTRIBUTOR_CASE_AUTHOR_CERT;
-			}
-		}
-	}
-
-	return CERT_SVC_ERR_NO_ERROR;
-}
-
 CERT_SVC_API
 int cert_svc_verify_certificate(CERT_CONTEXT* ctx, int* validity)
 {
@@ -324,30 +282,6 @@ CERT_SVC_API
 int cert_svc_verify_certificate_with_caflag(CERT_CONTEXT* ctx, int* validity)
 {
 	return _cert_svc_verify_certificate_with_caflag(ctx, 1, validity);
-}
-
-/*
- * message : unsigned character string
- * signature : base64 encoded string
- */
-CERT_SVC_API
-int cert_svc_verify_signature(CERT_CONTEXT* ctx, unsigned char* message, int msgLen, unsigned char* signature, char* algo, int* validity)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-
-	if (!message || !signature || !ctx || !ctx->certBuf) {
-		SLOGE("[ERR][%s] Invalid parameter, please check your parameter", __func__);
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	if ((ret = _verify_signature(ctx->certBuf, message, msgLen, signature, algo, validity)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to verify signature.", __func__);
-		return ret;
-	}
-
-	SLOGD("[%s] Success to verify signature.", __func__);
-
-	return CERT_SVC_ERR_NO_ERROR;
 }
 
 CERT_SVC_API
@@ -682,84 +616,7 @@ char* cert_svc_get_certificate_crt_file_path(void)
 }
 
 CERT_SVC_API
-int cert_svc_get_visibility(CERT_CONTEXT *ctx, int* visibility)
-{
-	CERT_CONTEXT* context = NULL;
-	int ret = CERT_SVC_ERR_NO_ERROR;
-
-	if (!ctx || !visibility) {
-		SLOGE("Invalid prameters");
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	if (!ctx->fileNames || !ctx->fileNames->filename) {
-		SLOGE("Can not find root certificate path");
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	context = cert_svc_cert_context_init();
-	if (!context) {
-		SLOGE("Out of memory");
-		return CERT_SVC_ERR_MEMORY_ALLOCATION;
-	}
-
-	ret	= cert_svc_load_file_to_context(context, ctx->fileNames->filename);
-	if (ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("failed to load root certficiate");
-		cert_svc_cert_context_final(context);
-		return CERT_SVC_ERR_INVALID_CERTIFICATE;
-	}
-
-	ret = get_visibility(context, visibility);
-
-	cert_svc_cert_context_final(context);
-
-	return ret;
-}
-
-
-CERT_SVC_API
-int cert_svc_get_visibility_by_root_certificate(const char* base64_encoded_data, int data_len, int* visibility)
-{
-	if (!base64_encoded_data|| !data_len) {
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	int ret = get_visibility_by_certificate((const unsigned char *)base64_encoded_data, data_len, visibility);
-	if (ret != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("Failed to get_visibility :%d", ret);
-		return ret;
-	}
-
-	return CERT_SVC_ERR_NO_ERROR;
-}
-
-CERT_SVC_API
 int cert_svc_util_parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld)
 {
 	return parse_name_fld_data(str, fld);
 }
-
-void hex_encoder(const char *src, int srcLen, char *out)
-{
-	int i = 0;
-	unsigned char cLow = 0;
-	unsigned char cHigh = 0;
-
-	for (i = 0; i < srcLen ; i++) {
-		cLow = src[i] & 0x0f;
-		cHigh = (src[i] >> 4) & 0x0f;
-
-		if (cLow <= 9)
-			out[i * 2 + 1] = cLow + '0';
-		else
-			out[i * 2 + 1] = cLow - 10 + 'A';
-
-		if (cHigh <= 9)
-			out[i * 2] = cHigh + '0';
-		else
-			out[i * 2] = cHigh - 10 + 'A';
-	}
-
-}
-

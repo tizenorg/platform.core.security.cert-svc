@@ -27,7 +27,6 @@
 extern "C" {
 #endif	// __cplusplus
 
-int get_file_full_path(char* originalName, const char* location, char* outBuf);
 int _add_certificate_to_store(const char* filePath, const char* location);
 int _delete_certificate_from_store(const char* filePath, const char* location);
 

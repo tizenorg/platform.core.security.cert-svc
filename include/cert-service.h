@@ -201,13 +201,10 @@ int cert_svc_push_file_into_context(CERT_CONTEXT* ctx, const char* filePath);
 int cert_svc_add_certificate_to_store(const char* filePath, const char* location);
 int cert_svc_delete_certificate_from_store(const char* fileName, const char* location);
 int cert_svc_verify_certificate(CERT_CONTEXT* ctx, int* validity);
-int cert_svc_verify_package_certificate(CERT_CONTEXT* ctx, int* validity, const char* signatureFile);
 int cert_svc_verify_certificate_with_caflag(CERT_CONTEXT* ctx, int* validity);
-int cert_svc_verify_signature(CERT_CONTEXT* ctx, unsigned char* message, int msgLen, unsigned char* signature, char* algo, int* validity);
 int cert_svc_extract_certificate_data(CERT_CONTEXT* ctx);
+
 int cert_svc_search_certificate(CERT_CONTEXT* ctx, search_field fldName, char* fldData);
-int cert_svc_get_visibility(CERT_CONTEXT* ctx, int* visibility);
-int cert_svc_get_visibility_by_root_certificate(const char* cert_data, int data_len, int* visibility);
 
 char* cert_svc_get_certificate_crt_file_path(void);
 int cert_svc_util_parse_name_fld_data(unsigned char* str, cert_svc_name_fld_data* fld);

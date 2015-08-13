@@ -56,6 +56,7 @@ public:
         VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, Base64Error);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongParamError);
     };
 
     typedef std::vector<unsigned char> Fingerprint;
@@ -115,6 +116,9 @@ public:
     std::string getOrganizationName(FieldType type = FIELD_SUBJECT) const;
     std::string getOrganizationalUnitName(FieldType type = FIELD_SUBJECT) const;
     std::string getEmailAddres(FieldType type = FIELD_SUBJECT) const;
+
+    // TODO: UID type is unsigned char. std::string should be changed to unsigned char container
+    std::string getUID(FieldType type = FIELD_SUBJECT) const;
     std::string getOCSPURL() const;
 
 
@@ -150,7 +154,9 @@ public:
     std::string getSerialNumberString() const;
     std::string getKeyUsageString() const;
     std::string getSignatureAlgorithmString() const;
+    std::string getPublicKeyAlgoString() const;
     std::string getPublicKeyString() const;
+    void getPublicKeyDER(unsigned char **pubkey, size_t *len) const;
 
     /*
      * 0 - not CA

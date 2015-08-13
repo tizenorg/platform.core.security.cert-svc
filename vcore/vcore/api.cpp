@@ -206,6 +206,9 @@ public:
             case CERTSVC_SUBJECT_STATE_NAME:
                 result = certPtr->getStateOrProvinceName();
                 break;
+            case CERTSVC_SUBJECT_LOCALITY_NAME:
+                result = certPtr->getLocalityName();
+                break;
             case CERTSVC_SUBJECT_ORGANIZATION_NAME:
                 result = certPtr->getOrganizationName();
                 break;
@@ -215,11 +218,22 @@ public:
             case CERTSVC_SUBJECT_EMAIL_ADDRESS:
                 result = certPtr->getEmailAddres();
                 break;
+/*
+            case CERTSVC_SUBJECT_UID:
+                result = certPtr->getUID();
+                break;
+*/
             case CERTSVC_ISSUER_COMMON_NAME:
                 result = certPtr->getCommonName(Certificate::FIELD_ISSUER);
                 break;
+            case CERTSVC_ISSUER_COUNTRY_NAME:
+                result = certPtr->getCountryName(Certificate::FIELD_ISSUER);
+                break;
             case CERTSVC_ISSUER_STATE_NAME:
                 result = certPtr->getStateOrProvinceName(Certificate::FIELD_ISSUER);
+                break;
+            case CERTSVC_ISSUER_LOCALITY_NAME:
+                result = certPtr->getLocalityName(Certificate::FIELD_ISSUER);
                 break;
             case CERTSVC_ISSUER_ORGANIZATION_NAME:
                 result = certPtr->getOrganizationName(Certificate::FIELD_ISSUER);
@@ -227,6 +241,14 @@ public:
             case CERTSVC_ISSUER_ORGANIZATION_UNIT_NAME:
                 result = certPtr->getOrganizationalUnitName(Certificate::FIELD_ISSUER);
                 break;
+            case CERTSVC_ISSUER_EMAIL_ADDRESS:
+                result = certPtr->getEmailAddres(Certificate::FIELD_ISSUER);
+                break;
+/*
+            case CERTSVC_ISSUER_UID:
+                result = certPtr->getUID(Certificate::FIELD_ISSUER);
+                break;
+*/
             case CERTSVC_VERSION:
             {
                 std::stringstream stream;
@@ -242,6 +264,9 @@ public:
                 break;
             case CERTSVC_KEY:
                 result = certPtr->getPublicKeyString();
+                break;
+            case CERTSVC_KEY_ALGO:
+                result = certPtr->getPublicKeyAlgoString();
                 break;
             case CERTSVC_SIGNATURE_ALGORITHM:
                 result = certPtr->getSignatureAlgorithmString();
@@ -489,6 +514,18 @@ public:
             return CERTSVC_WRONG_ARGUMENT;
         }
         *cert = X509_dup(it->second->getX509());
+        return CERTSVC_SUCCESS;
+    }
+
+    inline int getPubkeyDER(const CertSvcCertificate &certificate,
+                            unsigned char **pubkey,
+                            size_t *len)
+    {
+        auto it = m_certificateMap.find(certificate.privateHandler);
+        if (it == m_certificateMap.end() || pubkey == NULL || len == NULL)
+            return CERTSVC_WRONG_ARGUMENT;
+
+        it->second->getPublicKeyDER(pubkey, len);
         return CERTSVC_SUCCESS;
     }
 
@@ -1326,6 +1363,17 @@ void certsvc_certificate_free_x509(X509 *x509)
 {
 	if (x509)
 		X509_free(x509);
+}
+
+int certsvc_certificate_dup_pubkey_der(
+	CertSvcCertificate certificate,
+	unsigned char **pubkey,
+	size_t *len)
+{
+	try {
+		return impl(certificate.privateInstance)->getPubkeyDER(certificate, pubkey, len);
+	} catch (...) {}
+	return CERTSVC_FAIL;
 }
 
 void certsvc_pkcs12_free_evp_pkey(EVP_PKEY* pkey)

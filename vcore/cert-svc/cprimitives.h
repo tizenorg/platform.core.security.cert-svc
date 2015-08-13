@@ -52,6 +52,17 @@ int certsvc_certificate_dup_x509(CertSvcCertificate certificate, X509** cert);
 void certsvc_certificate_free_x509(X509 *x509_copy);
 
 /**
+ * Duplicate pubkey in DER form from CertSvcCertificate.
+ * Remarks: Free returned pubkey after use by free()
+ *
+ * @param[in] certificate Pointer to certificate.
+ * @param[out] pubkey Duplicated certificate in DER form
+ * @param[out] len    Duplicated certificate length
+ * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT, CERTSVC_FAIL
+ */
+int certsvc_certificate_dup_pubkey_der(CertSvcCertificate certificate, unsigned char **pubkey, size_t *len);
+
+/**
  * This will return pointer to EVP_PKEY base openssl struct. This struct must
  * be release with function certsvc_pkcs12_free_evp_pkey
  *

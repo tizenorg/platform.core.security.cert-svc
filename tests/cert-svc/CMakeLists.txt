@@ -18,14 +18,16 @@
 # @brief
 #
 
+SET(CERT_SVC_ORIG_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 SET(CERT_SVC_OGIG_TESTS_SOURCES
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/test_caflag.c
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/test_suite_main.c
+    ${CERT_SVC_ORIG_TESTS_DIR}/test_caflag.c
+    ${CERT_SVC_ORIG_TESTS_DIR}/test_suite_main.c
     ${VCORE_DPL_SOURCES}
     )
 
 INCLUDE_DIRECTORIES(
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc
+    ${CERT_SVC_ORIG_TESTS_DIR}
     ${PROJECT_SOURCE_DIR}/include
     )
 
@@ -48,11 +50,11 @@ INSTALL(TARGETS ${TARGET_TEST_CERT_SVC_OGIG}
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/second_ca.der
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/aia_signer.der
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/rev_signer.der
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/noaia_signer.der
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/v1_signer.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/caflag/second_ca.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/caflag/aia_signer.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/caflag/rev_signer.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/caflag/noaia_signer.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/caflag/v1_signer.der
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/tests/orig_c/data/caflag
     PERMISSIONS OWNER_READ
                 GROUP_READ
@@ -60,10 +62,21 @@ INSTALL(FILES
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/root_ca.der
-    ${PROJECT_SOURCE_DIR}/tests/cert-svc/data/caflag/root_ca_v1.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/caflag/root_ca.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/caflag/root_ca_v1.der
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/certs
     PERMISSIONS OWNER_READ
                 GROUP_READ
                 WORLD_READ
-    )  
+    )
+
+INSTALL(FILES
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/cert0.pem
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/cert1.der
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/cert2fake.pem
+    ${CERT_SVC_ORIG_TESTS_DIR}/data/cert3fake.der
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc/cert-type/
+    PERMISSIONS OWNER_READ
+                GROUP_READ
+                WORLD_READ
+    )

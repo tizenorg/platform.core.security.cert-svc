@@ -1,4 +1,4 @@
-# Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+# Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,26 +17,32 @@
 # @version     1.0
 # @brief
 #
+SET(CERT_SVC_CAPI_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-SET(VCOREC_TESTS_SOURCES
-    ${PROJECT_SOURCE_DIR}/tests/capi/api_tests.cpp
-    ${PROJECT_SOURCE_DIR}/tests/capi/test_suite_01.cpp
+SET(CERT_SVC_CAPI_TESTS_SRCS
+    ${CERT_SVC_CAPI_TESTS_DIR}/main.cpp
+    ${CERT_SVC_CAPI_TESTS_DIR}/common-res.cpp
+    ${CERT_SVC_CAPI_TESTS_DIR}/test-certificate.cpp
+    ${CERT_SVC_CAPI_TESTS_DIR}/test-primitive.cpp
     )
 
 INCLUDE_DIRECTORIES(
+    ${CERT_SVC_CAPI_TESTS_DIR}
     ${PROJECT_SOURCE_DIR}/vcore/src
-    ${PROJECT_SOURCE_DIR}/tests/capi
     ${PROJECT_SOURCE_DIR}/include
     )
 
-ADD_EXECUTABLE(${TARGET_VCOREC_TEST} ${VCOREC_TESTS_SOURCES} ${DPL_TEST_SOURCES})
+ADD_EXECUTABLE(${TARGET_CAPI_TEST}
+    ${CERT_SVC_CAPI_TESTS_SRCS}
+    ${DPL_TEST_SOURCES}
+    )
 
-TARGET_LINK_LIBRARIES(${TARGET_VCOREC_TEST}
+TARGET_LINK_LIBRARIES(${TARGET_CAPI_TEST}
     ${TARGET_VCORE_LIB}
     ${TEST_DEP_LIBRARIES}
     )
 
-INSTALL(TARGETS ${TARGET_VCOREC_TEST}
+INSTALL(TARGETS ${TARGET_CAPI_TEST}
     DESTINATION ${TZ_SYS_BIN}
     PERMISSIONS OWNER_READ
                 OWNER_WRITE
@@ -48,21 +54,9 @@ INSTALL(TARGETS ${TARGET_VCOREC_TEST}
     )
 
 INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/cert_a.pem
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/cert_b.pem
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/pkey.pem
-    DESTINATION ${TZ_SYS_SHARE}/cert-svc/pkcs12/test1st
-    PERMISSIONS OWNER_READ
-                GROUP_READ
-                WORLD_READ
-    )
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/cert0.pem
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/cert1.der
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/cert2fake.pem
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/cert3fake.der
-    ${PROJECT_SOURCE_DIR}/tests/capi/data/root_cacert0.pem
+    ${CERT_SVC_CAPI_TESTS_DIR}/data/root_cacert0.pem
+    ${CERT_SVC_CAPI_TESTS_DIR}/data/root_ca_cert.pem
+    ${CERT_SVC_CAPI_TESTS_DIR}/data/second_ca_cert.pem
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/cert-type/
     PERMISSIONS OWNER_READ
                 GROUP_READ

@@ -273,6 +273,27 @@ std::string Certificate::getEmailAddres(FieldType type) const
     return getField(type, NID_pkcs9_emailAddress);
 }
 
+std::string Certificate::getUID(FieldType type) const
+{
+    ASN1_BIT_STRING *uid = NULL;
+    if (type == FIELD_SUBJECT)
+        uid = m_x509->cert_info->subjectUID;
+    else
+        uid = m_x509->cert_info->issuerUID;
+
+    if (uid->data == NULL)
+        return std::string();
+
+    char *temp = new char[uid->length + 1];
+    memcpy(temp, uid->data, uid->length);
+    temp[uid->length] = 0;
+
+    std::string uidStr(temp);
+    delete []temp;
+
+    return uidStr;
+}
+
 std::string Certificate::getOCSPURL() const
 {
     // TODO verify this code
@@ -503,6 +524,30 @@ std::string Certificate::getPublicKeyString() const
     std::string result(bptr->data, bptr->length);
 
     return result;
+}
+
+void Certificate::getPublicKeyDER(unsigned char **pubkey, size_t *len) const
+{
+    if (pubkey == NULL || len == NULL)
+        VcoreThrowMsg(Certificate::Exception::WrongParamError, "Wrong parameter");
+
+    EVP_PKEY *pkey = X509_get_pubkey(m_x509);
+    unsigned char *_pubkey = NULL;
+    int _len = i2d_PUBKEY(pkey, &_pubkey);
+    EVP_PKEY_free(pkey);
+
+    if (_pubkey == NULL || _len == 0)
+        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
+                      "Error in i2d_PUBKEY");
+
+    *pubkey = _pubkey;
+    *len = static_cast<size_t>(_len);
+}
+
+std::string Certificate::getPublicKeyAlgoString() const
+{
+    return std::string(static_cast<const char *>(
+            OBJ_nid2ln(OBJ_obj2nid(m_x509->cert_info->key->algor->algorithm))));
 }
 
 int Certificate::isCA() const

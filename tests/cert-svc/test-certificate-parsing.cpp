@@ -13,18 +13,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-#include <string>
 
-#include <openssl/x509.h>
+#include <memory>
+#include <functional>
 
 #include <dpl/test/test_runner.h>
-#include <memory>
-
-#include <api_tests.h>
 
 #include <cert-service.h>
 
-RUNNER_TEST_GROUP_INIT(DEPRECATED_API)
+RUNNER_TEST_GROUP_INIT(T0100_CERTIFICATE_PARSING)
 
 typedef std::unique_ptr<CERT_CONTEXT, std::function<int(CERT_CONTEXT*)>> ScopedCertCtx;
 
@@ -34,7 +31,7 @@ typedef std::unique_ptr<CERT_CONTEXT, std::function<int(CERT_CONTEXT*)>> ScopedC
  * description: Loading *.pem file.
  * expect:      *.pem should load with no error.
  */
-RUNNER_TEST(deprecated_api_test01_pem_positive)
+RUNNER_TEST(T0101_pem_positive)
 {
     ScopedCertCtx ctx(cert_svc_cert_context_init(), cert_svc_cert_context_final);
     RUNNER_ASSERT(CERT_SVC_ERR_NO_ERROR ==
@@ -47,7 +44,7 @@ RUNNER_TEST(deprecated_api_test01_pem_positive)
  * description: Loading *.der file.
  * expect:      *.der file should load with no error.
  */
-RUNNER_TEST(deprecated_api_test02_der_positive)
+RUNNER_TEST(T0102_der_positive)
 {
     ScopedCertCtx ctx(cert_svc_cert_context_init(), cert_svc_cert_context_final);
     RUNNER_ASSERT(CERT_SVC_ERR_NO_ERROR ==
@@ -60,7 +57,7 @@ RUNNER_TEST(deprecated_api_test02_der_positive)
  * description: Loading *.pem file.
  * expect:      *.pom file should not load and return error.
  */
-RUNNER_TEST(deprecated_api_test03_pem_negative)
+RUNNER_TEST(T0103_pem_negative)
 {
     ScopedCertCtx ctx(cert_svc_cert_context_init(), cert_svc_cert_context_final);
     RUNNER_ASSERT(CERT_SVC_ERR_NO_ERROR !=
@@ -73,7 +70,7 @@ RUNNER_TEST(deprecated_api_test03_pem_negative)
  * description: Loading *.der file.
  * expect:      *.der file should not load and return error.
  */
-RUNNER_TEST(deprecated_api_test03_der_negative)
+RUNNER_TEST(T0104_der_negative)
 {
     ScopedCertCtx ctx(cert_svc_cert_context_init(), cert_svc_cert_context_final);
     RUNNER_ASSERT(CERT_SVC_ERR_NO_ERROR !=

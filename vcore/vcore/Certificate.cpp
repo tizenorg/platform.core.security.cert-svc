@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -12,15 +12,15 @@
  *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
- */
-/*
+ *
+ *
  * @file        Certificate.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
- * @brief
+ * @brief       Certificate class implementation
  */
-#include <vcore/Certificate.h>
 
+#include <cstdio>
 #include <memory>
 #include <sstream>
 #include <iomanip>
@@ -31,8 +31,18 @@
 #include <dpl/assert.h>
 #include <dpl/log/log.h>
 
-#include <vcore/Base64.h>
-#include <vcore/TimeConversion.h>
+#include "orig/cert-service.h"
+
+#include "vcore/Base64.h"
+#include "vcore/TimeConversion.h"
+
+#include "vcore/Certificate.h"
+
+namespace {
+
+typedef std::unique_ptr<CERT_CONTEXT, std::function<int(CERT_CONTEXT*)> > ScopedCertCtx;
+
+} // namespace anonymous
 
 namespace ValidationCore {
 
@@ -40,16 +50,6 @@ Certificate::Certificate(X509 *cert)
 {
     Assert(cert);
     m_x509 = X509_dup(cert);
-    if (!m_x509)
-        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
-                      "Internal Openssl error in d2i_X509 function.");
-}
-
-Certificate::Certificate(cert_svc_mem_buff &buffer)
-{
-    Assert(buffer.data);
-    const unsigned char *ptr = buffer.data;
-    m_x509 = d2i_X509(NULL, &ptr, buffer.size);
     if (!m_x509)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Internal Openssl error in d2i_X509 function.");
@@ -87,6 +87,24 @@ Certificate::Certificate(const std::string &data,
     if (!m_x509)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Internal Openssl error in d2i_X509 function.");
+}
+
+CertificatePtr Certificate::createFromFile(const std::string &location)
+{
+    ScopedCertCtx ctx(cert_svc_cert_context_init(), cert_svc_cert_context_final);
+    if (ctx.get() == NULL)
+        VcoreThrowMsg(Certificate::Exception::InternalError, "Failed to context init");
+
+    if (CERT_SVC_ERR_NO_ERROR != cert_svc_load_file_to_context(ctx.get(), location.c_str()))
+        VcoreThrowMsg(Certificate::Exception::InternalError, "load_file_to_context err");
+
+    const unsigned char *ptr = ctx.get()->certBuf->data;
+    X509 *x509 = d2i_X509(NULL, &ptr, ctx.get()->certBuf->size);
+    if (!x509)
+        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
+                      "Internal Openssl error in d2i_X509 function.");
+
+    return CertificatePtr(new Certificate(x509));
 }
 
 Certificate::~Certificate()
@@ -271,6 +289,23 @@ std::string Certificate::getOrganizationalUnitName(FieldType type) const
 std::string Certificate::getEmailAddres(FieldType type) const
 {
     return getField(type, NID_pkcs9_emailAddress);
+}
+
+std::string Certificate::getNameHash(FieldType type) const
+{
+    unsigned long ulNameHash;
+    char buf[9] = {0};
+
+    if (type == FIELD_SUBJECT)
+        ulNameHash = X509_subject_name_hash(m_x509);
+    else
+        ulNameHash = X509_issuer_name_hash(m_x509);
+
+    snprintf(buf, 9, "%08lx", ulNameHash);
+
+    LogDebug("str name hash [" << buf << "]");
+
+    return std::string(buf);
 }
 
 std::string Certificate::getUID(FieldType type) const

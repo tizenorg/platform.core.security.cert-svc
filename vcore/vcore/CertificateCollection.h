@@ -43,6 +43,8 @@ public:
     class Exception {
     public:
         VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, CertificateError);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongUsage);
     };
 

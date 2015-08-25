@@ -33,8 +33,8 @@
 #include <ckmc/ckmc-manager.h>
 #include <ckmc/ckmc-error.h>
 
-#include <cert-service.h>
-#include <cert-service-debug.h>
+#include "orig/cert-service.h"
+#include "orig/cert-service-debug.h"
 #include <cert-svc/cerror.h>
 #include <cert-svc/ccert.h>
 #include <vcore/cert-svc-client.h>

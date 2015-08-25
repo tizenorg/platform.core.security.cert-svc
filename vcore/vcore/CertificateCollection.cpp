@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -12,27 +12,36 @@
  *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
- */
-/*
+ *
+ *
  * @file        CertificateCollection.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
- * @version     0.1
- * @brief
+ * @author      Kyungwook Tak (k.tak@samsung.com)
+ * @version     1.0
+ * @brief       Handles certificate chain, make it complete and sort
  */
+
+#include <stdlib.h>
+#include <string.h>
+#include <stddef.h>
+#include <unistd.h>
+#include <dirent.h>
+
+#include <memory>
+#include <functional>
 
 #include <openssl/pem.h>
 #include <openssl/x509.h>
-
-#include <algorithm>
 
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
 #include <cert-svc/cprimitives.h>
 
 #include <dpl/log/log.h>
-#include <vcore/Base64.h>
 
-#include <vcore/CertificateCollection.h>
+#include "vcore/Base64.h"
+
+#include "vcore/CertificateCollection.h"
 
 namespace {
 
@@ -45,63 +54,73 @@ inline std::string toBinaryString(int data)
     return std::string(buffer, sizeof(int));
 }
 
-CertificatePtr getCertFromStore(X509_NAME *subject)
+CertificatePtr searchCertByHash(const std::string &dir, const CertificatePtr &certPtr)
 {
-    if (!subject) {
-        LogError("Invalid input!");
-        return CertificatePtr();
-    }
+	try {
+		const char *hash = certPtr->getNameHash(Certificate::FIELD_ISSUER).c_str();
 
-    CertSvcInstance instance;
-    if (certsvc_instance_new(&instance) != CERTSVC_SUCCESS) {
-        LogError("Failed to make instance");
+		std::unique_ptr<DIR, std::function<int(DIR*)>> dp(::opendir(dir.c_str()), ::closedir);
+		if (dp.get() == NULL) {
+			LogError("Failed open dir[" << dir << "]");
+			return CertificatePtr();
+		}
+
+		size_t len = offsetof(struct dirent, d_name) + pathconf(dir.c_str(), _PC_NAME_MAX) + 1;
+		std::unique_ptr<struct dirent, std::function<void(void*)>>
+			pEntry(static_cast<struct dirent *>(::malloc(len)), ::free);
+
+		struct dirent *dirp = NULL;
+		int ret = 0;
+		while ((ret = readdir_r(dp.get(), pEntry.get(), &dirp)) == 0 && dirp) {
+			if (dirp->d_type == DT_DIR)
+				continue;
+
+			/* filename length should be 10. ex) 1a2b3c4d.1 */
+			if (strlen(dirp->d_name) != 10)
+				continue;
+
+			if (strncmp(dirp->d_name, hash, 8) != 0)
+				continue;
+
+			LogDebug("Found hash matched file! : " << (dir + dirp->d_name));
+
+			CertificatePtr candidate = Certificate::createFromFile(dir + dirp->d_name);
+			if (candidate->getOneLine().compare(certPtr->getOneLine(Certificate::FIELD_ISSUER)) != 0)
+				continue;
+
+			return candidate;
+		}
+
+		if (ret != 0) {
+			LogError("readdir_r error. ret[" << ret << "]");
+			return CertificatePtr();
+		}
+
+		LogWarning("cert not found by hash[" << hash << "]");
 		return CertificatePtr();
-    }
 
-    char buffer[1024];
-    X509_NAME_oneline(subject, buffer, 1024);
-
-    LogDebug("Search certificate with subject: " << buffer);
-	CertSvcCertificateList certList;
-	int result = certsvc_certificate_search(instance, CERTSVC_SUBJECT, buffer, &certList);
-    if (result != CERTSVC_SUCCESS) {
-        LogError("Error during certificate search. result : " << result);
-		certsvc_instance_free(instance);
-        return CertificatePtr();
-    }
-
-	size_t listSize = 0;
-	result = certsvc_certificate_list_get_length(certList, &listSize);
-	if (result != CERTSVC_SUCCESS || listSize <= 0) {
-		LogError("Error in certsvc_certificate_list_get_length. result : " << result);
-		certsvc_instance_free(instance);
-		return CertificatePtr();
+	} catch (const Certificate::Exception::Base &e) {
+		VcoreThrowMsg(
+			CertificateCollection::Exception::CertificateError,
+			"Error in handling certificate : " << e.DumpToString());
+	} catch (const std::exception &e) {
+		VcoreThrowMsg(
+			CertificateCollection::Exception::InternalError,
+			"std::exception occured : " << e.what());
+	} catch (...) {
+		VcoreThrowMsg(
+			CertificateCollection::Exception::InternalError,
+			"Unknown exception in CertificateCollection.");
 	}
 
-	CertSvcCertificate cert;
-	result = certsvc_certificate_list_get_one(certList, 0, &cert);
-	if (result != CERTSVC_SUCCESS) {
-		LogError("Failed to get cert from cert list. result : " << result);
-		certsvc_certificate_list_all_free(certList);
-		certsvc_instance_free(instance);
-		return CertificatePtr();
-	}
 
-	X509 *pCertX509 = NULL;
-	result = certsvc_certificate_dup_x509(cert, &pCertX509);
-	certsvc_certificate_list_all_free(certList);
-	certsvc_instance_free(instance);
-
-    if (result != CERTSVC_SUCCESS || !pCertX509) {
-        LogError("Error during certificate dup x509. result : " << result);
-        return CertificatePtr();
-    }
-
-    CertificatePtr parentCert(new Certificate(pCertX509));
-    X509_free(pCertX509);
-
-    return parentCert;
 }
+
+CertificatePtr getIssuerCertFromStore(const CertificatePtr &certPtr)
+{
+	return searchCertByHash(SYSTEM_CERT_DIR, certPtr);
+}
+
 } // namespace
 
 namespace ValidationCore {
@@ -238,19 +257,18 @@ void CertificateCollection::sortCollection()
 bool CertificateCollection::completeCertificateChain()
 {
     CertificatePtr last = m_certList.back();
-    if (last->isSignedBy(last))
+    if (last->isRootCert())
         return true;
 
-    /* TODO Add getIssuerName function to Certificate.h */
-    CertificatePtr parent = getCertFromStore(X509_get_issuer_name(last->getX509()));
+    CertificatePtr rootCert = getIssuerCertFromStore(last);
 
-    if (!parent.get())
+    if (!rootCert.get())
         return false;
 
-    m_certList.push_back(parent);
-    if (!parent->isSignedBy(parent))
+    if (!rootCert->isRootCert())
         return false;
 
+    m_certList.push_back(rootCert);
     return true;
 }
 

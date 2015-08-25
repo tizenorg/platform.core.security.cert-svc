@@ -33,8 +33,8 @@
 #include <ckmc/ckmc-manager.h>
 #include <ckmc/ckmc-error.h>
 
-#include <cert-service.h>
-#include <cert-service-debug.h>
+#include "orig/cert-service.h"
+#include "orig/cert-service-debug.h"
 #include <cert-svc/cerror.h>
 #include <cert-svc/ccert.h>
 #include <vcore/cert-svc-client.h>
@@ -107,10 +107,10 @@ char *get_complete_path(const char *str1, const char *str2)
 	else
 		as_result = asprintf(&result, "%s%s", str1, str2);
 
-	if (as_result >= CERTSVC_SUCCESS)
-		return result;
-	else
+	if (as_result < 0)
 		return NULL;
+
+	return result;
 }
 
 /* TODO: root ssl file system refactor */

@@ -6,6 +6,6 @@ includedir=@INCLUDEDIR@
 Name: cert-svc-vcore
 Description: cert-svc-vcore
 Version: @VERSION@
-Requires: cert-svc libxml-2.0 libxslt openssl xmlsec1
+Requires: libxml-2.0 libxslt openssl xmlsec1
 Libs: -L${libdir} -lcert-svc-vcore
 Cflags: -I${includedir}/cert-svc

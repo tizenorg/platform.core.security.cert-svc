@@ -240,6 +240,9 @@ static int makeDataBySignature(
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return -1;
+	} catch (const std::exception &e) {
+		LogError("std exception occured : " << e.what());
+		return -1;
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::makeChainBySignature");
 		return -1;
@@ -368,6 +371,9 @@ SignatureValidator::Result SignatureValidator::check(
 		 *  just return signature disregard or verified
 		 *  because exception case will be handled by cert-checker after app installed
 		 */
+	} catch (const std::exception &e) {
+		LogError("std exception occured : " << e.what());
+		return SIGNATURE_INVALID;
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::check");
 		return SIGNATURE_INVALID;

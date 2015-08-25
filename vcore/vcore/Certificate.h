@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -12,15 +12,14 @@
  *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
- */
-/*
+ *
+ *
  * @file        Certificate.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.1
- * @brief
+ * @brief       Certificate class
  */
-#ifndef _VALIDATION_CORE_CERTIFICATE_H_
-#define _VALIDATION_CORE_CERTIFICATE_H_
+#pragma once
 
 #include <list>
 #include <set>
@@ -31,9 +30,7 @@
 
 #include <openssl/x509.h>
 
-#include <vcore/exception.h>
-
-#include <cert-service.h>
+#include "vcore/exception.h"
 
 extern "C" {
 struct x509_st;
@@ -57,6 +54,7 @@ public:
         VCORE_DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, Base64Error);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongParamError);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError);
     };
 
     typedef std::vector<unsigned char> Fingerprint;
@@ -82,9 +80,9 @@ public:
         FORM_BASE64
     };
 
-    explicit Certificate(X509 *cert);
+    static CertificatePtr createFromFile(const std::string &location);
 
-    explicit Certificate(cert_svc_mem_buff &buffer);
+    explicit Certificate(X509 *cert);
 
     explicit Certificate(const std::string &data,
                          FormType form = FORM_DER);
@@ -117,9 +115,12 @@ public:
     std::string getOrganizationalUnitName(FieldType type = FIELD_SUBJECT) const;
     std::string getEmailAddres(FieldType type = FIELD_SUBJECT) const;
 
+    std::string getNameHash(FieldType type = FIELD_SUBJECT) const;
+
     // TODO: UID type is unsigned char. std::string should be changed to unsigned char container
     std::string getUID(FieldType type = FIELD_SUBJECT) const;
     std::string getOCSPURL() const;
+
 
 
     // Openssl supports 9 types of alternative name filed.
@@ -180,5 +181,3 @@ protected:
     X509 *m_x509;
 };
 } // namespace ValidationCore
-
-#endif // _VALIDATION_CORE_CERTIFICATE_H_

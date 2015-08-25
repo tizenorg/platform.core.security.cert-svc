@@ -42,6 +42,7 @@ extern "C" {
 #define CERTSVC_ALIAS_DOES_NOT_EXIST (-10)  /* Alias no exist in store. */
 #define CERTSVC_INVALID_STORE_TYPE   (-11)  /* User-provided invalid import type for storing in system/email/wifi/vpn store. */
 #define CERTSVC_INVALID_STATUS       (-12)  /* User-provided invalid status while stetting the status for the store system/email/wifi/vpn store. */
+#define CERTSVC_INVALID_CERTIFICATE  (-13)  /* Invalid certificate format or content */
 
 #ifdef __cplusplus
 }

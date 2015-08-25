@@ -26,20 +26,20 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string>
+
 #include <openssl/err.h>
 #include <openssl/pkcs12.h>
 #include <openssl/sha.h>
 #include <openssl/x509.h>
 #include <openssl/pem.h>
 
-#include <cert-service.h>
-#include <cert-service-debug.h>
-#include <cert-svc/cerror.h>
+#include "dpl/log/log.h"
+#include "vcore/Certificate.h"
+#include "vcore/cert-svc-client.h"
+#include "cert-svc/cerror.h"
 
-#include <vcore/cert-svc-client.h>
-#include <vcore/utils.h>
-
-#include <vcore/pkcs12.h>
+#include "vcore/pkcs12.h"
 
 #define SYSCALL(call) while(((call) == -1) && (errno == EINTR))
 
@@ -126,13 +126,13 @@ int read_from_file(const char *fileName, char **certBuffer, int *length)
     struct stat st;
 
     if (stat(fileName, &st) == -1) {
-        SLOGE("Certificate does not exist in disable folder.");
+        LogError("Certificate does not exist in disable folder.");
         result = CERTSVC_FAIL;
         goto err;
     }
 
     if (!(fp_out = fopen(fileName, "rb"))) {
-        SLOGE("Fail to open file for reading, [%s].", fileName);
+        LogError("Fail to open file for reading, [" << fileName << "].");
         result = CERTSVC_FAIL;
         goto err;
     }
@@ -140,14 +140,14 @@ int read_from_file(const char *fileName, char **certBuffer, int *length)
     fseek(fp_out, 0L, SEEK_END);
     certLength = ftell(fp_out);
     if (certLength < 1) {
-        SLOGE("Fail to get certificate length.");
-        result = CERT_SVC_ERR_FILE_IO;
+        LogError("Fail to get certificate length.");
+        result = CERTSVC_IO_ERROR;
         goto err;
     }
 
     *certBuffer = (char*)malloc(sizeof(char) * ((int)certLength + 1));
     if (*certBuffer == NULL) {
-        SLOGE("Fail to allocate memory");
+        LogError("Fail to allocate memory");
         result = CERTSVC_BAD_ALLOC;
         goto err;
     }
@@ -155,7 +155,7 @@ int read_from_file(const char *fileName, char **certBuffer, int *length)
     memset(*certBuffer, 0x00, certLength+1);
     rewind (fp_out);
     if (fread(*certBuffer, sizeof(char), (size_t)certLength, fp_out) != (size_t)certLength) {
-        SLOGE("Fail to read file, [%s]", fileName);
+        LogError("Fail to read file, [" << fileName << "]");
         result = CERTSVC_IO_ERROR;
         goto err;
     }
@@ -245,23 +245,19 @@ int install_pem_file_format_to_store(CertStoreType storeType, const char *certBu
 		const char *alias, const char* path, char *private_key_gname, char *associated_gname, CertType decideCert)
 {
     int result = CERTSVC_SUCCESS;
-    int readCount = 0;
     char* fileName = NULL;
-    char* commonName = NULL;
     char *unique = NULL;
-    BIO* pBio = NULL;
-    X509* x509Struct = NULL;
     struct stat dirST;
 
     if (!certBuffer || !certLength) {
-        SLOGE("Invalid argument. certBuffer is input cert.");
+        LogError("Invalid argument. certBuffer is input cert.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
     if (decideCert == PEM_CRT) {
         result = unique_filename(&unique);
         if (result != CERTSVC_SUCCESS) {
-            SLOGE("Fail to generate unique filename.");
+            LogError("Fail to generate unique filename.");
             return result;
         }
     }
@@ -269,41 +265,19 @@ int install_pem_file_format_to_store(CertStoreType storeType, const char *certBu
         unique = (char*)path;
 
     if (unique == NULL)	{
-        SLOGE("Failed to get unique file name.");
+        LogError("Failed to get unique file name.");
         return result;
     }
 
-    /* Get common name from buffer or from file */
+    std::string commonName;
+
     if (stat(path, &dirST) != -1) {
-        result = get_common_name(path, NULL, &commonName);
-        if (result != CERTSVC_SUCCESS) {
-            pBio = BIO_new(BIO_s_mem());
-            if (pBio == NULL) {
-                SLOGE("Failed to allocate memory.");
-                result = CERTSVC_BAD_ALLOC;
-                goto error;
-            }
-
-            readCount = BIO_write(pBio, (const void*) certBuffer, certLength);
-            if (readCount < 1) {
-                SLOGE("Failed to load cert into bio.");
-                result = CERTSVC_BAD_ALLOC;
-                goto error;
-            }
-
-            x509Struct = PEM_read_bio_X509(pBio, NULL, 0, NULL);
-            if (x509Struct == NULL) {
-                SLOGE("Failed to create x509 structure.");
-                result = CERTSVC_IO_ERROR;
-                goto error;
-            }
-
-            result = get_common_name(NULL, x509Struct, &commonName);
-            if (result != CERTSVC_SUCCESS) {
-                SLOGE("CommonName is NULL");
-                result = CERTSVC_FAIL;
-                goto error;
-            }
+        ValidationCore::CertificatePtr certPtr = ValidationCore::Certificate::createFromFile(std::string(path));
+        commonName = certPtr->getCommonName();
+        if (commonName.empty()) {
+            LogError("CommonName is NULL");
+            result = CERTSVC_FAIL;
+            goto error;
         }
     }
 
@@ -312,21 +286,20 @@ int install_pem_file_format_to_store(CertStoreType storeType, const char *certBu
     if ((decideCert == P12_END_USER) && (private_key_gname != NULL))
         result =  vcore_client_install_certificate_to_store(storeType, fileName, alias, private_key_gname, fileName, certBuffer, certLength, decideCert);
     else if ((decideCert == P12_TRUSTED) || (decideCert == P12_INTERMEDIATE))
-        result =  vcore_client_install_certificate_to_store(storeType, fileName, commonName, NULL, associated_gname, certBuffer, certLength, decideCert);
+        result =  vcore_client_install_certificate_to_store(storeType, fileName, commonName.c_str(), NULL, associated_gname, certBuffer, certLength, decideCert);
     else
-        result =  vcore_client_install_certificate_to_store(storeType, fileName, commonName, NULL, fileName, certBuffer, certLength, decideCert);
+        result =  vcore_client_install_certificate_to_store(storeType, fileName, commonName.c_str(), NULL, fileName, certBuffer, certLength, decideCert);
 
     if (result != CERTSVC_SUCCESS) {
-        SLOGE("Failed to intall certificate. result[%d]", result);
+        LogError("Failed to intall certificate. result[" << result << "]");
         result = CERTSVC_FAIL;
         goto error;
      }
 
-    SLOGD("Success to add certificate in store.");
+    LogDebug("Success to add certificate in store.");
 
 error:
-    if (commonName)
-        free(commonName);
+
     return result;
 }
 
@@ -348,9 +321,8 @@ int install_crt_file(
     char* certBuffer = NULL;
     const char* tailEnd = NULL;
 
-    if (read_from_file(path, &fileContent, &fileSize)!=CERTSVC_SUCCESS)
-    {
-    	SLOGE("Failed to read the file. [%s]",path);
+    if (read_from_file(path, &fileContent, &fileSize)!=CERTSVC_SUCCESS) {
+        LogError("Failed to read the file. [" << path << "]");
         result = CERTSVC_IO_ERROR;
     	goto error;
     }
@@ -363,7 +335,7 @@ int install_crt_file(
     else if ((decideCert == P12_TRUSTED)||(decideCert == P12_INTERMEDIATE))
         header = strstr(tmpBuffer, START_TRUSTED);
     else {
-        SLOGE("Invalid cert.");
+        LogError("Invalid cert.");
         result = CERTSVC_IO_ERROR;
         goto error;
     }
@@ -383,7 +355,7 @@ int install_crt_file(
             tailEnd = END_TRUSTED;
         }
         else {
-            SLOGE("Invalid certificate passed.");
+            LogError("Invalid certificate passed.");
             result = CERTSVC_IO_ERROR;
             goto error;
         }
@@ -394,7 +366,7 @@ int install_crt_file(
             certBuffer = (char*) malloc(sizeof(char) * (certLength+2));
             if (certBuffer == NULL) {
                 result = CERTSVC_BAD_ALLOC;
-                SLOGE("Fail to allocate memory.");
+                LogError("Fail to allocate memory.");
                 goto error;
             }
 
@@ -406,13 +378,13 @@ int install_crt_file(
                                                       path, private_key_gname, associated_gname, decideCert);
             if (result != CERTSVC_SUCCESS) {
                 result = CERTSVC_FAIL;
-                SLOGE("Fail to install certificate[%s]", path);
+                LogError("Fail to install certificate[" << path << "]");
             }
         }
     }
     else {
-        SLOGE("Invalid file type passed.");
-        result = CERT_SVC_ERR_INVALID_CERTIFICATE;
+        LogError("Invalid file type passed.");
+        result = CERTSVC_INVALID_CERTIFICATE;
     }
 
 error:
@@ -428,24 +400,24 @@ int handle_crt_pem_file_installation(CertStoreType storeType, const char *path, 
     int result = CERTSVC_SUCCESS;
 
     if ((strstr(path, ".crt")) != NULL || (strstr(path, ".pem")) != NULL) {
-        SLOGD("certificate extention is .crt/.pem file");
+        LogDebug("certificate extention is .crt/.pem file");
 
         /* Installs CRT and PEM files. We will passing NULL for private_key_gname and associated_gname parameter in
          * install_crt_file(). Which means that there is no private key involved in the certificate which we are
          * installing and there are no other certificates related with the current certificate which is installed */
         result = install_crt_file(path, storeType, alias, NULL, NULL, PEM_CRT);
         if (result != CERTSVC_SUCCESS) {
-            SLOGE("Failed to install the certificate.");
+            LogError("Failed to install the certificate.");
             result = CERTSVC_FAIL;
             goto error;
         }
     }
     else {
-        SLOGE("Invalid certificate passed.");
+        LogError("Invalid certificate passed.");
         result = CERTSVC_FAIL;
         goto error;
     }
-    SLOGD("Success to install the certificate.");
+    LogDebug("Success to install the certificate.");
 
 error:
     return result;
@@ -464,14 +436,14 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
     if (*certv == NULL) {
         pSubject = X509_NAME_oneline((*cert)->cert_info->subject, NULL, 0);
         if (!pSubject) {
-            SLOGE("Failed to get subject name");
+            LogError("Failed to get subject name");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
 
         pIssuerName = X509_NAME_oneline((*cert)->cert_info->issuer, NULL, 0);
         if (!pIssuerName) {
-            SLOGE("Failed to get issuer name");
+            LogError("Failed to get issuer name");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
@@ -481,31 +453,31 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
             EVP_PKEY* pKey = NULL;
             pKey = X509_get_pubkey(*cert);
             if (!pKey) {
-                SLOGE("Failed to get public key");
+                LogError("Failed to get public key");
                 result = CERTSVC_FAIL;
                 goto free_memory;
             }
 
             if (X509_verify(*cert, pKey) <= 0) {
-                SLOGE("P12 verification failed");
+                LogError("P12 verification failed");
                 EVP_PKEY_free(pKey);
                 result = CERTSVC_FAIL;
                 goto free_memory;
             }
-            SLOGD("P12 verification Success");
+            LogDebug("P12 verification Success");
             EVP_PKEY_free(pKey);
         }
         else {
             cert_store = X509_STORE_new();
             if (!cert_store) {
-                SLOGE("Memory allocation failed");
+                LogError("Memory allocation failed");
                 result = CERTSVC_FAIL;
                 goto free_memory;
             }
 
             res = X509_STORE_load_locations(cert_store, NULL, "/opt/etc/ssl/certs/");
             if (res != 1) {
-                SLOGE("P12 load certificate store failed");
+                LogError("P12 load certificate store failed");
                 X509_STORE_free(cert_store);
                 result = CERTSVC_FAIL;
                 goto free_memory;
@@ -513,7 +485,7 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
 
             res = X509_STORE_set_default_paths(cert_store);
             if (res != 1) {
-                SLOGE("P12 load certificate store path failed");
+                LogError("P12 load certificate store path failed");
                 X509_STORE_free(cert_store);
                 result = CERTSVC_FAIL;
                 goto free_memory;
@@ -522,14 +494,14 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
             /* initialise store and store context */
             cert_ctx = X509_STORE_CTX_new();
             if (cert_ctx == NULL) {
-                SLOGE("Memory allocation failed");
+                LogError("Memory allocation failed");
                 result = CERTSVC_FAIL;
                 goto free_memory;
             }
 
             /* construct store context */
             if (!X509_STORE_CTX_init(cert_ctx, cert_store, *cert, NULL)) {
-                SLOGE("Memory allocation failed");
+                LogError("Memory allocation failed");
                 result = CERTSVC_FAIL;
                 goto free_memory;
             }
@@ -537,11 +509,11 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
 #ifdef P12_VERIFICATION_NEEDED
             res = X509_verify_cert(cert_ctx);
             if (res != 1) {
-                SLOGE("P12 verification failed");
+                LogError("P12 verification failed");
                 result = CERTSVC_FAIL;
                 goto free_memory;
             }
-            SLOGD("P12 verification Success");
+            LogDebug("P12 verification Success");
 #endif
         }
     }
@@ -549,21 +521,21 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
         /* Cert Chain */
         cert_store = X509_STORE_new();
         if (!cert_store) {
-            SLOGE("Memory allocation failed");
+            LogError("Memory allocation failed");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
 
         res = X509_STORE_load_locations(cert_store, NULL, SYSTEM_CERT_DIR);
         if (res != 1) {
-            SLOGE("P12 load certificate store failed");
+            LogError("P12 load certificate store failed");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
 
         res = X509_STORE_set_default_paths(cert_store);
         if (res != 1) {
-            SLOGE("P12 load certificate path failed");
+            LogError("P12 load certificate path failed");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
@@ -571,14 +543,14 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
         /* initialise store and store context */
         cert_ctx = X509_STORE_CTX_new();
         if (cert_ctx == NULL) {
-            SLOGE("Memory allocation failed");
+            LogError("Memory allocation failed");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
 
         /* construct store context */
         if (!X509_STORE_CTX_init(cert_ctx, cert_store, *cert, NULL)) {
-            SLOGE("Memory allocation failed");
+            LogError("Memory allocation failed");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
@@ -587,11 +559,11 @@ int verify_cert_details(X509** cert, STACK_OF(X509) **certv)
 #ifdef P12_VERIFICATION_NEEDED
         res = X509_verify_cert(cert_ctx);
         if (res != 1) {
-            SLOGE("P12 verification failed");
+            LogError("P12 verification failed");
             result = CERTSVC_FAIL;
             goto free_memory;
         }
-        SLOGD("P12 verification Success");
+        LogDebug("P12 verification Success");
 #endif
     }
 #endif //_CERT_SVC_VERIFY_PKCS12
@@ -629,8 +601,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
     int exists = 0;
 
     if ((!alias) || (strlen(alias) < 1) || (!path) || (strlen(path) < 1)) {
-        SLOGE("Invalid input parameter.");
-		SLOG(LOG_INFO, "MDM_LOG_USER", "Object=certificate, AccessType=Install, Result=Failed");
+        LogError("Invalid input parameter.");
         return CERTSVC_WRONG_ARGUMENT;
     }
 
@@ -640,8 +611,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
 
         /* User should not install any form of certificates inside SYSTEM_STORE */
         if (((1 << loopCount) & storeTypes) == SYSTEM_STORE) {
-            SLOGE("Not a valid store type installing certificate, store type passed [%d].", (1 << loopCount));
-			SLOG(LOG_INFO, "MDM_LOG_USER", "Object=certificate, AccessType=Install, Result=Failed");
+            LogError("Not a valid store type installing certificate, store type passed [" << (1 << loopCount) << "]");
             return CERTSVC_INVALID_STORE_TYPE;
         }
 
@@ -649,18 +619,18 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
         if ((1 << loopCount) & storeTypes) {
             storeType = NONE_STORE;
             storeType = (CertStoreType) (1 << loopCount);
-            SLOGD("Processing store type : [%s]", (storeType == VPN_STORE)? "VPN" : (storeType == WIFI_STORE)? "WIFI" : "EMAIL");
+            LogDebug("Processing store type : [" << ((storeType == VPN_STORE)? "VPN" : (storeType == WIFI_STORE)? "WIFI" : "EMAIL") << "]");
 
             /* check if the alias exists before installing certificate */
             result = c_certsvc_pkcs12_alias_exists_in_store(storeType, alias, &exists);
             if (result != CERTSVC_SUCCESS) {
-                SLOGE("Failure to access database.");
+                LogError("Failure to access database.");
                 result = CERTSVC_FAIL;
                 goto error;
             }
 
             if (exists!=CERTSVC_TRUE) {
-                SLOGE("Alias exist in store [%s].", (storeType == VPN_STORE)? "VPN" : (storeType == WIFI_STORE)? "WIFI" : "EMAIL");
+                LogError("Alias exist in store [" << ((storeType == VPN_STORE)? "VPN" : (storeType == WIFI_STORE)? "WIFI" : "EMAIL") << "]");
                 result = CERTSVC_DUPLICATED_ALIAS;
                 goto error;
             }
@@ -670,7 +640,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             if (password == NULL && ((strstr(path, ".pfx") == NULL) || (strstr(path, ".p12")))) {
                 result = handle_crt_pem_file_installation(storeType, path, alias);
                 if (result != CERTSVC_SUCCESS) {
-                    SLOGE("Failed to install PEM/CRT file to store.");
+                    LogError("Failed to install PEM/CRT file to store.");
                     result = CERTSVC_FAIL;
                 }
                 loopCount++;
@@ -679,7 +649,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
 
             /* Logic for handling .pfx/.p12 cert installation */
             if ((stream = fopen(path, "rb")) == NULL) {
-                SLOGE("Unable to open the file for reading [%s].", path);
+                LogError("Unable to open the file for reading [" << path << "]");
                 result = CERTSVC_IO_ERROR;
                 goto error;
             }
@@ -688,7 +658,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
                 container = d2i_PKCS12_fp(stream, NULL);
                 fclose(stream);
                 if (container == NULL) {
-                    SLOGE("Failed to parse the input file passed.");
+                    LogError("Failed to parse the input file passed.");
                     result = CERTSVC_FAIL;
                     goto error;
                 }
@@ -699,14 +669,14 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
                 result = PKCS12_parse(container, password, &key, &cert, &certv);
                 PKCS12_free(container);
                 if (result == CERTSVC_FAIL) {
-                    SLOGE("Failed to parse the file passed.");
+                    LogError("Failed to parse the file passed.");
                     result = CERTSVC_FAIL;
                     goto error;
                 }
 
                 result = verify_cert_details(&cert, &certv);
                 if (result == CERTSVC_FAIL) {
-                    SLOGE("Failed to verify p12 certificate.");
+                    LogError("Failed to verify p12 certificate.");
                     goto error;
                 }
             }
@@ -732,19 +702,19 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             if (unique != NULL) { free(unique); unique = NULL; }
             result = unique_filename(&unique);
             if (result != CERTSVC_SUCCESS || !unique) {
-                SLOGE("Unique filename generation failed.");
+                LogError("Unique filename generation failed.");
                 goto error;
             }
 
             if ((stream = fopen(unique, "w+")) == NULL) {
-                SLOGE("Unable to open the file for writing [%s].",unique);
+                LogError("Unable to open the file for writing [" << unique << "]");
                 result = CERTSVC_IO_ERROR;
                 goto error;
             }
 
             result = PEM_write_PrivateKey(stream, key, NULL, NULL, 0, NULL, NULL);
             if (result == 0) {
-                SLOGE("Writing the private key contents failed.");
+                LogError("Writing the private key contents failed.");
                 result = CERTSVC_FAIL;
                 fclose(stream);
                 goto error;
@@ -756,7 +726,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             readLen = fread(fileBuffer, sizeof(char), 4096, stream);
             fclose(stream);
             if (readLen <= 0){
-				SLOGE("Failed to read key file");
+				LogError("Failed to read key file");
                 result = CERTSVC_FAIL;
                 goto error;
             }
@@ -773,7 +743,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             decideCert = P12_PKEY;
             result = vcore_client_install_certificate_to_store(storeType, tmpPkValue, NULL, NULL, NULL, fileBuffer, readLen, decideCert);
             if (result != CERTSVC_SUCCESS) {
-                SLOGD("Failed to store the private key contents.");
+                LogDebug("Failed to store the private key contents.");
                 result = CERTSVC_FAIL;
                 goto error;
             }
@@ -782,12 +752,12 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             if (unique!=NULL) { free(unique); unique=NULL; }
             result = unique_filename(&unique);
             if (result != CERTSVC_SUCCESS || !unique) {
-                SLOGE("Unique filename generation failed.");
+                LogError("Unique filename generation failed.");
                 goto error;
             }
 
             if ((stream = fopen(unique, "w")) == NULL) {
-                SLOGE("Unable to open the file for writing [%s].", unique);
+                LogError("Unable to open the file for writing [" << unique << "]");
                 result = CERTSVC_IO_ERROR;
                 goto error;
             }
@@ -795,7 +765,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             result = PEM_write_X509(stream, cert);
             fclose(stream);
             if (result == 0) {
-                SLOGE("Failed to write contents to file.");
+                LogError("Failed to write contents to file.");
                 result = CERTSVC_FAIL;
                 goto error;
             }
@@ -809,7 +779,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             wr_res = install_crt_file(unique, storeType, alias, tmpPkValue, NULL, decideCert);
             if (wr_res != CERTSVC_SUCCESS) {
                 result = CERTSVC_FAIL;
-                SLOGE("Failed to install the end user certificate.");
+                LogError("Failed to install the end user certificate.");
                 goto error;
             }
 
@@ -817,13 +787,13 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
             for (i=nicerts; i>0; i--) {
                  result = unique_filename(&unique);
                  if (result != CERTSVC_SUCCESS || !unique) {
-                     SLOGE("Unique filename generation failed.");
+                     LogError("Unique filename generation failed.");
                      goto error;
                  }
 
                  if ((stream = fopen(unique, "w")) == NULL) {
                       result = CERTSVC_IO_ERROR;
-                      SLOGE("Unable to open the file for writing.");
+                      LogError("Unable to open the file for writing.");
                       goto error;
                  }
 
@@ -831,7 +801,7 @@ int c_certsvc_pkcs12_import_from_file_to_store(CertStoreType storeTypes, const c
                  fclose(stream);
                  if (result == 0) {
                      result = CERTSVC_FAIL;
-                     SLOGE("Unable to extract the certificates.");
+                     LogError("Unable to extract the certificates.");
                      goto error;
                  }
 
@@ -858,31 +828,28 @@ error:
     /* if any certificate parsing/installation fails in middle,
      * the below logic will delete the chain installed in DB */
     if (result != CERTSVC_SUCCESS) {
-		SLOG(LOG_INFO, "MDM_LOG_USER", "Object=certificate, AccessType=Install, Result=Failed");
         if (nicerts > 0) {
         	nicerts = 0; i = 0;
         	/* cvaluev[0] holds the end user certificate identifier which will be associated
         	 * to chain certs. Pull the cert chain based on end user cert and delete one by one. */
             if (c_certsvc_pkcs12_load_certificates_from_store(storeType, cvaluev[0], &certs, &ncerts) != CERTSVC_SUCCESS) {
-                SLOGE("Unable to load certificates from store.");
+                LogError("Unable to load certificates from store.");
                 return result;
             }
 
             for (i=0; i<ncerts; i++) {
-            	 if (certs[i] != NULL) {
-    	             SLOGD("file to delete : %s",certs[i]);
-                     c_certsvc_pkcs12_delete_certificate_from_store(storeType, (char *)certs[i]);
-            	 }
+                if (certs[i] != NULL) {
+                    LogDebug("file to delete : " << certs[i]);
+                    c_certsvc_pkcs12_delete_certificate_from_store(storeType, (char *)certs[i]);
+                }
             }
 
             if (certs[i] != NULL) {
                 for (i=0; i<ncerts; i++)
-                     free(certs[i]);
+                    free(certs[i]);
             }
         }
     }
-	else
-		SLOG(LOG_INFO, "MDM_LOG_USER", "Object=certificate, AccessType=Install, Result=Succeed");
 
     if (key != NULL) EVP_PKEY_free(key);
     if (cert != NULL) X509_free(cert);

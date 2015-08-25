@@ -91,8 +91,6 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}%{TZ_SYS_SHARE}/license
 cp LICENSE %{buildroot}%{TZ_SYS_SHARE}/license/%{name}
 
-mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/certs/user
-mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/certs/trusteduser
 mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/pkcs12
 mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/dbspace
 
@@ -145,7 +143,6 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %attr(644,root,root) %{_unitdir}/cert-server.socket
 %attr(777,root,root) %{_unitdir}/multi-user.target.wants/cert-server.service
 %attr(777,root,root) %{_unitdir}/sockets.target.wants/cert-server.socket
-%attr(755,root,root) %{_libdir}/libcert-svc.so.*
 %attr(755,root,root) %{_libdir}/libcert-svc-vcore.so.*
 %attr(644,root,root) %{TZ_SYS_SHARE}/license/%{name}
 %attr(644,root,root) %{TZ_SYS_RO_WRT_ENGINE}/schema.xsd
@@ -155,8 +152,6 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %attr(755,root,root) %{TZ_SYS_BIN}/initialize_store_db.sh
 
 # Resource files install as system
-%{TZ_SYS_SHARE}/cert-svc/certs/user
-%{TZ_SYS_SHARE}/cert-svc/certs/trusteduser
 %{TZ_SYS_SHARE}/cert-svc/pkcs12
 %{TZ_SYS_SHARE}/cert-svc/dbspace
 
@@ -165,10 +160,18 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %defattr(-,root,root,-)
 %{_includedir}/*
 %{_libdir}/pkgconfig/*
-%{_libdir}/libcert-svc.so
 %{_libdir}/libcert-svc-vcore.so
 
+
 %if 0%{?certsvc_test_build}
+%post test
+ln -sf %{TZ_SYS_SHARE}/ca-certificates/tizen/root_cacert0.pem %{TZ_SYS_ETC}/ssl/certs/
+ln -sf %{TZ_SYS_ETC}/ssl/certs/root_cacert0.pem %{TZ_SYS_ETC}/ssl/certs/ba70bb69.0
+
+%postun test
+rm %{TZ_SYS_ETC}/ssl/certs/root_cacert0.pem
+rm %{TZ_SYS_ETC}/ssl/certs/ba70bb69.0
+
 %files test
 %defattr(644,system,system,755)
 %attr(755,root,root) %{TZ_SYS_BIN}/cert-svc-test*
@@ -176,6 +179,5 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %{TZ_SYS_ETC}/ssl/certs/8956b9bc.0
 %{TZ_SYS_SHARE}/ca-certificates/tizen/*
 %{TZ_SYS_SHARE}/cert-svc/cert-type/*
-%{TZ_SYS_SHARE}/cert-svc/certs/root_ca*.der
 %{TZ_SYS_SHARE}/cert-svc/tests/*
 %endif

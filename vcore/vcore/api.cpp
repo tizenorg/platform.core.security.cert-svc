@@ -45,7 +45,7 @@
 
 #include <dpl/log/log.h>
 
-#include <cert-service.h>
+#include "orig/cert-service.h"
 
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
@@ -445,22 +445,7 @@ public:
 
         cert_svc_filename_list *fileList = ctx.get()->fileNames;
         while (fileList) {
-            ScopedCertCtx ctx2(cert_svc_cert_context_init(),
-                               cert_svc_cert_context_final);
-            if (ctx2.get() == NULL) {
-                LogWarning("Error in cert_svc_cert_context_init.");
-                return CERTSVC_FAIL;
-            }
-
-            // TODO add read_certifcate_from_file function to Certificate.h
-            if (CERT_SVC_ERR_NO_ERROR !=
-                cert_svc_load_file_to_context(ctx2.get(), fileList->filename))
-            {
-                LogWarning("Error in cert_svc_load_file_to_context");
-                return CERTSVC_FAIL;
-            }
-
-            list.push_back(addCert(CertificatePtr(new Certificate(*(ctx2.get()->certBuf)))));
+            list.push_back(addCert(Certificate::createFromFile(fileList->filename)));
 
             fileList = fileList->next;
         }
@@ -1134,19 +1119,7 @@ int certsvc_certificate_new_from_file(
         CertSvcCertificate *certificate)
 {
     try {
-        ScopedCertCtx context(cert_svc_cert_context_init(),
-                              cert_svc_cert_context_final);
-
-        int result = cert_svc_load_file_to_context(context.get(), location);
-
-        switch(result) {
-            case CERT_SVC_ERR_INVALID_PARAMETER: return CERTSVC_WRONG_ARGUMENT;
-            case CERT_SVC_ERR_INVALID_OPERATION: return CERTSVC_FAIL;
-            case CERT_SVC_ERR_MEMORY_ALLOCATION: return CERTSVC_BAD_ALLOC;
-            default:;
-        }
-
-        CertificatePtr cert(new Certificate(*(context->certBuf)));
+        CertificatePtr cert(Certificate::createFromFile(location));
 
         certificate->privateInstance = instance;
         certificate->privateHandler = impl(instance)->addCert(cert);

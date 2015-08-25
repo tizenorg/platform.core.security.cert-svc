@@ -19,6 +19,11 @@ ADD_DEFINITIONS(${VCORE_DEPS_CFLAGS_OTHER})
 SET(VCORE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(VCORE_SOURCES
+    ${VCORE_DIR}/orig/cert-service.c
+    ${VCORE_DIR}/orig/cert-service-util.c
+    ${VCORE_DIR}/orig/cert-service-store.c
+    ${VCORE_DIR}/orig/cert-service-process.c
+
     ${VCORE_DIR}/dpl/core/src/assert.cpp
     ${VCORE_DIR}/dpl/core/src/exception.cpp
     ${VCORE_DIR}/dpl/core/src/noncopyable.cpp
@@ -66,7 +71,6 @@ SET(VCORE_INCLUDES
 INCLUDE_DIRECTORIES(
     SYSTEM
     ${VCORE_DEPS_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/include
     ${VCORE_INCLUDES}
     )
 
@@ -104,7 +108,6 @@ SET(CERT_SERVER_SRC
 INCLUDE_DIRECTORIES(
     SYSTEM
     ${CERT_SERVER_DEP_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/include
     ${VCORE_DIR}
     ${CERT_SERVER_DIR}/include
     )

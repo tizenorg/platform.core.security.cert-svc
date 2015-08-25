@@ -145,7 +145,6 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %attr(644,root,root) %{_unitdir}/cert-server.socket
 %attr(777,root,root) %{_unitdir}/multi-user.target.wants/cert-server.service
 %attr(777,root,root) %{_unitdir}/sockets.target.wants/cert-server.socket
-%attr(755,root,root) %{_libdir}/libcert-svc.so.*
 %attr(755,root,root) %{_libdir}/libcert-svc-vcore.so.*
 %attr(644,root,root) %{TZ_SYS_SHARE}/license/%{name}
 %attr(644,root,root) %{TZ_SYS_RO_WRT_ENGINE}/schema.xsd
@@ -165,7 +164,6 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %defattr(-,root,root,-)
 %{_includedir}/*
 %{_libdir}/pkgconfig/*
-%{_libdir}/libcert-svc.so
 %{_libdir}/libcert-svc-vcore.so
 
 %if 0%{?certsvc_test_build}
@@ -176,6 +174,6 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %{TZ_SYS_ETC}/ssl/certs/8956b9bc.0
 %{TZ_SYS_SHARE}/ca-certificates/tizen/*
 %{TZ_SYS_SHARE}/cert-svc/cert-type/*
-%{TZ_SYS_SHARE}/cert-svc/certs/root_ca*.der
+#%{TZ_SYS_SHARE}/cert-svc/certs/root_ca*.der
 %{TZ_SYS_SHARE}/cert-svc/tests/*
 %endif

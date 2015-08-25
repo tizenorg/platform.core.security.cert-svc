@@ -1,5 +1,5 @@
-#include <cert-service.h>
-#include <cert-service-debug.h>
+#include "orig/cert-service.h"
+#include "orig/cert-service-debug.h"
 #include <cert-svc/cerror.h>
 
 #include <stdio.h>

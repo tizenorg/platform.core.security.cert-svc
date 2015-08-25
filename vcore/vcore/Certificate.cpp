@@ -31,8 +31,16 @@
 #include <dpl/assert.h>
 #include <dpl/log/log.h>
 
+#include "orig/cert-service.h"
+
 #include <vcore/Base64.h>
 #include <vcore/TimeConversion.h>
+
+namespace {
+
+typedef std::unique_ptr<CERT_CONTEXT, std::function<int(CERT_CONTEXT*)> > ScopedCertCtx;
+
+} // namespace anonymous
 
 namespace ValidationCore {
 
@@ -40,16 +48,6 @@ Certificate::Certificate(X509 *cert)
 {
     Assert(cert);
     m_x509 = X509_dup(cert);
-    if (!m_x509)
-        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
-                      "Internal Openssl error in d2i_X509 function.");
-}
-
-Certificate::Certificate(cert_svc_mem_buff &buffer)
-{
-    Assert(buffer.data);
-    const unsigned char *ptr = buffer.data;
-    m_x509 = d2i_X509(NULL, &ptr, buffer.size);
     if (!m_x509)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Internal Openssl error in d2i_X509 function.");
@@ -87,6 +85,24 @@ Certificate::Certificate(const std::string &data,
     if (!m_x509)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Internal Openssl error in d2i_X509 function.");
+}
+
+CertificatePtr Certificate::createFromFile(const std::string &location)
+{
+    ScopedCertCtx ctx(cert_svc_cert_context_init(), cert_svc_cert_context_final);
+    if (ctx.get() == NULL)
+        VcoreThrowMsg(Certificate::Exception::InternalError, "Failed to context init");
+
+    if (CERT_SVC_ERR_NO_ERROR != cert_svc_load_file_to_context(ctx.get(), location.c_str()))
+        VcoreThrowMsg(Certificate::Exception::InternalError, "load_file_to_context err");
+
+    const unsigned char *ptr = ctx.get()->certBuf->data;
+    X509 *x509 = d2i_X509(NULL, &ptr, ctx.get()->certBuf->size);
+    if (!x509)
+        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
+                      "Internal Openssl error in d2i_X509 function.");
+
+    return CertificatePtr(new Certificate(x509));
 }
 
 Certificate::~Certificate()

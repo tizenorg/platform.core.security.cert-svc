@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <cert-service-debug.h>
+#include "orig/cert-service-debug.h"
 
 #include <vcore/cert-svc-client.h>
 

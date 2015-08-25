@@ -19,8 +19,7 @@
  * @version     1.1
  * @brief
  */
-#ifndef _VALIDATION_CORE_CERTIFICATE_H_
-#define _VALIDATION_CORE_CERTIFICATE_H_
+#pragma once
 
 #include <list>
 #include <set>
@@ -32,8 +31,6 @@
 #include <openssl/x509.h>
 
 #include <vcore/exception.h>
-
-#include <cert-service.h>
 
 extern "C" {
 struct x509_st;
@@ -57,6 +54,7 @@ public:
         VCORE_DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, Base64Error);
         VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongParamError);
+        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError);
     };
 
     typedef std::vector<unsigned char> Fingerprint;
@@ -82,9 +80,9 @@ public:
         FORM_BASE64
     };
 
-    explicit Certificate(X509 *cert);
+    static CertificatePtr createFromFile(const std::string &location);
 
-    explicit Certificate(cert_svc_mem_buff &buffer);
+    explicit Certificate(X509 *cert);
 
     explicit Certificate(const std::string &data,
                          FormType form = FORM_DER);
@@ -180,5 +178,3 @@ protected:
     X509 *m_x509;
 };
 } // namespace ValidationCore
-
-#endif // _VALIDATION_CORE_CERTIFICATE_H_

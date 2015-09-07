@@ -29,31 +29,6 @@
 #include "orig/cert-service.h"
 #include "orig/cert-service-util.h"
 #include "orig/cert-service-debug.h"
-#include "orig/cert-service-process.h"
-
-int cert_svc_search_certificate(CERT_CONTEXT* ctx, search_field fldName, char* fldData)
-{
-	int ret = CERT_SVC_ERR_NO_ERROR;
-
-	if (!ctx || fldName > SEARCH_FIELD_END || !fldData) {
-		SLOGE("[ERR][%s] Invalid parameter. Check your parameter", __func__);
-		return CERT_SVC_ERR_INVALID_PARAMETER;
-	}
-
-	if (ctx->fileNames != NULL) {
-		SLOGE("[ERR][%s] fileNames field already be used.", __func__);
-		return CERT_SVC_ERR_INVALID_OPERATION;
-	}
-
-	if ((ret = _search_certificate(&(ctx->fileNames), fldName, fldData)) != CERT_SVC_ERR_NO_ERROR) {
-		SLOGE("[ERR][%s] Fail to search certificate.", ctx->fileNames);
-		return ret;
-	}
-
-	SLOGD("[%s] Success to search certificate(s).", __func__);
-
-	return CERT_SVC_ERR_NO_ERROR;
-}
 
 CERT_CONTEXT* cert_svc_cert_context_init()
 {

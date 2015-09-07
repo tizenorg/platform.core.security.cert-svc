@@ -16,7 +16,6 @@ SET(VCORE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(VCORE_SOURCES
     ${VCORE_DIR}/orig/cert-service.c
     ${VCORE_DIR}/orig/cert-service-util.c
-    ${VCORE_DIR}/orig/cert-service-process.c
 
     ${VCORE_DIR}/dpl/core/src/assert.cpp
     ${VCORE_DIR}/dpl/core/src/exception.cpp

@@ -87,42 +87,6 @@ RUNNER_TEST(T0101_certificate_new_from_file)
 	certsvc_certificate_free(cert);
 }
 
-RUNNER_TEST(T0102_certificate_search)
-{
-	CertSvcCertificateList handler;
-	int result = certsvc_certificate_search(
-			vinstance,
-			CERTSVC_SUBJECT_COMMON_NAME,
-			"WAC Application Services Ltd",
-			&handler);
-
-	RUNNER_ASSERT_MSG(CERTSVC_SUCCESS == result,
-		"Error in search method. errcode : " << result);
-
-	CertSvcCertificate cert;
-
-	result = certsvc_certificate_list_get_one(handler, 0, &cert);
-
-	RUNNER_ASSERT_MSG(CERTSVC_TRUE == result,
-		"Error reading certificate. errcode : " << result);
-
-	CertSvcString string;
-
-	certsvc_certificate_get_string_field(
-		cert,
-		CERTSVC_SUBJECT_COUNTRY_NAME,
-		&string);
-
-	const char *ptr = "GB";
-	const char *buffer;
-
-	certsvc_string_to_cstring(string, &buffer, NULL);
-
-	result = strncmp(buffer, ptr, strlen(ptr));
-
-	RUNNER_ASSERT_MSG(0 == result, "Country does not match. result : " << result);
-}
-
 RUNNER_TEST(T0103_is_signed_by)
 {
 	CertSvcCertificate cert1, cert2;

@@ -57,29 +57,6 @@ extern "C" {
 #define CERT_SVC_ERR_INVALID_NO_DEVICE_PROFILE (-25)
 #define CERT_SVC_ERR_INVALID_DEVICE_UNIQUE_ID  (-26)
 
-#define CERT_SVC_STORE_PATH "/usr/share/cert-svc/certs/"
-
-typedef enum {
-	SEARCH_FIELD_START = 0,
-	ISSUER_COUNTRY = 0,
-	ISSUER_STATEORPROVINCE,
-	ISSUER_LOCALITY,
-	ISSUER_ORGANIZATION,
-	ISSUER_ORGANIZATIONUNIT,
-	ISSUER_COMMONNAME,
-	ISSUER_EMAILADDRESS,
-	ISSUER_STR,
-	SUBJECT_COUNTRY,
-	SUBJECT_STATEORPROVINCE,
-	SUBJECT_LOCALITY,
-	SUBJECT_ORGANIZATION,
-	SUBJECT_ORGANIZATIONUNIT,
-	SUBJECT_COMMONNAME,
-	SUBJECT_EMAILADDRESS,
-	SUBJECT_STR,
-	SEARCH_FIELD_END = 16,
-} search_field;
-
 typedef struct {
 	unsigned int firstSecond;
 	unsigned int firstMinute;
@@ -168,8 +145,6 @@ CERT_CONTEXT* cert_svc_cert_context_init();
 int cert_svc_cert_context_final(CERT_CONTEXT* ctx);
 
 int cert_svc_load_file_to_context(CERT_CONTEXT* ctx, const char* filePath);
-
-int cert_svc_search_certificate(CERT_CONTEXT* ctx, search_field fldName, char* fldData);
 
 #ifdef __cplusplus
 }

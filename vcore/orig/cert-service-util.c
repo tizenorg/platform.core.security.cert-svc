@@ -30,7 +30,6 @@
 #include "orig/cert-service.h"
 #include "orig/cert-service-util.h"
 #include "orig/cert-service-debug.h"
-#include "orig/cert-service-process.h"
 
 
 #define CERT_BODY_PREFIX  "-----BEGIN CERTIFICATE-----"
@@ -319,6 +318,142 @@ err:
 
 	if(content != NULL)
 		free(content);
+
+	return ret;
+}
+
+int release_certificate_buf(cert_svc_mem_buff* certBuf)
+{
+	int ret = CERT_SVC_ERR_NO_ERROR;
+
+	if(certBuf == NULL)
+		return ret;
+
+	if(certBuf->data != NULL) {
+		free(certBuf->data);
+		certBuf->data = NULL;
+	}
+	free(certBuf);
+	certBuf = NULL;
+
+	return ret;
+}
+
+int release_certificate_data(cert_svc_cert_descriptor* certDesc)
+{
+	int ret = CERT_SVC_ERR_NO_ERROR;
+	int i = 0;
+
+	if(certDesc == NULL)
+		return ret;
+
+	/* parse cert descriptor information fields */
+	if(certDesc->info.sigAlgo != NULL) free(certDesc->info.sigAlgo);
+	if(certDesc->info.issuerStr != NULL) free(certDesc->info.issuerStr);
+	if(certDesc->info.issuer.countryName != NULL) free(certDesc->info.issuer.countryName);
+	if(certDesc->info.issuer.localityName != NULL) free(certDesc->info.issuer.localityName);
+	if(certDesc->info.issuer.stateOrProvinceName != NULL) free(certDesc->info.issuer.stateOrProvinceName);
+	if(certDesc->info.issuer.organizationName != NULL) free(certDesc->info.issuer.organizationName);
+	if(certDesc->info.issuer.organizationUnitName != NULL) free(certDesc->info.issuer.organizationUnitName);
+	if(certDesc->info.issuer.commonName != NULL) free(certDesc->info.issuer.commonName);
+	if(certDesc->info.issuer.emailAddress != NULL) free(certDesc->info.issuer.emailAddress);
+	if(certDesc->info.subjectStr != NULL) free(certDesc->info.subjectStr);
+	if(certDesc->info.subject.countryName != NULL) free(certDesc->info.subject.countryName);
+	if(certDesc->info.subject.localityName != NULL) free(certDesc->info.subject.localityName);
+	if(certDesc->info.subject.stateOrProvinceName != NULL) free(certDesc->info.subject.stateOrProvinceName);
+	if(certDesc->info.subject.organizationName != NULL) free(certDesc->info.subject.organizationName);
+	if(certDesc->info.subject.organizationUnitName != NULL) free(certDesc->info.subject.organizationUnitName);
+	if(certDesc->info.subject.commonName != NULL) free(certDesc->info.subject.commonName);
+	if(certDesc->info.subject.emailAddress != NULL) free(certDesc->info.subject.emailAddress);
+	if(certDesc->info.pubKeyAlgo != NULL) free(certDesc->info.pubKeyAlgo);
+	if(certDesc->info.pubKey != NULL) free(certDesc->info.pubKey);
+	if(certDesc->info.issuerUID != NULL) free(certDesc->info.issuerUID);
+	if(certDesc->info.subjectUID != NULL) free(certDesc->info.subjectUID);
+
+	/* parse cert descriptor extension fields */
+	if(certDesc->ext.numOfFields > 0) {
+		for(i = 0; i < (int)certDesc->ext.numOfFields; i++) {
+			if(certDesc->ext.fields[i].name != NULL) free(certDesc->ext.fields[i].name);
+			if(certDesc->ext.fields[i].data != NULL) free(certDesc->ext.fields[i].data);
+		}
+		if(certDesc->ext.fields != NULL) free(certDesc->ext.fields);
+	}
+
+	/* parse signature */
+	if(certDesc->signatureAlgo != NULL) free(certDesc->signatureAlgo);
+	if(certDesc->signatureData != NULL) free(certDesc->signatureData);
+
+	if(certDesc != NULL) free(certDesc);
+
+	return ret;
+}
+
+int release_cert_list(cert_svc_linked_list* certList)
+{
+	int ret = CERT_SVC_ERR_NO_ERROR;
+	cert_svc_linked_list* startCert = NULL;
+	cert_svc_linked_list* curCert = NULL;
+
+	if(certList == NULL)
+		return ret;
+
+	startCert = certList;
+
+	while(1) {
+		curCert = startCert;
+		startCert = startCert->next;
+
+		if(curCert->certificate != NULL) {
+			if(curCert->certificate->data != NULL) {
+				free(curCert->certificate->data);
+				curCert->certificate->data = NULL;
+			}
+			free(curCert->certificate);
+			curCert->certificate = NULL;
+		}
+
+		curCert->next = NULL;
+
+		if(curCert != NULL) {
+			free(curCert);
+			curCert = NULL;
+		}
+
+		if(startCert == NULL)
+			break;
+	}
+
+	return ret;
+}
+
+int release_filename_list(cert_svc_filename_list* fileNames)
+{
+	int ret = CERT_SVC_ERR_NO_ERROR;
+	cert_svc_filename_list* startList = NULL;
+	cert_svc_filename_list* curList = NULL;
+
+	if(fileNames == NULL)
+		return ret;
+
+	startList = fileNames;
+
+	while(1) {
+		curList = startList;
+		startList = startList->next;
+
+		if(curList->filename != NULL) {
+			free(curList->filename);
+			curList->filename = NULL;
+		}
+		curList->next = NULL;
+		if(curList != NULL) {
+			free(curList);
+			curList = NULL;
+		}
+
+		if(startList == NULL)
+			break;
+	}
 
 	return ret;
 }

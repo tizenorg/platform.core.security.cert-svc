@@ -28,6 +28,11 @@ extern "C" {
 
 int cert_svc_util_load_file_to_buffer(const char* filePath, cert_svc_mem_buff* certBuf);
 
+int release_certificate_buf(cert_svc_mem_buff* certBuf);
+int release_certificate_data(cert_svc_cert_descriptor* certDesc);
+int release_cert_list(cert_svc_linked_list* certList);
+int release_filename_list(cert_svc_filename_list* fileNames);
+
 #ifdef __cplusplus
 }
 #endif

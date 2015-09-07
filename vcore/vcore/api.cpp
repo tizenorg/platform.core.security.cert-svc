@@ -42,23 +42,20 @@
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/bio.h>
-
-#include <dpl/log/log.h>
-
-#include "orig/cert-service.h"
-
-#include <cert-svc/cinstance.h>
-#include <cert-svc/ccert.h>
-#include <cert-svc/cpkcs12.h>
-#include <cert-svc/cprimitives.h>
-
-#include <vcore/Base64.h>
-#include <vcore/Certificate.h>
-#include <vcore/CertificateCollection.h>
-#include <vcore/pkcs12.h>
-
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+
+#include "dpl/log/log.h"
+
+#include "vcore/Base64.h"
+#include "vcore/Certificate.h"
+#include "vcore/CertificateCollection.h"
+#include "vcore/pkcs12.h"
+
+#include "cert-svc/cinstance.h"
+#include "cert-svc/ccert.h"
+#include "cert-svc/cpkcs12.h"
+#include "cert-svc/cprimitives.h"
 
 #define START_CERT      "-----BEGIN CERTIFICATE-----"
 #define END_CERT        "-----END CERTIFICATE-----"
@@ -68,8 +65,6 @@
 using namespace ValidationCore;
 
 namespace {
-
-typedef std::unique_ptr<CERT_CONTEXT, std::function<int(CERT_CONTEXT*)> > ScopedCertCtx;
 
 class CertSvcInstanceImpl {
 public:
@@ -395,61 +390,6 @@ public:
             delete[] *iter;
             m_allocatedStringSet.erase(iter);
         }
-    }
-
-    inline int certificateSearch(
-        CertSvcInstance instance,
-        CertSvcCertificateField field,
-        const char *value,
-        CertSvcCertificateList *handler)
-    {
-        search_field fieldId = SEARCH_FIELD_END;
-
-        switch (field) {
-        case CERTSVC_SUBJECT:
-            fieldId = SUBJECT_STR;
-            break;
-        case CERTSVC_ISSUER:
-            fieldId = ISSUER_STR;
-            break;
-        case CERTSVC_SUBJECT_COMMON_NAME:
-            fieldId = SUBJECT_COMMONNAME;
-            break;
-        default:
-            LogError("Not implemented!");
-            return CERTSVC_WRONG_ARGUMENT;
-        }
-
-        ScopedCertCtx ctx(cert_svc_cert_context_init(),
-                          cert_svc_cert_context_final);
-
-        if (ctx.get() == NULL) {
-            LogWarning("Error in cert_svc_cert_context_init.");
-            return CERTSVC_FAIL;
-        }
-
-        LogDebug("Match string : " << value);
-        int result = cert_svc_search_certificate(ctx.get(), fieldId, const_cast<char*>(value));
-        LogDebug("Search finished!");
-
-        if (CERT_SVC_ERR_NO_ERROR != result) {
-            LogWarning("Error during certificate search");
-            return CERTSVC_FAIL;
-        }
-
-
-        size_t listId = m_idListCounter++;
-        std::vector<size_t> &list = m_idListMap[listId];
-        handler->privateHandler = listId;
-        handler->privateInstance = instance;
-
-        cert_svc_filename_list *fileList = ctx.get()->fileNames;
-        while (fileList) {
-            list.push_back(addCert(Certificate::createFromFile(fileList->filename)));
-
-            fileList = fileList->next;
-        }
-        return CERTSVC_SUCCESS;
     }
 
     inline int sortCollection(CertSvcCertificate *certificate_array, size_t size) {
@@ -1171,20 +1111,6 @@ int certsvc_certificate_save_file(
         const char *location)
 {
     return impl(certificate.privateInstance)->saveToFile(certificate, location);
-}
-
-int certsvc_certificate_search(
-        CertSvcInstance instance,
-        CertSvcCertificateField field,
-        const char *value,
-        CertSvcCertificateList *handler)
-{
-    try {
-        return impl(instance)->certificateSearch(instance, field, value, handler);
-    } catch (std::bad_alloc &) {
-        return CERTSVC_BAD_ALLOC;
-    } catch (...) {}
-    return CERTSVC_FAIL;
 }
 
 int certsvc_certificate_list_get_one(

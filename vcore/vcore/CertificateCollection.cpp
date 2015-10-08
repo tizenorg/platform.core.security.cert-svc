@@ -57,7 +57,7 @@ inline std::string toBinaryString(int data)
 CertificatePtr searchCertByHash(const std::string &dir, const CertificatePtr &certPtr)
 {
 	try {
-		const char *hash = certPtr->getNameHash(Certificate::FIELD_ISSUER).c_str();
+		std::string hash = certPtr->getNameHash(Certificate::FIELD_ISSUER);
 
 		std::unique_ptr<DIR, std::function<int(DIR*)>> dp(::opendir(dir.c_str()), ::closedir);
 		if (dp.get() == NULL) {
@@ -79,7 +79,7 @@ CertificatePtr searchCertByHash(const std::string &dir, const CertificatePtr &ce
 			if (strlen(dirp->d_name) != 10)
 				continue;
 
-			if (strncmp(dirp->d_name, hash, 8) != 0)
+			if (strncmp(dirp->d_name, hash.c_str(), 8) != 0)
 				continue;
 
 			LogDebug("Found hash matched file! : " << (dir + dirp->d_name));

@@ -355,8 +355,12 @@ SignatureValidator::Result SignatureValidator::check(
 			}
 		}
 
-		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED)
+		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED) {
+			LogError("Certificate is Revoked by OCSP server.");
 			return SIGNATURE_REVOKED;
+		}
+
+		LogDebug("Signature validation check done successfully ");
 
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
@@ -365,7 +369,7 @@ SignatureValidator::Result SignatureValidator::check(
 		LogError("XmlSec exception : " << e.DumpToString());
 		return SIGNATURE_INVALID;
 	} catch (const Ocsp::Exception::Base &e) {
-		LogError("Ocsp exception : " << e.DumpToString());
+		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
 		 *  Don't care ocsp exception here.
 		 *  just return signature disregard or verified
@@ -427,8 +431,12 @@ SignatureValidator::Result SignatureValidator::checkList(
 			}
 		}
 
-		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED)
+		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED) {
+			LogError("Certificate is Revoked by OCSP server.");
 			return SIGNATURE_REVOKED;
+		}
+
+		LogDebug("Signature validation of check list done successfully ");
 
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
@@ -437,7 +445,7 @@ SignatureValidator::Result SignatureValidator::checkList(
 		LogError("XmlSec exception : " << e.DumpToString());
 		return SIGNATURE_INVALID;
 	} catch (const Ocsp::Exception::Base &e) {
-		LogError("Ocsp exception : " << e.DumpToString());
+		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
 		 *  Don't care ocsp exception here.
 		 *  just return signature disregard or verified

@@ -145,18 +145,17 @@ do                                                                              
     }                                                                           \
 } while (0)
 
-#define  LogError(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Error)
 
 #ifdef BUILD_TYPE_DEBUG
     #define LogDebug(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
-    #define LogInfo(message)     DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Info)
-    #define LogWarning(message)  DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Warning)
     #define LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
 #else
     #define LogDebug(message)    DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
-    #define LogInfo(message)     DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Info)
-    #define LogWarning(message)  DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Warning)
     #define LogPedantic(message) DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
 #endif // BUILD_TYPE_DEBUG
+
+#define LogInfo(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Info)
+#define LogWarning(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Warning)
+#define LogError(message)   DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Error)
 
 #endif // DPL_LOG_H

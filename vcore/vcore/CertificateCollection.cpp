@@ -54,7 +54,25 @@ inline std::string toBinaryString(int data)
     return std::string(buffer, sizeof(int));
 }
 
-CertificatePtr searchCertByHash(const std::string &dir, const CertificatePtr &certPtr)
+bool isHashMatchedName(const std::string &name, const std::string &hash)
+{
+	if (name.compare(0, 8, hash) != 0)
+		return false;
+
+	return true;
+}
+
+bool isHashMatchedFile(const std::string &path, const std::string &hash)
+{
+	CertificatePtr certPtr = Certificate::createFromFile(path);
+	std::string name = certPtr->getNameHash(Certificate::FIELD_SUBJECT);
+
+	LogDebug("candidate file path[" << path << "] name[" << name << "] hash[" << hash << "]");
+
+	return isHashMatchedName(name, hash);
+}
+
+CertificatePtr searchCert(const std::string &dir, const CertificatePtr &certPtr, bool withHash)
 {
 	try {
 		std::string hash = certPtr->getNameHash(Certificate::FIELD_ISSUER);
@@ -75,12 +93,13 @@ CertificatePtr searchCertByHash(const std::string &dir, const CertificatePtr &ce
 			if (dirp->d_type == DT_DIR)
 				continue;
 
-			/* filename length should be 10. ex) 1a2b3c4d.1 */
-			if (strlen(dirp->d_name) != 10)
-				continue;
-
-			if (strncmp(dirp->d_name, hash.c_str(), 8) != 0)
-				continue;
+			if (withHash) {
+				if (!isHashMatchedName(dirp->d_name, hash))
+					continue;
+			} else {
+				if (!isHashMatchedFile(dir + dirp->d_name, hash))
+					continue;
+			}
 
 			LogDebug("Found hash matched file! : " << (dir + dirp->d_name));
 
@@ -112,13 +131,17 @@ CertificatePtr searchCertByHash(const std::string &dir, const CertificatePtr &ce
 			CertificateCollection::Exception::InternalError,
 			"Unknown exception in CertificateCollection.");
 	}
-
-
 }
 
 CertificatePtr getIssuerCertFromStore(const CertificatePtr &certPtr)
 {
-	return searchCertByHash(SYSTEM_CERT_DIR, certPtr);
+	CertificatePtr found = searchCert(ROOT_CA_CERTS_TIZEN_DIR, certPtr, false);
+	if (found.get() != NULL) {
+		LogDebug("Found issuer cert in tizen root CA dir");
+		return found;
+	}
+
+	return searchCert(SYSTEM_CERT_DIR, certPtr, true);
 }
 
 } // namespace

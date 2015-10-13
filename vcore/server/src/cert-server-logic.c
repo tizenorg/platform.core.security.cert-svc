@@ -65,16 +65,16 @@ static int CertStatus_to_int(CertStatus status)
 
 char *add_shared_owner_prefix(const char *name)
 {
-	size_t alias_len = strlen(name) + strlen(ckmc_label_shared_owner) + strlen(ckmc_label_name_separator);
+	size_t alias_len = strlen(name) + strlen(ckmc_owner_id_system) + strlen(ckmc_owner_id_separator);
 	char *ckm_alias = (char *)malloc(alias_len + 1);
 	if (!ckm_alias) {
 		SLOGE("Failed to allocate memory");
 		return NULL;
 	}
 	memset(ckm_alias, 0, alias_len + 1);
-	strncat(ckm_alias, ckmc_label_shared_owner, alias_len + 1);
-	strncat(ckm_alias, ckmc_label_name_separator, alias_len + 1 - strlen(ckmc_label_shared_owner));
-	strncat(ckm_alias, name, alias_len + 1 - strlen(ckmc_label_shared_owner) + strlen(ckmc_label_name_separator));
+	strncat(ckm_alias, ckmc_owner_id_system, alias_len + 1);
+	strncat(ckm_alias, ckmc_owner_id_separator, alias_len + 1 - strlen(ckmc_owner_id_system));
+	strncat(ckm_alias, name, alias_len + 1 - strlen(ckmc_owner_id_system) + strlen(ckmc_owner_id_separator));
 
 	return ckm_alias;
 }

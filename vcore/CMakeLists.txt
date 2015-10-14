@@ -14,9 +14,6 @@ ADD_DEFINITIONS(${VCORE_DEPS_CFLAGS_OTHER})
 SET(VCORE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(VCORE_SOURCES
-    ${VCORE_DIR}/orig/cert-service.c
-    ${VCORE_DIR}/orig/cert-service-util.c
-
     ${VCORE_DIR}/dpl/core/src/assert.cpp
     ${VCORE_DIR}/dpl/core/src/exception.cpp
     ${VCORE_DIR}/dpl/core/src/noncopyable.cpp
@@ -47,7 +44,7 @@ SET(VCORE_SOURCES
     ${VCORE_DIR}/vcore/XmlsecAdapter.cpp
     ${VCORE_DIR}/vcore/pkcs12.cpp
     ${VCORE_DIR}/vcore/exception.cpp
-    ${VCORE_DIR}/vcore/cert-svc-client.c
+    ${VCORE_DIR}/vcore/Client.cpp
     ${VCORE_DIR}/vcore/Ocsp.cpp
     ${VCORE_DIR}/vcore/CryptoInit.cpp
     )

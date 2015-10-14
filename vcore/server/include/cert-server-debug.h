@@ -1,7 +1,6 @@
 /*
- * certification service
  *
- * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd All Rights Reserved 
+ * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved 
  *
  * Contact: Kidong Kim <kd0228.kim@samsung.com>
  *
@@ -19,22 +18,22 @@
  *
  */
 
-#ifndef CERT_SERVICE_UTIL_H
-#define CERT_SERVICE_UTIL_H
+#ifndef CERT_SERVER_DEBUG_H
+#define CERT_SERVER_DEBUG_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int cert_svc_util_load_file_to_buffer(const char* filePath, cert_svc_mem_buff* certBuf);
+#ifdef LOG_TAG
+#undef LOG_TAG
+#endif
+#define LOG_TAG "CERT_SVC_SERVER"
 
-int release_certificate_buf(cert_svc_mem_buff* certBuf);
-int release_certificate_data(cert_svc_cert_descriptor* certDesc);
-int release_cert_list(cert_svc_linked_list* certList);
-int release_filename_list(cert_svc_filename_list* fileNames);
+#include <dlog.h>
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // CERT_SERVICE_UTIL_H
+#endif // CERT_SERVER_DEBUG_H

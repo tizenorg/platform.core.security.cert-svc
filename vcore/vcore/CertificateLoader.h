@@ -22,8 +22,6 @@
 #include <dpl/noncopyable.h>
 #include <openssl/ssl.h>
 
-#include "orig/cert-service.h"
-
 #include <vcore/Certificate.h>
 
 namespace ValidationCore {

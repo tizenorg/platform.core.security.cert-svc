@@ -20,18 +20,20 @@
  * @brief       Certificate class implementation
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <cstdio>
 #include <memory>
-#include <sstream>
 #include <iomanip>
 
+#include <openssl/pem.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
-#include <openssl/bn.h>
+#include <openssl/objects.h>
 
-#include <dpl/assert.h>
 #include <dpl/log/log.h>
-
-#include "orig/cert-service.h"
 
 #include "vcore/Base64.h"
 #include "vcore/TimeConversion.h"
@@ -40,7 +42,8 @@
 
 namespace {
 
-typedef std::unique_ptr<CERT_CONTEXT, std::function<int(CERT_CONTEXT*)> > ScopedCertCtx;
+typedef std::unique_ptr<X509, std::function<void(X509 *)>> ScopedX509;
+typedef std::unique_ptr<FILE, std::function<int(FILE *)>> ScopedFile;
 
 } // namespace anonymous
 
@@ -48,9 +51,13 @@ namespace ValidationCore {
 
 Certificate::Certificate(X509 *cert)
 {
-    Assert(cert);
+    if (cert == NULL)
+        VcoreThrowMsg(Certificate::Exception::WrongParamError,
+                      "Input X509 shouldn't be NULL.");
+
     m_x509 = X509_dup(cert);
-    if (!m_x509)
+
+    if (m_x509 == NULL)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Internal Openssl error in d2i_X509 function.");
 }
@@ -58,7 +65,9 @@ Certificate::Certificate(X509 *cert)
 Certificate::Certificate(const std::string &data,
                          Certificate::FormType form)
 {
-    Assert(data.size());
+    if (data.size() == 0)
+        VcoreThrowMsg(Certificate::Exception::WrongParamError,
+                      "Input data shouldn't be empty");
 
     int size;
     const unsigned char *ptr;
@@ -89,18 +98,54 @@ Certificate::Certificate(const std::string &data,
                       "Internal Openssl error in d2i_X509 function.");
 }
 
+static off_t getFileSize(const std::string &location)
+{
+    struct stat status;
+
+    stat(location.c_str(), &status);
+
+    return status.st_size;
+}
+
 CertificatePtr Certificate::createFromFile(const std::string &location)
 {
-    ScopedCertCtx ctx(cert_svc_cert_context_init(), cert_svc_cert_context_final);
-    if (ctx.get() == NULL)
-        VcoreThrowMsg(Certificate::Exception::InternalError, "Failed to context init");
+    FILE *fp = NULL;
+    X509 *x509 = NULL;
 
-    if (CERT_SVC_ERR_NO_ERROR != cert_svc_load_file_to_context(ctx.get(), location.c_str()))
-        VcoreThrowMsg(Certificate::Exception::InternalError, "load_file_to_context err");
+    fp = fopen(location.c_str(), "rb");
+    if (fp == NULL)
+        VcoreThrowMsg(Certificate::Exception::WrongParamError,
+                      "File cannot be opened : " << location);
 
-    const unsigned char *ptr = ctx.get()->certBuf->data;
-    X509 *x509 = d2i_X509(NULL, &ptr, ctx.get()->certBuf->size);
-    if (!x509)
+    ScopedFile filePtr(fp, fclose);
+
+    x509 = PEM_read_X509(fp, NULL, NULL, NULL);
+    if (x509 == NULL) {
+        rewind(fp);
+        x509 = PEM_read_X509_AUX(fp, NULL, NULL, NULL);
+    }
+
+    if (x509 != NULL) {
+        ScopedX509 x509Ptr(x509, X509_free);
+        return CertificatePtr(new Certificate(x509));
+    }
+
+    off_t filesize = getFileSize(location);
+    if (filesize == 0)
+        VcoreThrowMsg(Certificate::Exception::WrongParamError,
+                      "File content is empty : " << location);
+
+    unsigned char *content = new unsigned char[filesize + 1];
+    memset(content, 0x00, filesize + 1);
+    rewind(fp);
+    if (fread(content, sizeof(unsigned char), filesize, fp) != static_cast<size_t>(filesize))
+        VcoreThrowMsg(Certificate::Exception::InternalError,
+                      "file read failed. wrong size : " << location);
+
+    content[filesize] = '\0';
+    const unsigned char *ptr = reinterpret_cast<const unsigned char *>(content);
+    x509 = d2i_X509(NULL, &ptr, filesize);
+    if (x509 == NULL)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Internal Openssl error in d2i_X509 function.");
 
@@ -191,7 +236,8 @@ X509_NAME *Certificate::getX509Name(FieldType type) const
         name = X509_get_subject_name(m_x509);
         break;
     default:
-        Assert("Invalid field type.");
+        VcoreThrowMsg(Certificate::Exception::WrongParamError,
+                      "Invalid field type param. type : " << type);
     }
 
     if (!name)

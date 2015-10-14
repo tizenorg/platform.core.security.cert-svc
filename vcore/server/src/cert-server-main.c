@@ -32,12 +32,11 @@
 #include <sys/select.h>
 #include <systemd/sd-daemon.h>
 
-#include "orig/cert-service-debug.h"
-
 #include <cert-svc/cerror.h>
 #include <cert-svc/ccert.h>
-#include <vcore/cert-svc-client.h>
+#include <vcore/Client.h>
 
+#include <cert-server-debug.h>
 #include <cert-server-logic.h>
 
 sqlite3 *cert_store_db = NULL;

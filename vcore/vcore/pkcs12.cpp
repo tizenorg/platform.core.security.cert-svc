@@ -36,7 +36,7 @@
 
 #include "dpl/log/log.h"
 #include "vcore/Certificate.h"
-#include "vcore/cert-svc-client.h"
+#include "vcore/Client.h"
 #include "cert-svc/cerror.h"
 
 #include "vcore/pkcs12.h"
@@ -161,6 +161,8 @@ int read_from_file(const char *fileName, char **certBuffer, int *length)
     }
     *length = certLength;
 
+    LogDebug("Success to read from file[" << fileName << "]");
+
 err:
     if (fp_out != NULL) {
         fclose(fp_out);
@@ -272,10 +274,17 @@ int install_pem_file_format_to_store(CertStoreType storeType, const char *certBu
     std::string commonName;
 
     if (stat(path, &dirST) != -1) {
-        ValidationCore::CertificatePtr certPtr = ValidationCore::Certificate::createFromFile(std::string(path));
-        commonName = certPtr->getCommonName();
-        if (commonName.empty()) {
-            LogError("CommonName is NULL");
+        try {
+            ValidationCore::CertificatePtr certPtr = ValidationCore::Certificate::createFromFile(std::string(path));
+            commonName = certPtr->getCommonName();
+            if (commonName.empty()) {
+                LogError("CommonName is NULL");
+                result = CERTSVC_FAIL;
+                goto error;
+            }
+            LogDebug("Certificate Common name to install : " << commonName);
+        } catch (const ValidationCore::Certificate::Exception::Base &e) {
+            LogError("Certificate exception : " << e.DumpToString());
             result = CERTSVC_FAIL;
             goto error;
         }
@@ -340,58 +349,63 @@ int install_crt_file(
         goto error;
     }
 
-    if (header != NULL)	{
-        /* Supports installation of only one certificate present in a CRT file */
-        if (decideCert == PEM_CRT) {
-            trailer = strstr(header, END_CERT);
-            tailEnd = END_CERT;
-        }
-        else if (decideCert == P12_END_USER) {
-            trailer = strstr(header, END_CERT);
-            tailEnd = END_CERT;
-        }
-        else if ((decideCert == P12_TRUSTED)||(decideCert == P12_INTERMEDIATE)) {
-            trailer = strstr(header, END_TRUSTED);
-            tailEnd = END_TRUSTED;
-        }
-        else {
-            LogError("Invalid certificate passed.");
-            result = CERTSVC_IO_ERROR;
-            goto error;
-        }
-
-        if (trailer != NULL) {
-            tmpBuffer = trailer;
-            certLength = ((int)(trailer - header) + strlen(tailEnd));
-            certBuffer = (char*) malloc(sizeof(char) * (certLength+2));
-            if (certBuffer == NULL) {
-                result = CERTSVC_BAD_ALLOC;
-                LogError("Fail to allocate memory.");
-                goto error;
-            }
-
-            memset(certBuffer, 0x00, certLength+2);
-            memcpy(certBuffer, header, certLength);
-            certBuffer[certLength] = '\0';
-
-            result = install_pem_file_format_to_store(storeType, certBuffer, certLength, alias, \
-                                                      path, private_key_gname, associated_gname, decideCert);
-            if (result != CERTSVC_SUCCESS) {
-                result = CERTSVC_FAIL;
-                LogError("Fail to install certificate[" << path << "]");
-            }
-        }
-    }
-    else {
+    if (header == NULL) {
         LogError("Invalid file type passed.");
         result = CERTSVC_INVALID_CERTIFICATE;
+        goto error;
     }
 
+    /* Supports installation of only one certificate present in a CRT file */
+    if (decideCert == PEM_CRT) {
+        trailer = strstr(header, END_CERT);
+        tailEnd = END_CERT;
+    }
+    else if (decideCert == P12_END_USER) {
+        trailer = strstr(header, END_CERT);
+        tailEnd = END_CERT;
+    }
+    else if ((decideCert == P12_TRUSTED)||(decideCert == P12_INTERMEDIATE)) {
+        trailer = strstr(header, END_TRUSTED);
+        tailEnd = END_TRUSTED;
+    }
+    else {
+        LogError("Invalid certificate passed.");
+        result = CERTSVC_IO_ERROR;
+        goto error;
+    }
+
+    if (trailer == NULL) {
+        LogError("Invalid certificate passed.");
+        result = CERTSVC_IO_ERROR;
+        goto error;
+    }
+
+    tmpBuffer = trailer;
+    certLength = ((int)(trailer - header) + strlen(tailEnd));
+    certBuffer = (char*) malloc(sizeof(char) * (certLength+2));
+    if (certBuffer == NULL) {
+        result = CERTSVC_BAD_ALLOC;
+        LogError("Fail to allocate memory.");
+        goto error;
+    }
+
+    memset(certBuffer, 0x00, certLength+2);
+    memcpy(certBuffer, header, certLength);
+    certBuffer[certLength] = '\0';
+
+    result = install_pem_file_format_to_store(storeType, certBuffer, certLength, alias, \
+                                              path, private_key_gname, associated_gname, decideCert);
+    if (result != CERTSVC_SUCCESS) {
+        result = CERTSVC_FAIL;
+        LogError("Fail to install certificate[" << path << "]");
+    }
+
+    LogDebug("Success to install certificate[" << path << "]");
+
 error:
-    if (certBuffer)
-        free(certBuffer);
-    if (fileContent)
-        free(fileContent);
+    free(certBuffer);
+    free(fileContent);
+
     return result;
 }
 

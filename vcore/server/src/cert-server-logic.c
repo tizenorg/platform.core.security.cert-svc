@@ -33,12 +33,11 @@
 #include <ckmc/ckmc-manager.h>
 #include <ckmc/ckmc-error.h>
 
-#include "orig/cert-service.h"
-#include "orig/cert-service-debug.h"
 #include <cert-svc/cerror.h>
 #include <cert-svc/ccert.h>
-#include <vcore/cert-svc-client.h>
+#include <vcore/Client.h>
 
+#include <cert-server-debug.h>
 #include <cert-server-logic.h>
 
 static CertStatus int_to_CertStatus(int intval)

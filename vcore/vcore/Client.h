@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 /**
- * @file        cert-svc-client.h
+ * @file        Client.h
  * @author      Madhan A K (madhan.ak@samsung.com)
  * @version     1.0
  * @brief       cert-svc client interface for cert-server.

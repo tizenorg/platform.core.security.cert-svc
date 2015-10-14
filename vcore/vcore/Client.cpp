@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 /**
- * @file     cert-svc-client.c
+ * @file     Client.cpp
  * @author   Madhan A K (madhan.ak@samsung.com)
  *           Kyungwook Tak (k.tak@samsung.com)
  * @version  1.0
@@ -30,9 +30,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "orig/cert-service-debug.h"
+#include <dpl/log/log.h>
 
-#include <vcore/cert-svc-client.h>
+#include <vcore/Client.h>
 
 void initialize_res_data(VcoreResponseData *pData)
 {
@@ -57,9 +57,10 @@ void initialize_req_data(VcoreRequestData *pData)
 	memset(pData->dataBlock, 0, VCORE_MAX_SEND_DATA_SIZE);
 	pData->certStatus = DISABLED;
 	pData->storeType = NONE_STORE;
-	pData->reqType = -1;
+	pData->reqType = (VcoreRequestType)-1;
 	pData->dataBlockLen = 0;
 	pData->is_root_app = -1;
+	pData->certType = INVALID_DATA;
 }
 
 int _recv_fixed_lenghth(int sockfd, char *buff, int length)
@@ -78,7 +79,7 @@ int _recv_fixed_lenghth(int sockfd, char *buff, int length)
 }
 
 VcoreRequestData* set_request_data(
-	int reqType,
+	VcoreRequestType reqType,
 	CertStoreType storeType,
 	int is_root_app,
 	const char *pGroupName,
@@ -92,7 +93,7 @@ VcoreRequestData* set_request_data(
 {
 	VcoreRequestData* pReqData = (VcoreRequestData*)malloc(sizeof(VcoreRequestData));
 	if (!pReqData) {
-		LOGE("Failed to malloc VcoreRequestData");
+		LogError("Failed to malloc VcoreRequestData");
 		return NULL;
 	}
 	initialize_req_data(pReqData);
@@ -106,7 +107,7 @@ VcoreRequestData* set_request_data(
 
 	if (pGroupName) {
 		if (strlen(pGroupName) > VCORE_MAX_FILENAME_SIZE) {
-			LOGE("The data name is too long");
+			LogError("The data name is too long");
 			free(pReqData);
 			return NULL;
 		}
@@ -116,7 +117,7 @@ VcoreRequestData* set_request_data(
 
 	if (common_name) {
 		if (strlen(common_name) > VCORE_MAX_FILENAME_SIZE) {
-			LOGE("The length of the path specified is too long");
+			LogError("The length of the path specified is too long");
 			free(pReqData);
 			return NULL;
 		}
@@ -126,7 +127,7 @@ VcoreRequestData* set_request_data(
 
 	if (private_key_gname) {
 		if (strlen(private_key_gname) > VCORE_MAX_FILENAME_SIZE) {
-			LOGE("The private key gname is too long");
+			LogError("The private key gname is too long");
 			free(pReqData);
 			return NULL;
 		}
@@ -136,7 +137,7 @@ VcoreRequestData* set_request_data(
 
 	if (associated_gname) {
 		if (strlen(associated_gname) > VCORE_MAX_FILENAME_SIZE) {
-			LOGE("The associated gname is too long");
+			LogError("The associated gname is too long");
 			free(pReqData);
 			return NULL;
 		}
@@ -146,7 +147,7 @@ VcoreRequestData* set_request_data(
 
 	if (dataLen != 0 && pData != NULL) {
 		if (dataLen > VCORE_MAX_SEND_DATA_SIZE) {
-			LOGE("The data length is too long [%d]", dataLen);
+			LogError("The data length is too long : " << dataLen);
 			free(pReqData);
 			return NULL;
 		}
@@ -168,7 +169,7 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData* pClientData) {
 	initialize_res_data(&recvData);
 
 	if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		LOGE("Error in function socket()..");
+		LogError("Error in function socket()..");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_exit;
 	}
@@ -185,32 +186,32 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData* pClientData) {
 	timeout.tv_usec = 0;
 
 	if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
-		LOGE("Error in Set SO_RCVTIMEO Socket Option");
+		LogError("Error in Set SO_RCVTIMEO Socket Option");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
 	if (setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
-		LOGE("Error in Set SO_SNDTIMEO Socket Option");
+		LogError("Error in Set SO_SNDTIMEO Socket Option");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
 	if (connect(sockfd, (struct sockaddr*)&clientaddr, clientLen) < 0) {
-		LOGE("Error in function connect()..");
+		LogError("Error in function connect()..");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
 	if (write(sockfd, (char*)pClientData, sizeof(VcoreRequestData)) < 0) {
-		LOGE("Error in function write()..");
+		LogError("Error in function write()..");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
 	read_len = _recv_fixed_lenghth(sockfd, (char*)&recvData, sizeof(recvData));
 	if (read_len < 0) {
-		LOGE("Error in function read()..");
+		LogError("Error in function read()..");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
@@ -218,7 +219,7 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData* pClientData) {
 	if(recvData.certCount > 0) {
 		recvData.certList = (VcoreCertResponseData *) malloc(recvData.certCount * sizeof(VcoreCertResponseData));
 		if (!recvData.certList) {
-			LOGE("Failed to allocate memory");
+			LogError("Failed to allocate memory");
 			recvData.result = VCORE_SOCKET_ERROR;
 			goto Error_close_exit;
 		}
@@ -226,7 +227,7 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData* pClientData) {
 		for(i=0; i<recvData.certCount; i++) {
 			read_len = _recv_fixed_lenghth(sockfd, (char*)(recvData.certList + i), sizeof(VcoreCertResponseData));
 			if (read_len < 0) {
-				LOGE("Error in function read()..");
+				LogError("Error in function read()..");
 				recvData.result = VCORE_SOCKET_ERROR;
 				goto Error_close_exit;
 			}
@@ -236,7 +237,7 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData* pClientData) {
 	if(recvData.certBlockCount > 0) {
 		recvData.certBlockList = (ResponseCertBlock *) malloc(recvData.certBlockCount * sizeof(ResponseCertBlock));
 		if (!recvData.certBlockList) {
-			LOGE("Failed to allocate memory");
+			LogError("Failed to allocate memory");
 			recvData.result = VCORE_SOCKET_ERROR;
 			goto Error_close_exit;
 		}
@@ -244,7 +245,7 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData* pClientData) {
 		for(i=0; i<recvData.certBlockCount; i++) {
 			read_len = _recv_fixed_lenghth(sockfd, (char*)(recvData.certBlockList + i), sizeof(ResponseCertBlock));
 			if (read_len < 0) {
-				LOGE("Error in function read()..");
+				LogError("Error in function read()..");
 				recvData.result = VCORE_SOCKET_ERROR;
 				goto Error_close_exit;
 			}
@@ -282,7 +283,7 @@ int vcore_client_install_certificate_to_store(
 	initialize_res_data(&recvData);
 
 	if (!gname && !certData) {
-		LOGE("Invalid input argument.");
+		LogError("Invalid input argument.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -296,9 +297,10 @@ int vcore_client_install_certificate_to_store(
 			associated_gname,
 			certData,
 			certSize,
-			certType, 0);
+			certType,
+			DISABLED);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -314,13 +316,13 @@ int vcore_client_set_certificate_status_to_store(CertStoreType storeType, int is
 	initialize_res_data(&recvData);
 
 	if (gname == NULL) {
-		LOGE("Invalid input parameter.");
+		LogError("Invalid input parameter.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	pSendData = set_request_data(CERTSVC_SET_CERTIFICATE_STATUS, storeType, is_root_app, gname, NULL, NULL, NULL, NULL, 0, 0, status);
+	pSendData = set_request_data(CERTSVC_SET_CERTIFICATE_STATUS, storeType, is_root_app, gname, NULL, NULL, NULL, NULL, 0, INVALID_DATA, status);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -337,13 +339,13 @@ int vcore_client_get_certificate_status_from_store(CertStoreType storeType, cons
 	initialize_res_data(&recvData);
 
 	if (gname == NULL) {
-		LOGE("Invalid input parameter.");
+		LogError("Invalid input parameter.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	pSendData = set_request_data(CERTSVC_GET_CERTIFICATE_STATUS, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, 0, 0);
+	pSendData = set_request_data(CERTSVC_GET_CERTIFICATE_STATUS, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -360,13 +362,13 @@ int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char*
 	initialize_res_data(&recvData);
 
 	if (alias == NULL) {
-		LOGE("Invalid input parameter.");
+		LogError("Invalid input parameter.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	pSendData = set_request_data(CERTSVC_CHECK_ALIAS_EXISTS, storeType, DISABLED,alias, NULL, NULL, NULL, NULL, 0, 0, 0);
+	pSendData = set_request_data(CERTSVC_CHECK_ALIAS_EXISTS, storeType, DISABLED,alias, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -383,25 +385,25 @@ int vcore_client_get_certificate_from_store(CertStoreType storeType, const char*
 	VcoreResponseData recvData;
 
 	if (!gname || !certData || !certSize) {
-		LOGE("Invalid input argument.");
+		LogError("Invalid input argument.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
 	initialize_res_data(&recvData);
 
 	if (storeType == SYSTEM_STORE)  /* for extracting certificate from system store */
-		pSendData = set_request_data(CERTSVC_EXTRACT_SYSTEM_CERT, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, certType, 0);
+		pSendData = set_request_data(CERTSVC_EXTRACT_SYSTEM_CERT, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, certType, DISABLED);
 	else /* for extracting certificate from other stores */
-		pSendData = set_request_data(CERTSVC_EXTRACT_CERT, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, certType, 0);
+		pSendData = set_request_data(CERTSVC_EXTRACT_CERT, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, certType, DISABLED);
 
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data.");
+		LogError("Failed to set request data.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
 	recvData = cert_svc_client_comm(pSendData);
 	if (recvData.result < 0) {
-		LOGE("An error occurred from server side err[%d]", recvData.result);
+		LogError("An error occurred from server side err : " << recvData.result);
 		free(pSendData);
 		return recvData.result;
 	}
@@ -415,7 +417,7 @@ int vcore_client_get_certificate_from_store(CertStoreType storeType, const char*
 		*certSize = recvData.dataBlockLen;
 	}
 	else {
-		LOGE("revcData length is wrong : %d", recvData.dataBlockLen);
+		LogError("revcData length is wrong : " << recvData.dataBlockLen);
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -429,13 +431,13 @@ int vcore_client_delete_certificate_from_store(CertStoreType storeType, const ch
 	initialize_res_data(&recvData);
 
 	if (gname == NULL) {
-		LOGE("Invalid input parameter.");
+		LogError("Invalid input parameter.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	pSendData = set_request_data(CERTSVC_DELETE_CERT, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, 0, 0);
+	pSendData = set_request_data(CERTSVC_DELETE_CERT, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -444,7 +446,7 @@ int vcore_client_delete_certificate_from_store(CertStoreType storeType, const ch
 	return recvData.result;
 }
 
-int _vcore_client_get_certificate_list_from_store(int reqType, CertStoreType storeType, int is_root_app, 
+int _vcore_client_get_certificate_list_from_store(VcoreRequestType reqType, CertStoreType storeType, int is_root_app, 
 									   CertSvcStoreCertList **certList, size_t *length)
 {
 	VcoreRequestData* pSendData = NULL;
@@ -457,9 +459,9 @@ int _vcore_client_get_certificate_list_from_store(int reqType, CertStoreType sto
 	initialize_res_data(&recvData);
 
 
-	pSendData = set_request_data(reqType, storeType, is_root_app, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+	pSendData = set_request_data(reqType, storeType, is_root_app, NULL, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -495,10 +497,11 @@ int _vcore_client_get_certificate_list_from_store(int reqType, CertStoreType sto
 
 	*length = recvData.certCount;
 
-	LOGI("get_certificate_list_from_store: result=%d", recvData.result);
-	if(recvData.certList != NULL)
-		free(recvData.certList);
+	LogDebug("get_certificate_list_from_store: result : " << recvData.result);
+
+	free(recvData.certList);
 	free(pSendData);
+
 	return recvData.result;
 }
 
@@ -530,13 +533,13 @@ int vcore_client_get_certificate_alias_from_store(CertStoreType storeType, const
 	initialize_res_data(&recvData);
 
 	if (gname == NULL) {
-		LOGE("Invalid input parameter.");
+		LogError("Invalid input parameter.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	pSendData = set_request_data(CERTSVC_GET_CERTIFICATE_ALIAS, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, 0, 0);
+	pSendData = set_request_data(CERTSVC_GET_CERTIFICATE_ALIAS, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
@@ -558,21 +561,21 @@ int vcore_client_load_certificates_from_store(CertStoreType storeType, const cha
 
 	initialize_res_data(&recvData);
 
-	pSendData = set_request_data(CERTSVC_LOAD_CERTIFICATES, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, 0, 0);
+	pSendData = set_request_data(CERTSVC_LOAD_CERTIFICATES, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
 	if (pSendData == NULL) {
-		LOGE("Failed to set request data");
+		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
 	recvData = cert_svc_client_comm(pSendData);
 	if (recvData.result != CERTSVC_SUCCESS) {
-		SLOGE("Failed to CERTSVC_LOAD_CERTIFICATES. server retcode=%d", recvData.result);
+		LogError("Failed to CERTSVC_LOAD_CERTIFICATES. server retcode : " << recvData.result);
 		return recvData.result;
 	}
 
 	ncerts_out = recvData.certBlockCount;
 	if (ncerts_out == 0) {
-		SLOGE("No certificates exist with gname[%s] in store[%d]", gname, storeType);
+		LogError("No certificates exist with gname[" << gname << "] in store[" << storeType << "]");
 		return CERTSVC_ALIAS_DOES_NOT_EXIST;
 	}
 
@@ -585,7 +588,7 @@ int vcore_client_load_certificates_from_store(CertStoreType storeType, const cha
 	for (i = 0; i < recvData.certBlockCount; i++) {
 		cert = recvData.certBlockList + i;
 		certs_out[i] = strndup(cert->dataBlock, cert->dataBlockLen);
-		SLOGD("vcore_client_load_certificates_from_store. cert[%s]", certs_out[i]);
+		LogDebug("vcore_client_load_certificates_from_store. cert[" << certs_out[i] << "]");
 	}
 
 	*certs = certs_out;

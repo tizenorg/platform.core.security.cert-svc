@@ -66,6 +66,25 @@ using namespace ValidationCore;
 
 namespace {
 
+struct CharDeleter {
+    void operator()(char *str) const {
+        free(str);
+    }
+};
+
+struct CharArrDeleter {
+    void operator()(char **arr) const {
+        size_t i = 0;
+        if (arr == NULL)
+            return;
+
+        while (arr[i])
+            free(arr[i++]);
+
+        free(arr);
+    }
+};
+
 class CertSvcInstanceImpl {
 public:
     CertSvcInstanceImpl()
@@ -936,9 +955,11 @@ out:
             return result;
         }
 
+        std::shared_ptr<char *> certsPtr(certs, CharArrDeleter());
+
 		std::vector<CertificatePtr> certPtrVector;
-        CertSvcString Alias;
         for (size_t i = 0; i < ncerts; i++) {
+            CertSvcString Alias;
             Alias.privateHandler = certs[i];
             Alias.privateLength = strlen(certs[i]);
             char *certBuffer = NULL;
@@ -949,43 +970,40 @@ out:
                 return CERTSVC_FAIL;
             }
 
+            std::shared_ptr<char> certBufferPtr(certBuffer, CharDeleter());
+
             const char *header = strstr(certBuffer, START_CERT);
             const char *headEnd = START_CERT;
-            const char *trailer = NULL;
-            const char *tailEnd = NULL;
             if (!header) {
-                // START_CERT not found. let's find START_TRUSTED.
                 header = strstr(certBuffer, START_TRUSTED);
                 headEnd = START_TRUSTED;
+                if (!header) {
+                    LogError("Invalid format of certificate. alias : " << certs[i]);
+                    return CERTSVC_FAIL;
+                }
             }
 
-            if (header) {
-                // START_something found. let's find END_CERT first.
-                trailer = strstr(header, END_CERT);
-                tailEnd = END_CERT;
-            }
-
+            const char *trailer = strstr(header, END_CERT);
+            const char *tailEnd = END_CERT;
             if (!trailer) {
-                // END_CERT not found. let's find END_TRUSTED.
                 trailer = strstr(header, END_TRUSTED);
                 tailEnd = END_TRUSTED;
+                if (!trailer) {
+                    LogError("Invalid format of certificate. alias : " << certs[i]);
+                    return CERTSVC_FAIL;
+                }
             }
 
-            if (!trailer) {
-                LogError("Failed the get the certificate.");
+            if ((strcmp(headEnd, START_CERT) == 0 && strcmp(tailEnd, END_TRUSTED) == 0)
+                    || (strcmp(headEnd, START_TRUSTED) == 0 && strcmp(tailEnd, END_CERT) == 0)) {
+                LogError("Invalid format of certificate. alias : " << certs[i]);
                 return CERTSVC_FAIL;
             }
 
-            size_t length = ((1 + strlen(header)) - (strlen(headEnd) + strlen(tailEnd) + 1));
-            std::string tmpBuffer(certBuffer);
-            tmpBuffer = tmpBuffer.substr(strlen(headEnd), length);
-            std::string binary(tmpBuffer.c_str(), length);
-            certPtrVector.push_back(CertificatePtr(new Certificate(binary, Certificate::FORM_BASE64)));
-            free(certBuffer);
+            header += strlen(headEnd); /* cut headEnd */
+            std::string certStr(header, strlen(header) - strlen(trailer));
+            certPtrVector.push_back(CertificatePtr(new Certificate(certStr, Certificate::FORM_BASE64)));
         }
-
-        if (ncerts > 0)
-            c_certsvc_pkcs12_free_certificates(certs);
 
         std::vector<size_t> listId;
         for (const auto &cert : certPtrVector)
@@ -1422,8 +1440,8 @@ int certsvc_get_certificate(CertSvcInstance instance,
             result = CERTSVC_BAD_ALLOC;
         }
 
-        length = BIO_write(pBio, (const void*) certBuffer, length);
-        if (length < 1) {
+        length = BIO_write(pBio, (const void *)certBuffer, (int)length);
+        if ((int)length < 1) {
             LogError("Failed to load cert into bio.");
             result = CERTSVC_BAD_ALLOC;
         }
@@ -1444,7 +1462,7 @@ int certsvc_get_certificate(CertSvcInstance instance,
                 goto error;
             }
 
-            if (fwrite(certBuffer, sizeof(char), (size_t)length, fp_write) != (size_t)length) {
+            if (fwrite(certBuffer, sizeof(char), length, fp_write) != length) {
                 LogError("Fail to write certificate.");
                 result = CERTSVC_FAIL;
                 goto error;

@@ -553,6 +553,9 @@ int vcore_client_load_certificates_from_store(CertStoreType storeType, const cha
 	VcoreResponseData recvData;
 	ResponseCertBlock* cert = NULL;
 	size_t i = 0;
+	size_t ncerts_out = 0;
+	char **certs_out = NULL;
+
 	initialize_res_data(&recvData);
 
 	pSendData = set_request_data(CERTSVC_LOAD_CERTIFICATES, storeType, DISABLED, gname, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -562,22 +565,34 @@ int vcore_client_load_certificates_from_store(CertStoreType storeType, const cha
 	}
 
 	recvData = cert_svc_client_comm(pSendData);
-
-	*ncerts = recvData.certBlockCount;
-	*certs = (char**)malloc((recvData.certBlockCount+1) * sizeof(char *));
-	(*certs)[recvData.certBlockCount] = NULL;
-	LOGD("vcore_client_load_certificates_from_store. result=%d, ncerts=%d", recvData.result, *ncerts);
-	if(recvData.certBlockCount > 0) {
-		for(i=0; i<recvData.certBlockCount; i++) {
-		   cert = recvData.certBlockList + i ;
-		   (*certs)[i] = strndup(cert->dataBlock, cert->dataBlockLen);
-		   LOGD("vcore_client_load_certificates_from_store. cert=%s", (*certs)[i]);
-		}
+	if (recvData.result != CERTSVC_SUCCESS) {
+		SLOGE("Failed to CERTSVC_LOAD_CERTIFICATES. server retcode=%d", recvData.result);
+		return recvData.result;
 	}
 
-	if(recvData.certBlockList != NULL)
-		free(recvData.certBlockList);
-	free(pSendData);
-	return recvData.result;
+	ncerts_out = recvData.certBlockCount;
+	if (ncerts_out == 0) {
+		SLOGE("No certificates exist with gname[%s] in store[%d]", gname, storeType);
+		return CERTSVC_ALIAS_DOES_NOT_EXIST;
+	}
 
+	certs_out = (char **)malloc((ncerts_out + 1) * sizeof(char *));
+	if (certs_out == NULL)
+		return CERTSVC_BAD_ALLOC;
+
+	certs_out[ncerts_out] = NULL;
+
+	for (i = 0; i < recvData.certBlockCount; i++) {
+		cert = recvData.certBlockList + i;
+		certs_out[i] = strndup(cert->dataBlock, cert->dataBlockLen);
+		SLOGD("vcore_client_load_certificates_from_store. cert[%s]", certs_out[i]);
+	}
+
+	*certs = certs_out;
+	*ncerts = ncerts_out;
+
+	free(recvData.certBlockList);
+	free(pSendData);
+
+	return recvData.result;
 }

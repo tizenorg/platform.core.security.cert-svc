@@ -51,6 +51,7 @@
 #include "vcore/Certificate.h"
 #include "vcore/CertificateCollection.h"
 #include "vcore/pkcs12.h"
+#include "vcore/Client.h"
 
 #include "cert-svc/cinstance.h"
 #include "cert-svc/ccert.h"
@@ -835,7 +836,7 @@ out:
         CertSvcString pfxIdString,
         int *is_unique)
     {
-        return c_certsvc_pkcs12_alias_exists_in_store(storeType, pfxIdString.privateHandler, is_unique);
+        return vcore_client_check_alias_exist_in_store(storeType, pfxIdString.privateHandler, is_unique);
     }
 
     inline int getCertDetailFromStore(CertStoreType storeType,
@@ -843,7 +844,7 @@ out:
         char **certBuffer,
         size_t *certSize)
     {
-        return c_certsvc_pkcs12_get_certificate_buffer_from_store(storeType, gname.privateHandler, certBuffer, certSize);
+        return vcore_client_get_certificate_from_store(storeType, gname.privateHandler, certBuffer, certSize, PEM_CRT);
     }
 
     inline int pkcsDeleteCertFromStore(
@@ -851,14 +852,14 @@ out:
         CertSvcString gname
     )
     {
-        return c_certsvc_pkcs12_delete_certificate_from_store(storeType, gname.privateHandler);
+        return vcore_client_delete_certificate_from_store(storeType, gname.privateHandler);
     }
 
     inline int pkcsHasPassword(
         CertSvcString filepath,
         int *has_password)
     {
-        return c_certsvc_pkcs12_has_password(filepath.privateHandler, has_password);
+        return pkcs12_has_password(filepath.privateHandler, has_password);
     }
 
     inline int pkcsImportToStore(
@@ -867,14 +868,14 @@ out:
         CertSvcString pass,
         CertSvcString pfxIdString)
     {
-        return c_certsvc_pkcs12_import_from_file_to_store(storeType, path.privateHandler, pass.privateHandler, pfxIdString.privateHandler);
+        return pkcs12_import_from_file_to_store(storeType, path.privateHandler, pass.privateHandler, pfxIdString.privateHandler);
     }
 
     inline int pkcsGetAliasNameForCertInStore(CertStoreType storeType,
         CertSvcString gname,
         char **alias)
     {
-        return c_certsvc_pkcs12_get_certificate_alias_from_store(storeType, gname.privateHandler, alias);
+        return vcore_client_get_certificate_alias_from_store(storeType, gname.privateHandler, alias);
     }
 
     inline int pkcsSetCertStatusToStore(CertStoreType storeType,
@@ -882,7 +883,7 @@ out:
     	CertSvcString gname,
         CertStatus status)
     {
-        return c_certsvc_pkcs12_set_certificate_status_to_store(storeType, is_root_app, gname.privateHandler, status);
+	    return vcore_client_set_certificate_status_to_store(storeType, is_root_app, gname.privateHandler, status);
     }
 
     inline int pkcsGetCertStatusFromStore(
@@ -890,7 +891,7 @@ out:
         CertSvcString gname,
         CertStatus *status)
     {
-        return c_certsvc_pkcs12_get_certificate_status_from_store(storeType, gname.privateHandler, status);
+        return vcore_client_get_certificate_status_from_store(storeType, gname.privateHandler, status);
     }
 
     inline int getCertFromStore(CertSvcInstance instance,
@@ -901,10 +902,22 @@ out:
 	    return certsvc_get_certificate(instance, storeType, gname, certificate);
     }
 
-    inline int freePkcsIdListFromStore(
-        CertSvcStoreCertList** certList)
+    inline int freePkcsIdListFromStore(CertSvcStoreCertList **certList)
     {
-        return c_certsvc_pkcs12_free_aliases_loaded_from_store(certList);
+        CertSvcStoreCertList *current;
+        CertSvcStoreCertList *next;
+
+        for (current = *certList; current != NULL; current = next) {
+            next = current->next;
+
+            free(current->title);
+            free(current->gname);
+            free(current);
+        }
+
+        *certList = NULL;
+
+        return CERTSVC_SUCCESS;
     }
 
     inline int getPkcsIdListFromStore(
@@ -913,7 +926,7 @@ out:
         CertSvcStoreCertList** certList,
         size_t *length)
     {
-        return c_certsvc_pkcs12_get_certificate_list_from_store(storeType, is_root_app, certList, length);
+        return vcore_client_get_certificate_list_from_store(storeType, is_root_app, certList, length);
     }
 
     inline int getPkcsIdEndUserListFromStore(
@@ -921,7 +934,7 @@ out:
         CertSvcStoreCertList** certList,
         size_t *length)
     {
-        return c_certsvc_pkcs12_get_end_user_certificate_list_from_store(storeType, certList, length);
+        return vcore_client_get_end_user_certificate_list_from_store(storeType, certList, length);
     }
 
     inline int getPkcsIdRootListFromStore(
@@ -929,7 +942,7 @@ out:
         CertSvcStoreCertList** certList,
         size_t *length)
     {
-        return c_certsvc_pkcs12_get_root_certificate_list_from_store(storeType, certList, length);
+        return vcore_client_get_root_certificate_list_from_store(storeType, certList, length);
     }
 
     inline int getPkcsPrivateKeyFromStore(
@@ -938,7 +951,7 @@ out:
         char **certBuffer,
         size_t *certSize)
     {
-        return c_certsvc_pkcs12_private_key_load_from_store(storeType, gname.privateHandler, certBuffer, certSize);
+        return vcore_client_get_certificate_from_store(storeType, gname.privateHandler, certBuffer, certSize, (CertType)P12_PKEY);
     }
 
     inline int getPkcsCertificateListFromStore(
@@ -949,7 +962,7 @@ out:
     {
         char **certs = NULL;
         size_t ncerts = 0;
-        int result = c_certsvc_pkcs12_load_certificates_from_store(storeType, pfxIdString.privateHandler, &certs, &ncerts);
+        int result = vcore_client_load_certificates_from_store(storeType, pfxIdString.privateHandler, &certs, &ncerts);
         if (result != CERTSVC_SUCCESS) {
             LogError("Unable to load certificates from store.");
             return result;
@@ -1077,7 +1090,7 @@ int certsvc_certificate_new_from_file(
         CertSvcCertificate *certificate)
 {
     try {
-        CertificatePtr cert(Certificate::createFromFile(location));
+        CertificatePtr cert = Certificate::createFromFile(location);
 
         certificate->privateInstance = instance;
         certificate->privateHandler = impl(instance)->addCert(cert);
@@ -1428,7 +1441,7 @@ int certsvc_get_certificate(CertSvcInstance instance,
     X509* x509Struct = NULL;
 
     try {
-        result = c_certsvc_pkcs12_get_certificate_buffer_from_store(storeType, gname, &certBuffer, &length);
+        result = vcore_client_get_certificate_from_store(storeType, gname, &certBuffer, &length, PEM_CRT);
         if (result != CERTSVC_SUCCESS) {
             LogError("Failed to get certificate buffer from store.");
             return result;
@@ -1630,17 +1643,16 @@ int certsvc_pkcs12_import_from_file_to_store(CertSvcInstance instance,
     CertSvcString pfxIdString)
 {
     try {
-        if (path.privateHandler != NULL) {
-        if (!impl(instance)->checkValidStoreType(storeType)) {
+        if (path.privateHandler == NULL || !impl(instance)->checkValidStoreType(storeType)) {
             LogError("Invalid input parameter.");
             return CERTSVC_INVALID_STORE_TYPE;
         }
+
         return impl(instance)->pkcsImportToStore(storeType, path, password, pfxIdString);
-    }
-    else
+    } catch (...) {
+        LogError("Exception occured from pkcsImportToStore");
         return CERTSVC_FAIL;
-    } catch (...) {}
-    return CERTSVC_FAIL;
+    }
 }
 
 int certsvc_pkcs12_get_alias_name_for_certificate_in_store(CertSvcInstance instance,
@@ -1782,9 +1794,7 @@ int certsvc_pkcs12_has_password(
     int *has_password)
 {
     try {
-        return impl(instance)->pkcsHasPassword(
-            filepath,
-            has_password);
+        return impl(instance)->pkcsHasPassword(filepath, has_password);
     } catch (...) {}
     return CERTSVC_FAIL;
 }

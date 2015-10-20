@@ -71,26 +71,26 @@ char *add_shared_owner_prefix(const char *name)
 		return NULL;
 	}
 	memset(ckm_alias, 0, alias_len + 1);
-	strncat(ckm_alias, ckmc_owner_id_system, alias_len + 1);
-	strncat(ckm_alias, ckmc_owner_id_separator, alias_len + 1 - strlen(ckmc_owner_id_system));
-	strncat(ckm_alias, name, alias_len + 1 - strlen(ckmc_owner_id_system) + strlen(ckmc_owner_id_separator));
+	strcat(ckm_alias, ckmc_owner_id_system);
+	strcat(ckm_alias, ckmc_owner_id_separator);
+	strcat(ckm_alias, name);
 
 	return ckm_alias;
 }
 
-int ckmc_remove_alias_with_shared_owner_prefix(const char *name, int *result)
+int ckmc_remove_alias_with_shared_owner_prefix(const char *name)
 {
 	char *ckm_alias = add_shared_owner_prefix(name);
 	if (!ckm_alias) {
 		SLOGE("Failed to allocate memory");
-		return CERTSVC_BAD_ALLOC;
+		return CKMC_ERROR_OUT_OF_MEMORY;
 	}
 
-	*result = ckmc_remove_alias(ckm_alias);
+	int result = ckmc_remove_alias(ckm_alias);
 
 	free(ckm_alias);
 
-	return CERTSVC_SUCCESS;
+	return result;
 }
 
 char *get_complete_path(const char *str1, const char *str2)
@@ -303,6 +303,11 @@ int saveCertificateToStore(
 	int result = ckmc_save_data(ckm_alias, cert_data, cert_policy);
 	free(ckm_alias);
 
+	if (result == CKMC_ERROR_DB_ALIAS_EXISTS) {
+		SLOGI("same alias with gname[%s] alrady exist in ckm. Maybe other store type have it. skip.", pGname);
+		return CERTSVC_SUCCESS;
+	}
+
 	if (result != CKMC_ERROR_NONE) {
 		SLOGE("Failed to save trusted data. ckm errcode[%d]", result);
 		return CERTSVC_FAIL;
@@ -409,7 +414,7 @@ int update_ca_certificate_file(sqlite3 *db_handle, char *certBuffer, size_t cert
 	int records = 0;
 	int count = 0;
 	int counter = 0;
-	char *pValue = NULL;
+	char *gname = NULL;
 	char *query = NULL;
 	const char *text;
 	sqlite3_stmt *stmt = NULL;
@@ -427,7 +432,7 @@ int update_ca_certificate_file(sqlite3 *db_handle, char *certBuffer, size_t cert
 		goto error_and_exit;
 	}
 
-	while (count < 4) {
+	for (count = 0; count < 4; count++) {
 		/* get the ssl certificate from database */
 		if (count == 0)
 			query = sqlite3_mprintf("select certificate from ssl where enabled=%d and is_root_app_enabled=%d", ENABLED, ENABLED);
@@ -437,71 +442,77 @@ int update_ca_certificate_file(sqlite3 *db_handle, char *certBuffer, size_t cert
 							  ((count == 1)?"wifi":(count == 2)?"vpn":"email"), ENABLED, ENABLED, ENABLED);
 
 		result = execute_select_query(db_handle, query, &stmt);
+
+		if (query) {
+			sqlite3_free(query);
+			query = NULL;
+		}
+
 		if (result != CERTSVC_SUCCESS) {
 			SLOGE("Querying database failed.");
-			goto next;
+			goto error_and_exit;
 		}
 
 		/* update the ca-certificate.crt file */
 		while (1) {
 			records = sqlite3_step(stmt);
-			if (records != SQLITE_ROW || records == SQLITE_DONE) {
+			if (records == SQLITE_DONE) {
 				result = CERTSVC_SUCCESS;
 				break;
 			}
 
-			if (records == SQLITE_ROW) {
-				certLength = 0;
-				certBuffer = NULL;
-				pValue = NULL;
+			if (records != SQLITE_ROW) {
+				SLOGE("DB query error when select. result[%d].", records);
+				result = CERTSVC_FAIL;
+				goto error_and_exit;
+			}
 
-				if (count == 0) {
-					/* gets the certificate from database for system store */
-					text = (const char *)sqlite3_column_text(stmt, 0);
-					if (text) {
-						certLength = strlen(text);
-						certBuffer = strndup(text, certLength);
-					}
-				} else {
-					/* gets the certificate from key-manager for other stores */
-					text = (const char *)sqlite3_column_text(stmt, 0);
-					if (text)
-						pValue = strndup(text, strlen(text));
+			certLength = 0;
+			certBuffer = NULL;
+			gname = NULL;
 
-					result = get_certificate_buffer_from_store(db_handle, storeType[count], pValue, &certBuffer, &certLength);
-					if (result != CERTSVC_SUCCESS) {
-						SLOGE("Failed to get certificate buffer from key-manager.");
-						goto error_and_exit;
-					}
+			if (count == 0) {
+				/* gets the certificate from database for system store */
+				text = (const char *)sqlite3_column_text(stmt, 0);
+				if (text) {
+					certLength = strlen(text);
+					certBuffer = strndup(text, certLength);
 				}
+			} else {
+				/* gets the certificate from key-manager for other stores */
+				text = (const char *)sqlite3_column_text(stmt, 0);
+				if (text)
+					gname = strndup(text, strlen(text));
 
-				if (certBuffer) {
-					if (counter++ == 0)
-						result = write_to_ca_cert_crt_file("wb", certBuffer, certLength);
-					else
-						result = write_to_ca_cert_crt_file("ab", certBuffer, certLength);
-
-					if (result != CERTSVC_SUCCESS) {
-						SLOGE("Failed to write to file.");
-						result = CERTSVC_FAIL;
-						goto error_and_exit;
-					}
+				result = get_certificate_buffer_from_store(db_handle, storeType[count], gname, &certBuffer, &certLength);
+				if (result != CERTSVC_SUCCESS) {
+					SLOGE("Failed to get certificate buffer from key-manager.");
+					goto error_and_exit;
 				}
 			}
-		}
-next:
-		count++;
-		if (query) {
-			sqlite3_free(query);
-			query = NULL;
+
+			if (certBuffer == NULL) {
+				SLOGE("Failed to extract cert buffer to update ca-certificate.");
+				result = CERTSVC_FAIL;
+				goto error_and_exit;
+			}
+
+			if (counter++ == 0)
+				result = write_to_ca_cert_crt_file("wb", certBuffer, certLength);
+			else
+				result = write_to_ca_cert_crt_file("ab", certBuffer, certLength);
+
+			if (result != CERTSVC_SUCCESS) {
+				SLOGE("Failed to write to file.");
+				result = CERTSVC_FAIL;
+				goto error_and_exit;
+			}
 		}
 	}
+
 	SLOGD("Successfully updated ca-certificate.crt file.");
 
 error_and_exit:
-	if (query)
-		sqlite3_free(query);
-
 	if (stmt)
 		sqlite3_finalize(stmt);
 
@@ -515,7 +526,6 @@ int enable_disable_cert_status(
 	const char *pGname,
 	CertStatus status)
 {
-	int ckmc_result = CKMC_ERROR_UNKNOWN;
 	int result = CERTSVC_SUCCESS;
 	int records = 0;
 	size_t certSize = 0;
@@ -605,10 +615,10 @@ int enable_disable_cert_status(
 		}
 
 		if (storeType != SYSTEM_STORE) {
-			result = ckmc_remove_alias_with_shared_owner_prefix(pGname, &ckmc_result);
+			result = ckmc_remove_alias_with_shared_owner_prefix(pGname);
 
-			if (result != CERTSVC_SUCCESS || ckmc_result != CKMC_ERROR_NONE) {
-				SLOGE("Failed to delete certificate from key-manager. ckmc_result[%d]", ckmc_result);
+			if (result != CKMC_ERROR_NONE) {
+				SLOGE("Failed to delete certificate from key-manager. ckmc_result[%d]", result);
 				return CERTSVC_FAIL;
 			}
 
@@ -1092,87 +1102,136 @@ int getCertificateDetailFromSystemStore(
 	return CERTSVC_SUCCESS;
 }
 
-int deleteCertificateFromStore(sqlite3 *db_handle, CertStoreType storeType, const char *pGname) {
-
+int deleteCertificateFromStore(sqlite3 *db_handle, CertStoreType storeType, const char *pGname)
+{
 	int result = CERTSVC_SUCCESS;
-	int ckmc_result = CKMC_ERROR_UNKNOWN;
 	int records = 0;
 	char *query = NULL;
 	char *private_key_name = NULL;
 	sqlite3_stmt *stmt = NULL;
+
+	SLOGD("Remove certificate of gname[%s] in store[%d]", pGname, storeType);
 
 	if (!pGname) {
 		SLOGE("Invalid input parameter passed.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	if (storeType != SYSTEM_STORE) {
-		/* start constructing query */
-		query = sqlite3_mprintf("select private_key_gname from %Q where gname=%Q", ((storeType == WIFI_STORE)? "wifi" :\
+	if (storeType == SYSTEM_STORE) {
+		SLOGE("Invalid store type passed.");
+		return CERTSVC_INVALID_STORE_TYPE;
+	}
+
+	/* start constructing query */
+	query = sqlite3_mprintf("select private_key_gname from %Q where gname=%Q", ((storeType == WIFI_STORE)? "wifi" :\
+						   (storeType == VPN_STORE)? "vpn" : "email"), pGname);
+
+	result = execute_select_query(db_handle, query, &stmt);
+	if (result != CERTSVC_SUCCESS) {
+		SLOGE("Querying database failed.");
+		result = CERTSVC_FAIL;
+		goto error;
+	}
+
+	records = sqlite3_step(stmt);
+	if (records != SQLITE_ROW) {
+		SLOGE("No valid records found for passed gname [%s]. result[%d].", pGname, records);
+		result = CERTSVC_FAIL;
+		goto error;
+	}
+
+	/* if a cert is having private-key in it, the private key should
+	 * be deleted first from key-manager, then the actual cert */
+	if (sqlite3_column_text(stmt, 0) != NULL)
+		private_key_name = strdup((const char *)sqlite3_column_text(stmt, 0));
+
+	query = sqlite3_mprintf("delete from disabled_certs where gname=%Q", pGname);
+	result = execute_insert_update_query(db_handle, query);
+	if (result != CERTSVC_SUCCESS) {
+		SLOGE("Unable to delete certificate entry from database. result[%d]", result);
+		goto error;
+	}
+
+	if (query) {
+		sqlite3_free(query);
+		query = NULL;
+	}
+
+	if (stmt) {
+		sqlite3_finalize(stmt);
+		stmt = NULL;
+	}
+
+	query = sqlite3_mprintf("delete from %Q where gname=%Q", ((storeType == WIFI_STORE)? "wifi" : \
 							   (storeType == VPN_STORE)? "vpn" : "email"), pGname);
 
+	result = execute_insert_update_query(db_handle, query);
+	if (result != CERTSVC_SUCCESS) {
+		SLOGE("Unable to delete certificate entry from database. result[%d]", result);
+		goto error;
+	}
+
+	if (query) {
+		sqlite3_free(query);
+		query = NULL;
+	}
+
+	if (stmt) {
+		sqlite3_finalize(stmt);
+		stmt = NULL;
+	}
+
+	CertStoreType other = ALL_STORE & ~SYSTEM_STORE & ~storeType;
+	CertStoreType current;
+	int gname_exist = 0;
+	for (current = VPN_STORE; current < SYSTEM_STORE; current <<= 1) {
+		if ((other & current) == 0)
+			continue;
+
+		query = sqlite3_mprintf("select * from %Q where gname=%Q", ((current == WIFI_STORE)? "wifi" :\
+							   (current == VPN_STORE)? "vpn" : "email"), pGname);
 		result = execute_select_query(db_handle, query, &stmt);
 		if (result != CERTSVC_SUCCESS) {
 			SLOGE("Querying database failed.");
 			result = CERTSVC_FAIL;
 			goto error;
 		}
-
 		records = sqlite3_step(stmt);
-		if ((records != SQLITE_ROW) || (records == SQLITE_DONE)) {
-			SLOGE("No valid records found for passed gname [%s].",pGname);
-			result = CERTSVC_FAIL;
-			goto error;
+		if (records == SQLITE_ROW) {
+			SLOGI("Same gname[%s] exist on store[%d].", pGname, current);
+			gname_exist = 1;
+			break;
 		}
 
-		/* if a cert is having private-key in it, the private key should
-		 * be deleted first from key-manager, then the actual cert */
-		if (sqlite3_column_text(stmt, 0) != NULL) {
-			private_key_name = strdup((const char *)sqlite3_column_text(stmt, 0));
-			result = ckmc_remove_alias_with_shared_owner_prefix(private_key_name, &ckmc_result);
-			if (result != CERTSVC_SUCCESS || ckmc_result != CKMC_ERROR_NONE) {
-				SLOGE("Failed to delete certificate from key-manager. ckmc_result[%d]", ckmc_result);
+		sqlite3_free(query);
+		sqlite3_finalize(stmt);
+		query = NULL;
+		stmt = NULL;
+	}
+
+	if (!gname_exist) {
+		SLOGD("The gname[%s] which is in store[%d] is the last one. so remove it from ckm either.", pGname, storeType);
+
+		if (private_key_name != NULL) {
+			result = ckmc_remove_alias_with_shared_owner_prefix(private_key_name);
+			if (result != CKMC_ERROR_NONE) {
+				SLOGE("Failed to delete certificate from key-manager. ckmc_result[%d]", result);
 				result = CERTSVC_FAIL;
 				goto error;
 			}
 		}
 
 		/* removing the actual cert */
-		result = ckmc_remove_alias_with_shared_owner_prefix(pGname, &ckmc_result);
-		if (result != CERTSVC_SUCCESS || ckmc_result != CKMC_ERROR_NONE) {
-			query = sqlite3_mprintf("delete from disabled_certs where gname=%Q", pGname);
-			result = execute_insert_update_query(db_handle, query);
-			if (result != CERTSVC_SUCCESS) {
-				SLOGE("Unable to delete certificate entry from database.");
-				result = CERTSVC_FAIL;
-				goto error;
-			}
-		}
-
-		if (query) {
-			sqlite3_free(query);
-			query = NULL;
-		}
-
-		if (stmt) {
-			sqlite3_finalize(stmt);
-			stmt = NULL;
-		}
-
-		query = sqlite3_mprintf("delete from %Q where gname=%Q", ((storeType == WIFI_STORE)? "wifi" : \
-							   (storeType == VPN_STORE)? "vpn" : "email"), pGname);
-
-		result = execute_insert_update_query(db_handle, query);
-		if (result != CERTSVC_SUCCESS) {
-			SLOGE("Unable to delete certificate entry from database.");
+		result = ckmc_remove_alias_with_shared_owner_prefix(pGname);
+		if (result != CKMC_ERROR_NONE) {
+			SLOGE("Failed to remove data in ckm with gname[%s]. ckm_result[%d]", pGname, result);
 			result = CERTSVC_FAIL;
 			goto error;
 		}
-	} else {
-		SLOGE("Invalid store type passed.");
-		result = CERTSVC_INVALID_STORE_TYPE;
 	}
+
 	SLOGD("Success in deleting the certificate from store.");
+	result = CERTSVC_SUCCESS;
 
 error:
 	if (query)
@@ -1182,6 +1241,7 @@ error:
 		sqlite3_finalize(stmt);
 
 	free(private_key_name);
+
 	return result;
 }
 

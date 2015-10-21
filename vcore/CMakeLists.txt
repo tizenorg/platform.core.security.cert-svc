@@ -92,6 +92,7 @@ SET(CERT_SERVER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/server)
 SET(CERT_SERVER_SRC
     ${CERT_SERVER_DIR}/src/cert-server-main.c
     ${CERT_SERVER_DIR}/src/cert-server-logic.c
+    ${CERT_SERVER_DIR}/src/cert-server-db.c
     )
 
 INCLUDE_DIRECTORIES(

@@ -38,68 +38,7 @@
 
 #include <cert-server-debug.h>
 #include <cert-server-logic.h>
-
-sqlite3 *cert_store_db = NULL;
-
-int open_db(sqlite3 **db_handle, const char *db_path) {
-
-	int result = CERTSVC_FAIL;
-	sqlite3 *handle;
-
-	if (access(db_path, F_OK) == 0) {
-		result = db_util_open(db_path, &handle, 0);
-		if (result != SQLITE_OK) {
-			SLOGE("connect db [%s] failed!", db_path);
-			return CERTSVC_FAIL;
-		}
-		*db_handle = handle;
-		return CERTSVC_SUCCESS;
-	}
-	SLOGD("%s DB does not exists. Creating one!!", db_path);
-
-	result = db_util_open(db_path, &handle, 0);
-	if (result != SQLITE_OK) {
-		SLOGE("connect to db [%s] failed!.", db_path);
-		return CERTSVC_FAIL;
-	}
-	*db_handle = handle;
-	return CERTSVC_SUCCESS;
-}
-
-int evaluate_query(sqlite3 *db_handle, char *query) {
-
-	int result = CERTSVC_SUCCESS;
-	sqlite3_stmt* p_statement;
-
-	if (!db_handle) {
-		SLOGE("Database not initialised.");
-		return CERTSVC_WRONG_ARGUMENT;
-	}
-
-	if (!query) {
-		SLOGE("Query is NULL.");
-		return CERTSVC_WRONG_ARGUMENT;
-	}
-
-	result = sqlite3_prepare_v2(db_handle, query, strlen(query), &p_statement, NULL);
-	if (result != SQLITE_OK) {
-		SLOGE("Sqlite3 error [%d] : <%s> preparing <%s> query.", result, sqlite3_errmsg(db_handle), query);
-		return CERTSVC_FAIL;
-	}
-
-	result = sqlite3_step(p_statement);
-	if (result != SQLITE_DONE) {
-		SLOGE("Sqlite3 error [%d] : <%s> executing <%s> statement.", result, sqlite3_errmsg(db_handle), query);
-		return CERTSVC_FAIL;
-	}
-
-	result = sqlite3_finalize(p_statement);
-	if (result != SQLITE_OK) {
-		SLOGE("Sqlite3 error [%d] : <%s> finalising <%s> statement.", result, sqlite3_errmsg(db_handle), query);
-		return CERTSVC_FAIL;
-	}
-	return CERTSVC_SUCCESS;
-}
+#include <cert-server-db.h>
 
 int initialize_db(void)
 {
@@ -108,11 +47,50 @@ int initialize_db(void)
 	if (cert_store_db != NULL)
 		return CERTSVC_SUCCESS;
 
-	result = open_db(&cert_store_db, CERTSVC_SYSTEM_STORE_DB);
-	if (result != CERTSVC_SUCCESS)
-		SLOGE("Certsvc store DB creation failed. result[%d]", result);
+	result = db_util_open(CERTSVC_SYSTEM_STORE_DB, &cert_store_db, 0);
+	if (result != SQLITE_OK) {
+		SLOGE("connect certs-meta db failed!");
+		cert_store_db = NULL;
+		return CERTSVC_FAIL;
+	}
 
-	return result;
+	return CERTSVC_SUCCESS;
+}
+
+int evaluate_query(sqlite3 *db_handle, char *query)
+{
+	int result = CERTSVC_SUCCESS;
+	sqlite3_stmt *stmt = NULL;
+
+	if (!db_handle) {
+		SLOGE("Database not initialized.");
+		return CERTSVC_WRONG_ARGUMENT;
+	}
+
+	if (!query) {
+		SLOGE("Query is NULL.");
+		return CERTSVC_WRONG_ARGUMENT;
+	}
+
+	result = sqlite3_prepare_v2(db_handle, query, strlen(query), &stmt, NULL);
+	if (result != SQLITE_OK) {
+		SLOGE("Sqlite3 error [%d] : <%s> preparing <%s> query.", result, sqlite3_errmsg(db_handle), query);
+		return CERTSVC_FAIL;
+	}
+
+	result = sqlite3_step(stmt);
+	if (result != SQLITE_DONE) {
+		SLOGE("Sqlite3 error [%d] : <%s> executing <%s> statement.", result, sqlite3_errmsg(db_handle), query);
+		return CERTSVC_FAIL;
+	}
+
+	result = sqlite3_finalize(stmt);
+	if (result != SQLITE_OK) {
+		SLOGE("Sqlite3 error [%d] : <%s> finalising <%s> statement.", result, sqlite3_errmsg(db_handle), query);
+		return CERTSVC_FAIL;
+	}
+
+	return CERTSVC_SUCCESS;
 }
 
 void CertSigHandler(int signo)
@@ -125,7 +103,7 @@ void CertSigHandler(int signo)
 	exit(1);
 }
 
-int CertSvcGetSocketFromSystemd(int* pSockfd)
+int CertSvcGetSocketFromSystemd(int *pSockfd)
 {
 	int n = sd_listen_fds(0);
 	int fd;
@@ -137,10 +115,11 @@ int CertSvcGetSocketFromSystemd(int* pSockfd)
 			return CERTSVC_SUCCESS;
 		}
 	}
+
 	return CERTSVC_FAIL;
 }
 
-void CertSvcServerComm()
+void CertSvcServerComm(void)
 {
 	int server_sockfd = 0;
 	int client_sockfd = 0;
@@ -162,7 +141,7 @@ void CertSvcServerComm()
 	VcoreRequestData recv_data;
 	VcoreResponseData send_data;
 
-	if (!CertSvcGetSocketFromSystemd(&server_sockfd)) {
+	if (CertSvcGetSocketFromSystemd(&server_sockfd) != CERTSVC_SUCCESS) {
 		SLOGE("Failed to get sockfd from systemd.");
 		return;
 	}
@@ -209,13 +188,13 @@ void CertSvcServerComm()
 
 		SLOGD("cert-server Accept! client sock[%d]", client_sockfd);
 
-		if (setsockopt (client_sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+		if (setsockopt(client_sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
 			SLOGE("Error in Set SO_RCVTIMEO Socket Option");
 			send_data.result = CERTSVC_FAIL;
 			goto Error_close_exit;
 		}
 
-		if (setsockopt (client_sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+		if (setsockopt(client_sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
 			SLOGE("Error in Set SO_SNDTIMEO Socket Option");
 			send_data.result = CERTSVC_FAIL;
 			goto Error_close_exit;
@@ -236,12 +215,11 @@ void CertSvcServerComm()
 		case CERTSVC_EXTRACT_CERT:
 		{
 			send_data.result = getCertificateDetailFromStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.certType,
 					recv_data.gname,
-					send_data.dataBlock,
-					&send_data.dataBlockLen);
+					send_data.dataBlock);
+			send_data.dataBlockLen = strlen(send_data.dataBlock);
 			result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			break;
 		}
@@ -249,10 +227,9 @@ void CertSvcServerComm()
 		case CERTSVC_EXTRACT_SYSTEM_CERT:
 		{
 			send_data.result = getCertificateDetailFromSystemStore(
-					cert_store_db,
 					recv_data.gname,
-					send_data.dataBlock,
-					&send_data.dataBlockLen);
+					send_data.dataBlock);
+			send_data.dataBlockLen = strlen(send_data.dataBlock);
 			result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			break;
 		}
@@ -260,11 +237,10 @@ void CertSvcServerComm()
 		case CERTSVC_DELETE_CERT:
 		{
 			send_data.result = deleteCertificateFromStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.gname);
 			if (send_data.result == CERTSVC_SUCCESS)
-				send_data.result = update_ca_certificate_file(cert_store_db, NULL, 0);
+				send_data.result = update_ca_certificate_file(NULL);
 			result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			break;
 		}
@@ -272,7 +248,6 @@ void CertSvcServerComm()
 		case CERTSVC_GET_CERTIFICATE_STATUS:
 		{
 			send_data.result = getCertificateStatusFromStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.gname,
 					&send_data.certStatus);
@@ -283,13 +258,12 @@ void CertSvcServerComm()
 		case CERTSVC_SET_CERTIFICATE_STATUS:
 		{
 			send_data.result = setCertificateStatusToStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.is_root_app,
 					recv_data.gname,
 					recv_data.certStatus);
 			if (send_data.result == CERTSVC_SUCCESS)
-				send_data.result = update_ca_certificate_file(cert_store_db, NULL, 0);
+				send_data.result = update_ca_certificate_file(NULL);
 			result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			break;
 		}
@@ -297,7 +271,6 @@ void CertSvcServerComm()
 		case CERTSVC_CHECK_ALIAS_EXISTS:
 		{
 			send_data.result = checkAliasExistsInStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.gname,
 					&send_data.isAliasUnique);
@@ -308,18 +281,16 @@ void CertSvcServerComm()
 		case CERTSVC_INSTALL_CERTIFICATE:
 		{
 			send_data.result = installCertificateToStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.gname,
 					recv_data.common_name,
 					recv_data.private_key_gname,
 					recv_data.associated_gname,
 					recv_data.dataBlock,
-					recv_data.dataBlockLen,
 					recv_data.certType);
 
-			if ((send_data.result == CERTSVC_SUCCESS) && ((recv_data.certType == PEM_CRT) || (recv_data.certType == P12_TRUSTED)))
-				send_data.result = update_ca_certificate_file(cert_store_db, recv_data.dataBlock, recv_data.dataBlockLen);
+			if (send_data.result == CERTSVC_SUCCESS && (recv_data.certType == PEM_CRT || recv_data.certType == P12_TRUSTED))
+				send_data.result = update_ca_certificate_file(recv_data.dataBlock);
 			result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			break;
 		}
@@ -329,7 +300,6 @@ void CertSvcServerComm()
 		case CERTSVC_GET_ROOT_CERTIFICATE_LIST:
 		{
 			send_data.result = getCertificateListFromStore(
-					cert_store_db,
 					recv_data.reqType,
 					recv_data.storeType,
 					recv_data.is_root_app,
@@ -339,14 +309,12 @@ void CertSvcServerComm()
 			result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 			if (bufferLen > 0)
 				result = send(client_sockfd, certListBuffer, bufferLen, 0);
-
 			break;
 		}
 
 		case CERTSVC_GET_CERTIFICATE_ALIAS:
 		{
 			send_data.result = getCertificateAliasFromStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.gname,
 					send_data.common_name);
@@ -357,7 +325,6 @@ void CertSvcServerComm()
 		case CERTSVC_LOAD_CERTIFICATES:
 		{
 			send_data.result = loadCertificatesFromStore(
-					cert_store_db,
 					recv_data.storeType,
 					recv_data.gname,
 					&certBlockBuffer,
@@ -374,32 +341,27 @@ void CertSvcServerComm()
 			break;
 		}
 
-		if (result <= 0) {
+		if (result <= 0)
 			SLOGE("send failed :%d, errno %d try once", result, errno);
-			//result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
-			//SLOGE("retry result :%d, errno %d", result, errno);
-		}
 	}
 
 Error_close_exit:
 	close(server_sockfd);
+
 	if (cert_store_db) {
 		sqlite3_close(cert_store_db);
 		cert_store_db = NULL;
 	}
 
-	if (certListBuffer)
-		free(certListBuffer);
-
-	if (certBlockBuffer)
-		free(certBlockBuffer);
+	free(certListBuffer);
+	free(certBlockBuffer);
 
 	if (client_sockfd >= 0) {
 		result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
 		close(client_sockfd);
-	}
-	else
+	} else {
 		SLOGE("cannot connect to client socket.");
+	}
 
 	SLOGI("CertSvcServerComm done.");
 }

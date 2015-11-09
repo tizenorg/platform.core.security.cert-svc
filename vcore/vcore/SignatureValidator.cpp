@@ -30,6 +30,7 @@
 #include <vcore/SignatureReader.h>
 #include <vcore/SignatureFinder.h>
 #include <vcore/Ocsp.h>
+#include <vcore/PluginHandler.h>
 
 #include <vcore/SignatureValidator.h>
 
@@ -182,12 +183,28 @@ static struct tm getMidTime(const struct tm &tb, const struct tm &ta)
 
 namespace ValidationCore {
 
+static SignatureValidator::Result additionalCheck(SignatureValidator::Result result, SignatureData &data)
+{
+	try {
+		PluginHandler handler;
+		if (handler.fail()) {
+			LogInfo("No validator plugin found. Skip additional check.");
+			return result;
+		}
+
+		return handler.step(result, data);
+	} catch (...) {
+		LogError("Exception in additional check by plugin.");
+		return SignatureValidator::SIGNATURE_INVALID;
+	}
+}
+
 /*
- *  Prepare to check / checklist. parse xml and save info to signature data.
+ *  Parse xml and save info to signature data.
  *
  *  [out] outData  : signature data for validating and will be finally returned to client.
  */
-int prepareToCheck(SignatureData &outData)
+static int parseSignature(SignatureData &outData)
 {
 	try {
 		SignatureReader xml;
@@ -212,8 +229,8 @@ static int makeDataBySignature(
 {
 	data = SignatureData(fileInfo.getFileName(), fileInfo.getFileNumber());
 
-	if (prepareToCheck(data)) {
-		LogError("Failed to prepare to check.");
+	if (parseSignature(data)) {
+		LogError("Failed to parse signature.");
 		return -1;
 	}
 
@@ -257,7 +274,7 @@ static int makeDataBySignature(
  *  [out] context   : xml sec for validating.
  *  [out] data      : signature data for validationg and will be finally returned to client.
  */
-static SignatureValidator::Result checkInternal(
+static SignatureValidator::Result preStep(
 	const SignatureFileInfo &fileInfo,
 	bool &disregard,
 	XmlSec::XmlSecContext &context,
@@ -319,7 +336,7 @@ static SignatureValidator::Result checkInternal(
 	return SignatureValidator::SIGNATURE_VERIFIED;
 }
 
-SignatureValidator::Result SignatureValidator::check(
+SignatureValidator::Result baseCheck(
 	const SignatureFileInfo &fileInfo,
 	const std::string &widgetContentPath,
 	bool checkOcsp,
@@ -327,47 +344,48 @@ SignatureValidator::Result SignatureValidator::check(
 	SignatureData &outData)
 {
 	bool disregard = false;
+	SignatureValidator::Result result = SignatureValidator::SIGNATURE_INVALID;
 
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(fileInfo, disregard, context, outData);
-		if (result != SIGNATURE_VERIFIED)
+		result = preStep(fileInfo, disregard, context, outData);
+		if (result != SignatureValidator::SIGNATURE_VERIFIED)
 			return result;
 
 		if (!outData.isAuthorSignature()) {
 			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&context)) {
 				LogWarning("Installation break - invalid package!");
-				return SIGNATURE_INVALID;
+				return SignatureValidator::SIGNATURE_INVALID;
 			}
 
 			outData.setReference(context.referenceSet);
 			if (!checkObjectReferences(outData)) {
 				LogWarning("Failed to check Object References");
-				return SIGNATURE_INVALID;
+				return SignatureValidator::SIGNATURE_INVALID;
 			}
 
 			if (checkReferences) {
 				ReferenceValidator fileValidator(widgetContentPath);
 				if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(outData)) {
 					LogWarning("Invalid package - file references broken");
-					return SIGNATURE_INVALID;
+					return SignatureValidator::SIGNATURE_INVALID;
 				}
 			}
 		}
 
 		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED) {
 			LogError("Certificate is Revoked by OCSP server.");
-			return SIGNATURE_REVOKED;
+			return SignatureValidator::SIGNATURE_REVOKED;
 		}
 
 		LogDebug("Signature validation check done successfully ");
 
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
-		return SIGNATURE_INVALID;
+		return SignatureValidator::SIGNATURE_INVALID;
 	} catch (const XmlSec::Exception::Base &e) {
 		LogError("XmlSec exception : " << e.DumpToString());
-		return SIGNATURE_INVALID;
+		return SignatureValidator::SIGNATURE_INVALID;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
@@ -377,16 +395,16 @@ SignatureValidator::Result SignatureValidator::check(
 		 */
 	} catch (const std::exception &e) {
 		LogError("std exception occured : " << e.what());
-		return SIGNATURE_INVALID;
+		return SignatureValidator::SIGNATURE_INVALID;
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::check");
-		return SIGNATURE_INVALID;
+		return SignatureValidator::SIGNATURE_INVALID;
 	}
 
-	return disregard ? SIGNATURE_DISREGARD : SIGNATURE_VERIFIED;
+	return disregard ? SignatureValidator::SIGNATURE_DISREGARD : SignatureValidator::SIGNATURE_VERIFIED;
 }
 
-SignatureValidator::Result SignatureValidator::checkList(
+SignatureValidator::Result baseCheckList(
 	const SignatureFileInfo &fileInfo,
 	const std::string &widgetContentPath,
 	const std::list<std::string> &uriList,
@@ -395,23 +413,24 @@ SignatureValidator::Result SignatureValidator::checkList(
 	SignatureData &outData)
 {
 	bool disregard = false;
+	SignatureValidator::Result result = SignatureValidator::SIGNATURE_INVALID;
 
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(fileInfo, disregard, context, outData);
-		if (result != SIGNATURE_VERIFIED)
+		result = preStep(fileInfo, disregard, context, outData);
+		if (result != SignatureValidator::SIGNATURE_VERIFIED)
 			return result;
 
 		if (uriList.size() == 0) {
 			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validateNoHash(&context)) {
 				LogWarning("Installation break - invalid package! >> validateNoHash");
-				return SIGNATURE_INVALID;
+				return SignatureValidator::SIGNATURE_INVALID;
 			}
 		} else {
 			XmlSecSingleton::Instance().setPartialHashList(uriList);
 			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validatePartialHash(&context)) {
 				LogWarning("Installation break - invalid package! >> validatePartialHash");
-				return SIGNATURE_INVALID;
+				return SignatureValidator::SIGNATURE_INVALID;
 			}
 		}
 
@@ -427,23 +446,23 @@ SignatureValidator::Result SignatureValidator::checkList(
 			ReferenceValidator fileValidator(widgetContentPath);
 			if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(outData)) {
 				LogWarning("Invalid package - file references broken");
-				return SIGNATURE_INVALID;
+				return SignatureValidator::SIGNATURE_INVALID;
 			}
 		}
 
 		if (checkOcsp && Ocsp::check(outData) == Ocsp::Result::REVOKED) {
 			LogError("Certificate is Revoked by OCSP server.");
-			return SIGNATURE_REVOKED;
+			return SignatureValidator::SIGNATURE_REVOKED;
 		}
 
 		LogDebug("Signature validation of check list done successfully ");
 
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
-		return SIGNATURE_INVALID;
+		return SignatureValidator::SIGNATURE_INVALID;
 	} catch (const XmlSec::Exception::Base &e) {
 		LogError("XmlSec exception : " << e.DumpToString());
-		return SIGNATURE_INVALID;
+		return SignatureValidator::SIGNATURE_INVALID;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
@@ -453,10 +472,35 @@ SignatureValidator::Result SignatureValidator::checkList(
 		 */
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::checkList");
-		return SIGNATURE_INVALID;
+		return SignatureValidator::SIGNATURE_INVALID;
 	}
 
-	return disregard ? SIGNATURE_DISREGARD : SIGNATURE_VERIFIED;
+	return disregard ? SignatureValidator::SIGNATURE_DISREGARD : SignatureValidator::SIGNATURE_VERIFIED;
+}
+
+SignatureValidator::Result SignatureValidator::check(
+	const SignatureFileInfo &fileInfo,
+	const std::string &widgetContentPath,
+	bool checkOcsp,
+	bool checkReferences,
+	SignatureData &outData)
+{
+	Result result = baseCheck(fileInfo, widgetContentPath, checkOcsp, checkReferences, outData);
+
+	return additionalCheck(result, outData);
+}
+
+SignatureValidator::Result SignatureValidator::checkList(
+	const SignatureFileInfo &fileInfo,
+	const std::string &widgetContentPath,
+	const std::list<std::string> &uriList,
+	bool checkOcsp,
+	bool checkReferences,
+	SignatureData &outData)
+{
+	Result result = baseCheckList(fileInfo, widgetContentPath, uriList, checkOcsp, checkReferences, outData);
+
+	return additionalCheck(result, outData);
 }
 
 SignatureValidator::Result SignatureValidator::makeChainBySignature(

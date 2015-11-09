@@ -13,26 +13,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-source /etc/tizen-platform.conf
+INIT_SQL=$1
+DB_PATH=$2
 
-DB_PATH=${TZ_SYS_SHARE}/cert-svc/dbspace
-name="certs-meta.db"
+sqlite3 $DB_PATH "PRAGMA journal_mode = PERSIST;"
+sqlite3 $DB_PATH ".read $INIT_SQL"
 
-rm -f ${DB_PATH}/$name
-rm -f ${DB_PATH}/$name-journal
-
-SQL="PRAGMA journal_mode = PERSIST;"
-sqlite3 ${DB_PATH}/$name "$SQL"
-
-SQL=".read ${TZ_SYS_SHARE}/cert-svc/cert_svc_store_db.sql"
-sqlite3 ${DB_PATH}/$name "$SQL"
-
-touch ${DB_PATH}/$name-journal
-
-chown system:system ${DB_PATH}/$name
-chown system:system ${DB_PATH}/$name-journal
-
-chmod 664 ${DB_PATH}/$name
-chmod 664 ${DB_PATH}/$name-journal
-
-echo "cert_svc_create_clean_store_db.sh done"
+touch $DB_PATH-journal

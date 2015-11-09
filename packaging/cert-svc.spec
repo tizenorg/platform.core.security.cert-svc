@@ -8,8 +8,9 @@ Group:   Security/Libraries
 License: Apache-2.0
 Source0: %{name}-%{version}.tar.gz
 Source1001: %{name}.manifest
-Requires(post): findutils
 BuildRequires: cmake
+BuildRequires: findutils
+BuildRequires: openssl
 BuildRequires: pkgconfig(dlog)
 BuildRequires: pkgconfig(openssl)
 BuildRequires: pkgconfig(libpcrecpp)
@@ -21,11 +22,9 @@ BuildRequires: pkgconfig(libsystemd-daemon)
 BuildRequires: pkgconfig(key-manager)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(libsystemd-journal)
-Requires: pkgconfig(libtzplatform-config)
-Requires: ca-certificates-tizen
-Requires: ca-certificates-mozilla
-Requires: ca-certificates
-Requires: openssl
+BuildRequires: pkgconfig(sqlite3)
+BuildRequires: ca-certificates-tizen
+BuildRequires: ca-certificates-mozilla
 
 %description
 Certification service
@@ -115,22 +114,6 @@ if [ $1 == 1 ]; then
     systemctl restart cert-server.service
 fi
 
-echo "make ca-certificate.crt"
-%{TZ_SYS_BIN}/make-ca-certificate.sh
-rm %{TZ_SYS_BIN}/make-ca-certificate.sh
-
-echo "create certs-meta.db"
-rm -rf %{TZ_SYS_SHARE}/cert-svc/dbspace/certs-meta.db
-%{TZ_SYS_BIN}/cert_svc_create_clean_store_db.sh %{TZ_SYS_SHARE}/cert-svc/cert_svc_store_db.sql
-%{TZ_SYS_BIN}/initialize_store_db.sh
-if [[ -e %{TZ_SYS_SHARE}/cert-svc/dbspace/certs-meta.db ]]; then
-    cat %{TZ_SYS_SHARE}/cert-svc/root-cert.sql | sqlite3 %{TZ_SYS_SHARE}/cert-svc/dbspace/certs-meta.db
-fi
-rm %{TZ_SYS_SHARE}/cert-svc/cert_svc_store_db.sql
-rm %{TZ_SYS_SHARE}/cert-svc/root-cert.sql
-rm %{TZ_SYS_BIN}/cert_svc_create_clean_store_db.sh
-rm %{TZ_SYS_BIN}/initialize_store_db.sh
-
 %postun
 /sbin/ldconfig
 
@@ -146,15 +129,11 @@ rm %{TZ_SYS_BIN}/initialize_store_db.sh
 %attr(755,root,root) %{_libdir}/libcert-svc-vcore.so.*
 %attr(644,root,root) %{TZ_SYS_SHARE}/license/%{name}
 %attr(644,root,root) %{TZ_SYS_RO_WRT_ENGINE}/schema.xsd
-%attr(644,root,root) %{TZ_SYS_SHARE}/cert-svc/cert_svc_store_db.sql
-%attr(755,root,root) %{TZ_SYS_BIN}/cert_svc_create_clean_store_db.sh
-%attr(755,root,root) %{TZ_SYS_BIN}/make-ca-certificate.sh
-%attr(755,root,root) %{TZ_SYS_BIN}/initialize_store_db.sh
 
 # Resource files install as system
 %{TZ_SYS_SHARE}/cert-svc/pkcs12
-%{TZ_SYS_SHARE}/cert-svc/dbspace
-
+%{TZ_SYS_SHARE}/cert-svc/dbspace/certs-meta.db*
+%{TZ_SYS_SHARE}/cert-svc/ca-certificate.crt
 
 %files devel
 %defattr(-,root,root,-)

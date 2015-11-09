@@ -1,18 +1,18 @@
 #!/bin/bash
 source /etc/tizen-platform.conf
 
-ROOT_CERT_SQL=${TZ_SYS_SHARE}/cert-svc/root-cert.sql
-CERT_LIST_CRT=${TZ_SYS_SHARE}/cert-svc/ca-certificate.crt
+DB_PATH=$1
+CRT_PATH=$2
 
-MOZILLA_SSL_DIRECTORY=${TZ_SYS_SHARE}/ca-certificates/mozilla
-TIZEN_SSL_DIRECTORY=${TZ_SYS_SHARE}/ca-certificates/tizen
+ROOT_CERT_SQL=root-cert.sql
+MOZILLA_SSL_DIRECTORY=$TZ_SYS_SHARE/ca-certificates/mozilla
+TIZEN_SSL_DIRECTORY=$TZ_SYS_SHARE/ca-certificates/tizen
 
 function initialize_store_in_dir {
 	for i in `find $1/* -name '*'`
 	do
-		cert=`openssl x509 -in $i`
-		echo $cert >> ${CERT_LIST_CRT}
-		echo >> ${CERT_LIST_CRT}
+		openssl x509 -in $i -outform PEM >> $CRT_PATH
+#		echo >> $CRT_PATH
 
 		gname=`echo $i | cut -f 6 -d '/'`
 		filehash=`openssl x509 -in $i -hash -noout`
@@ -31,27 +31,15 @@ function initialize_store_in_dir {
 
 		commonname=${commonname:1} # cut first whitespace
 
-		echo "INSERT INTO ssl (gname, certificate, file_hash, subject_hash, common_name, enabled, is_root_app_enabled) values (\"$gname\", \"$cert\", \"$filehash\", \"$subjecthash\", \"$commonname\", 1, 1);" >> ${ROOT_CERT_SQL}
+		echo "INSERT INTO ssl (gname, certificate, file_hash, subject_hash, common_name, enabled, is_root_app_enabled) values (\"$gname\", \"$cert\", \"$filehash\", \"$subjecthash\", \"$commonname\", 1, 1);" >> $ROOT_CERT_SQL
 	done
 }
 
-if [[ -e $ROOT_CERT_SQL ]]
-then
-	rm $ROOT_CERT_SQL
-fi
-
-if [[ -e $CERT_LIST_CRT ]]
-then
-	rm $CERT_LIST_CRT
-fi
-
 touch $ROOT_CERT_SQL
-touch $CERT_LIST_CRT
+touch $CRT_PATH
 
 initialize_store_in_dir $MOZILLA_SSL_DIRECTORY
 initialize_store_in_dir $TIZEN_SSL_DIRECTORY
 
-chown system:system ${CERT_LIST_CRT}
-chmod 644 ${CERT_LIST_CRT}
-
-echo "initialize_store_db.sh done"
+cat $ROOT_CERT_SQL | sqlite3 $DB_PATH
+rm $ROOT_CERT_SQL

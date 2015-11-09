@@ -180,4 +180,5 @@ rm %{TZ_SYS_ETC}/ssl/certs/ba70bb69.0
 %{TZ_SYS_SHARE}/ca-certificates/tizen/*
 %{TZ_SYS_SHARE}/cert-svc/cert-type/*
 %{TZ_SYS_SHARE}/cert-svc/tests/*
+%{_libdir}/libcert-svc-validator-plugin.so
 %endif

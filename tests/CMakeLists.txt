@@ -16,6 +16,7 @@
 SET(TARGET_CAPI_TEST "cert-svc-tests-capi")
 SET(TARGET_PKCS12_TEST "cert-svc-tests-pkcs12")
 SET(TARGET_VCORE_TEST "cert-svc-tests-vcore")
+SET(TARGET_PLUGIN_SAMPLE "cert-svc-validator-plugin")
 
 PKG_CHECK_MODULES(TEST_DEP
     REQUIRED
@@ -52,3 +53,4 @@ INCLUDE_DIRECTORIES(
 ADD_SUBDIRECTORY(capi)
 ADD_SUBDIRECTORY(pkcs12)
 ADD_SUBDIRECTORY(vcore)
+ADD_SUBDIRECTORY(plugin)

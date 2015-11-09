@@ -30,6 +30,7 @@
 #include <vcore/SignatureReader.h>
 #include <vcore/SignatureFinder.h>
 #include <vcore/Ocsp.h>
+#include <vcore/PluginHandler.h>
 
 #include <vcore/SignatureValidator.h>
 
@@ -182,12 +183,28 @@ static struct tm getMidTime(const struct tm &tb, const struct tm &ta)
 
 namespace ValidationCore {
 
+static SignatureValidator::Result checkByPlugin(SignatureValidator::Result result, SignatureData &data)
+{
+	try {
+		PluginHandler handler;
+		if (handler.fail()) {
+			LogInfo("No validator plugin found. Skip additional check.");
+			return result;
+		}
+
+		return handler.step(result, data);
+	} catch (...) {
+		LogError("Exception in additional check by plugin.");
+		return SignatureValidator::SIGNATURE_INVALID;
+	}
+}
+
 /*
  *  Prepare to check / checklist. parse xml and save info to signature data.
  *
  *  [out] outData  : signature data for validating and will be finally returned to client.
  */
-int prepareToCheck(SignatureData &outData)
+static int prepareToCheck(SignatureData &outData)
 {
 	try {
 		SignatureReader xml;
@@ -327,10 +344,11 @@ SignatureValidator::Result SignatureValidator::check(
 	SignatureData &outData)
 {
 	bool disregard = false;
+	Result result = SIGNATURE_INVALID;
 
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(fileInfo, disregard, context, outData);
+		result = checkInternal(fileInfo, disregard, context, outData);
 		if (result != SIGNATURE_VERIFIED)
 			return result;
 
@@ -383,7 +401,10 @@ SignatureValidator::Result SignatureValidator::check(
 		return SIGNATURE_INVALID;
 	}
 
-	return disregard ? SIGNATURE_DISREGARD : SIGNATURE_VERIFIED;
+	if (disregard)
+		result = SIGNATURE_DISREGARD;
+
+	return checkByPlugin(result, outData);
 }
 
 SignatureValidator::Result SignatureValidator::checkList(
@@ -395,10 +416,11 @@ SignatureValidator::Result SignatureValidator::checkList(
 	SignatureData &outData)
 {
 	bool disregard = false;
+	Result result = SIGNATURE_INVALID;
 
 	try {
 		XmlSec::XmlSecContext context;
-		Result result = checkInternal(fileInfo, disregard, context, outData);
+		result = checkInternal(fileInfo, disregard, context, outData);
 		if (result != SIGNATURE_VERIFIED)
 			return result;
 
@@ -456,7 +478,10 @@ SignatureValidator::Result SignatureValidator::checkList(
 		return SIGNATURE_INVALID;
 	}
 
-	return disregard ? SIGNATURE_DISREGARD : SIGNATURE_VERIFIED;
+	if (disregard)
+		result = SIGNATURE_DISREGARD;
+
+	return checkByPlugin(result, outData);
 }
 
 SignatureValidator::Result SignatureValidator::makeChainBySignature(

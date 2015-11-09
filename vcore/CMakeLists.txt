@@ -47,6 +47,7 @@ SET(VCORE_SOURCES
     ${VCORE_DIR}/vcore/Client.cpp
     ${VCORE_DIR}/vcore/Ocsp.cpp
     ${VCORE_DIR}/vcore/CryptoInit.cpp
+    ${VCORE_DIR}/vcore/PluginHandler.cpp
     )
 
 SET(VCORE_INCLUDES
@@ -75,6 +76,7 @@ SET_TARGET_PROPERTIES(${TARGET_VCORE_LIB}
 TARGET_LINK_LIBRARIES(${TARGET_VCORE_LIB}
     ${VCORE_DEPS_LIBRARIES}
     ${TARGET_CERT_SVC_LIB}
+    -ldl
     )
 
 ########## cert-server #############
@@ -129,6 +131,7 @@ INSTALL(FILES
     ${VCORE_DIR}/vcore/SignatureData.h
     ${VCORE_DIR}/vcore/CertStoreType.h
     ${VCORE_DIR}/vcore/exception.h
+    ${VCORE_DIR}/vcore/ValidatorPluginApi.h
     DESTINATION ${INCLUDEDIR}/cert-svc/vcore
     )
 

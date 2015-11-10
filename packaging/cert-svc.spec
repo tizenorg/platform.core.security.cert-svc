@@ -69,6 +69,7 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 
 %{!?build_type:%define build_type "Release"}
 %cmake . -DPREFIX=%{_prefix} \
+        -DVERSION=%{version} \
         -DEXEC_PREFIX=%{_exec_prefix} \
         -DLIBDIR=%{_libdir} \
         -DINCLUDEDIR=%{_includedir} \

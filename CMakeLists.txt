@@ -3,8 +3,7 @@ PROJECT(cert-svc)
 
 INCLUDE(FindPkgConfig)
 
-SET(SO_VERSION 1)
-SET(VERSION "${SO_VERSION}.0.0")
+STRING(REGEX MATCH "([^.]*)" SO_VERSION "${VERSION}")
 
 # compiler options
 SET(GC_SECTIONS_FLAGS         "-fdata-sections -ffunction-sections -Wl,--gc-sections")

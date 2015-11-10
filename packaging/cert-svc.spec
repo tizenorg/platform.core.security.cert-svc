@@ -25,6 +25,10 @@ BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: pkgconfig(sqlite3)
 BuildRequires: ca-certificates-tizen
 BuildRequires: ca-certificates-mozilla
+Requires(post):   smack
+Requires(post):   systemd
+Requires(post):   /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 
 %description
 Certification service
@@ -67,6 +71,8 @@ export CXXFLAGS="$CXXFLAGS -DTIZEN_EMULATOR_MODE"
 export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 %endif
 
+%define CERTSVC_RW %{TZ_SYS_SHARE}/cert-svc
+
 %{!?build_type:%define build_type "Release"}
 %cmake . -DPREFIX=%{_prefix} \
         -DEXEC_PREFIX=%{_exec_prefix} \
@@ -76,6 +82,7 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
         -DTZ_SYS_BIN=%TZ_SYS_BIN \
         -DTZ_SYS_ETC=%TZ_SYS_ETC \
         -DTZ_SYS_RO_WRT_ENGINE=%TZ_SYS_RO_WRT_ENGINE \
+        -DCERTSVC_RW=%CERTSVC_RW \
 %if 0%{?certsvc_test_build}
         -DCERTSVC_TEST_BUILD=1 \
         -DTZ_SYS_RO_APP=%TZ_SYS_RO_APP \
@@ -90,8 +97,8 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}%{TZ_SYS_SHARE}/license
 cp LICENSE %{buildroot}%{TZ_SYS_SHARE}/license/%{name}
 
-mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/pkcs12
-mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/dbspace
+mkdir -p %{buildroot}%{CERTSVC_RW}/pkcs12
+mkdir -p %{buildroot}%{CERTSVC_RW}/dbspace
 
 %make_install
 mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
@@ -108,6 +115,15 @@ if [ $1 == 0 ]; then
 fi
 
 %post
+chsmack -a "System" %{CERTSVC_RW}
+chsmack -t %{CERTSVC_RW}
+chsmack -a "System" %{CERTSVC_RW}/pkcs12
+chsmack -t %{CERTSVC_RW}/pkcs12
+chsmack -a "System" %{CERTSVC_RW}/dbspace
+chsmack -t %{CERTSVC_RW}/dbspace
+chsmack -a "System" %{CERTSVC_RW}/dbspace/*
+chsmack -a "System::Shared" %{CERTSVC_RW}/ca-certificate.crt
+
 /sbin/ldconfig
 systemctl daemon-reload
 if [ $1 == 1 ]; then
@@ -131,9 +147,11 @@ fi
 %attr(644,root,root) %{TZ_SYS_RO_WRT_ENGINE}/schema.xsd
 
 # Resource files install as system
-%{TZ_SYS_SHARE}/cert-svc/pkcs12
-%{TZ_SYS_SHARE}/cert-svc/dbspace/certs-meta.db*
-%{TZ_SYS_SHARE}/cert-svc/ca-certificate.crt
+%dir %{CERTSVC_RW}
+%dir %{CERTSVC_RW}/pkcs12
+%dir %{CERTSVC_RW}/dbspace
+%{CERTSVC_RW}/dbspace/certs-meta.db*
+%{CERTSVC_RW}/ca-certificate.crt
 
 %files devel
 %defattr(-,root,root,-)

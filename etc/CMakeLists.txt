@@ -2,7 +2,7 @@ SET(ETC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 INSTALL(FILES
     ${ETC_DIR}/schema.xsd
-    DESTINATION ${TZ_SYS_RO_WRT_ENGINE}
+    DESTINATION ${TZ_SYS_SHARE}/cert-svc
     )
 
 MESSAGE("Add ssl table to certs-meta.db")
@@ -23,7 +23,7 @@ EXECUTE_PROCESS(
     COMMAND
         ${ETC_DIR}/initialize_store_db.sh
         ${ETC_DIR}/certs-meta.db
-        ${ETC_DIR}/ca-certificate.crt
+        ${TZ_SYS_CERTS}
     RESULT_VARIABLE ERROR_CODE
     )
 
@@ -35,9 +35,4 @@ INSTALL(FILES
     ${ETC_DIR}/certs-meta.db
     ${ETC_DIR}/certs-meta.db-journal
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/dbspace
-    )
-
-INSTALL(FILES
-    ${ETC_DIR}/ca-certificate.crt
-    DESTINATION ${TZ_SYS_SHARE}/cert-svc
     )

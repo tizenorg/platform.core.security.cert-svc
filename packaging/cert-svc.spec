@@ -43,6 +43,7 @@ Summary:  Certification service (tests)
 Group:    Security/Testing
 Requires: ca-certificates-tizen
 Requires: %{name} = %{version}-%{release}
+Conflicts: %name
 
 %description test
 Certification service (tests)
@@ -50,7 +51,7 @@ Certification service (tests)
 
 %prep
 %setup -q
-cp -a %{SOURCE1001} .
+cp -a %SOURCE1001 .
 
 %build
 export CFLAGS="$CFLAGS -DTIZEN_DEBUG_ENABLE"
@@ -67,98 +68,77 @@ export CXXFLAGS="$CXXFLAGS -DTIZEN_EMULATOR_MODE"
 export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 %endif
 
+# concatenated cert path defined in ca-certificates package
+%define SYS_CONCATENATED_CERT /var/lib/ca-certificates/ca-bundle.pem
+%define SYS_CERTS %TZ_SYS_ETC/ssl/certs
+
 %{!?build_type:%define build_type "Release"}
-%cmake . -DPREFIX=%{_prefix} \
-        -DVERSION=%{version} \
-        -DEXEC_PREFIX=%{_exec_prefix} \
-        -DLIBDIR=%{_libdir} \
-        -DINCLUDEDIR=%{_includedir} \
+%cmake . -DVERSION=%version \
+        -DINCLUDEDIR=%_includedir \
         -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
         -DTZ_SYS_BIN=%TZ_SYS_BIN \
-        -DTZ_SYS_ETC=%TZ_SYS_ETC \
-        -DTZ_SYS_RO_WRT_ENGINE=%TZ_SYS_RO_WRT_ENGINE \
+        -DTZ_SYS_CERTS=%SYS_CERTS \
+        -DTZ_SYS_CONCATENATED_CERT=%SYS_CONCATENATED_CERT \
 %if 0%{?certsvc_test_build}
         -DCERTSVC_TEST_BUILD=1 \
         -DTZ_SYS_RO_APP=%TZ_SYS_RO_APP \
 %endif
-        -DCMAKE_BUILD_TYPE=%{build_type} \
-        -DSYSTEMD_UNIT_DIR=%{_unitdir}
+        -DCMAKE_BUILD_TYPE=%build_type \
+        -DSYSTEMD_UNIT_DIR=%_unitdir
 
-make %{?jobs:-j%jobs}
+make %{?_smp_mflags}
 
 %install
-rm -rf %{buildroot}
-mkdir -p %{buildroot}%{TZ_SYS_SHARE}/license
-cp LICENSE %{buildroot}%{TZ_SYS_SHARE}/license/%{name}
-
-mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/pkcs12
-mkdir -p %{buildroot}%{TZ_SYS_SHARE}/cert-svc/dbspace
-
 %make_install
-mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
-mkdir -p %{buildroot}%{_unitdir}/sockets.target.wants
-ln -s ../cert-server.service %{buildroot}%{_unitdir}/multi-user.target.wants/
-ln -s ../cert-server.socket %{buildroot}%{_unitdir}/sockets.target.wants/
+%install_service multi-user.target.wants cert-server.service
+%install_service sockets.target.wants cert-server.socket
 
-%clean
-rm -rf %{buildroot}
+mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/pkcs12
+mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/dbspace
+ln -s %SYS_CONCATENATED_CERT %buildroot%TZ_SYS_SHARE/cert-svc/ca-certificate.crt
 
 %preun
-if [ $1 == 0 ]; then
+# erase
+if [ $1 = 0 ]; then
     systemctl stop cert-server.service
 fi
 
 %post
 /sbin/ldconfig
 systemctl daemon-reload
-if [ $1 == 1 ]; then
+# install
+if [ $1 = 1 ]; then
+    systemctl start cert-server.service
+fi
+# upgrade / reinstall
+if [ $1 = 2 ]; then
     systemctl restart cert-server.service
 fi
 
-%postun
-/sbin/ldconfig
+%postun -p /sbin/ldconfig
 
 %files
-%defattr(644,system,system,755)
-%manifest %{name}.manifest
-# Read only files install as root
-%attr(755,root,root) %{TZ_SYS_BIN}/cert-server
-%attr(644,root,root) %{_unitdir}/cert-server.service
-%attr(644,root,root) %{_unitdir}/cert-server.socket
-%attr(777,root,root) %{_unitdir}/multi-user.target.wants/cert-server.service
-%attr(777,root,root) %{_unitdir}/sockets.target.wants/cert-server.socket
-%attr(755,root,root) %{_libdir}/libcert-svc-vcore.so.*
-%attr(644,root,root) %{TZ_SYS_SHARE}/license/%{name}
-%attr(644,root,root) %{TZ_SYS_RO_WRT_ENGINE}/schema.xsd
-
-# Resource files install as system
-%{TZ_SYS_SHARE}/cert-svc/pkcs12
-%{TZ_SYS_SHARE}/cert-svc/dbspace/certs-meta.db*
-%{TZ_SYS_SHARE}/cert-svc/ca-certificate.crt
+%manifest %name.manifest
+%license LICENSE
+%_unitdir/cert-server.service
+%_unitdir/cert-server.socket
+%_unitdir/multi-user.target.wants/cert-server.service
+%_unitdir/sockets.target.wants/cert-server.socket
+%_libdir/libcert-svc-vcore.so.*
+%TZ_SYS_BIN/cert-server
+%attr(-, system, system) %TZ_SYS_SHARE/cert-svc
 
 %files devel
-%defattr(-,root,root,-)
-%{_includedir}/*
-%{_libdir}/pkgconfig/*
-%{_libdir}/libcert-svc-vcore.so
-
+%_includedir/*
+%_libdir/pkgconfig/*
+%_libdir/libcert-svc-vcore.so
 
 %if 0%{?certsvc_test_build}
-%post test
-ln -sf %{TZ_SYS_SHARE}/ca-certificates/tizen/root_cacert0.pem %{TZ_SYS_ETC}/ssl/certs/
-ln -sf %{TZ_SYS_ETC}/ssl/certs/root_cacert0.pem %{TZ_SYS_ETC}/ssl/certs/ba70bb69.0
-
-%postun test
-rm %{TZ_SYS_ETC}/ssl/certs/root_cacert0.pem
-rm %{TZ_SYS_ETC}/ssl/certs/ba70bb69.0
-
 %files test
-%defattr(644,system,system,755)
-%attr(755,root,root) %{TZ_SYS_BIN}/cert-svc-test*
-%{TZ_SYS_RO_APP}/widget/tests/*
-%{TZ_SYS_ETC}/ssl/certs/8956b9bc.0
-%{TZ_SYS_SHARE}/ca-certificates/tizen/*
-%{TZ_SYS_SHARE}/cert-svc/cert-type/*
-%{TZ_SYS_SHARE}/cert-svc/tests/*
-%{_libdir}/libcert-svc-validator-plugin.so
+%TZ_SYS_BIN/cert-svc-test*
+%TZ_SYS_RO_APP/widget/tests
+%TZ_SYS_SHARE/cert-svc/cert-type
+%TZ_SYS_SHARE/cert-svc/tests
+%TZ_SYS_SHARE/ca-certificates/tizen/root_cacert0.pem
+%_libdir/libcert-svc-validator-plugin.so
 %endif

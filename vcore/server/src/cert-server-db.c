@@ -20,6 +20,65 @@
  * @brief    cert server db utils.
  */
 
+#include <cert-server-debug.h>
+
 #include <cert-server-db.h>
 
 sqlite3 *cert_store_db = NULL;
+
+int execute_insert_update_query(const char *query)
+{
+	if (!cert_store_db) {
+		SLOGE("Database not initialised.");
+		return CERTSVC_WRONG_ARGUMENT;
+	}
+
+	if (!query) {
+		SLOGE("Query is NULL.");
+		return CERTSVC_WRONG_ARGUMENT;
+	}
+
+	/* Begin transaction */
+	int result = sqlite3_exec(cert_store_db, "BEGIN EXCLUSIVE", NULL, NULL, NULL);
+	if (result != SQLITE_OK) {
+		SLOGE("Failed to begin transaction.");
+		return CERTSVC_FAIL;
+	}
+
+	/* Executing command */
+	result = sqlite3_exec(cert_store_db, query, NULL, NULL, NULL);
+	if (result != SQLITE_OK) {
+		SLOGE("Failed to execute query (%s).", query);
+		return CERTSVC_FAIL;
+	}
+
+	/* Committing the transaction */
+	result = sqlite3_exec(cert_store_db, "COMMIT", NULL, NULL, NULL);
+	if (result) {
+		SLOGE("Failed to commit transaction. Roll back now.");
+		result = sqlite3_exec(cert_store_db, "ROLLBACK", NULL, NULL, NULL);
+		if (result != SQLITE_OK)
+			SLOGE("Failed to commit transaction. Roll back now.");
+
+		return CERTSVC_FAIL;
+	}
+
+	SLOGD("Transaction Commit and End.");
+
+	return CERTSVC_SUCCESS;
+}
+
+int execute_select_query(const char *query, sqlite3_stmt **stmt)
+{
+	if (!cert_store_db || !query)
+		return CERTSVC_WRONG_ARGUMENT;
+
+	sqlite3_stmt *stmts = NULL;
+	if (sqlite3_prepare_v2(cert_store_db, query, strlen(query), &stmts, NULL) != SQLITE_OK) {
+		SLOGE("sqlite3_prepare_v2 failed [%s].", query);
+		return CERTSVC_FAIL;
+	}
+
+	*stmt = stmts;
+	return CERTSVC_SUCCESS;
+}

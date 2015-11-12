@@ -62,8 +62,3 @@ INSTALL(FILES
     ${PROJECT_SOURCE_DIR}/tests/pkcs12/wifiuser.p12
     DESTINATION ${TZ_SYS_SHARE}/cert-svc/tests/
 )
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/8956b9bc.0
-    DESTINATION ${TZ_SYS_ETC}/ssl/certs/
-)

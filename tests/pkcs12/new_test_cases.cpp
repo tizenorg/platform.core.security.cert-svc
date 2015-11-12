@@ -86,7 +86,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1002_certsvc_set_cert_to_disabled_and_get_status_for_
 
 	CREATE_INSTANCE
 
-	CertSvcString Alias = wrapper_certsvc_string_new("Certum_Root_CA.pem");
+	CertSvcString Alias = wrapper_certsvc_string_new("24ad0b63.0");
 
 	result = certsvc_pkcs12_get_certificate_status_from_store(instance, SYSTEM_STORE, Alias, &status);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Get certificate status from system store failed.");

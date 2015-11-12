@@ -24,6 +24,12 @@
 #define CERT_SERVER_DB_H_
 
 #include <db-util.h>
+
+#include <cert-svc/cerror.h>
+
 extern sqlite3 *cert_store_db;
+
+int execute_insert_update_query(const char *query);
+int execute_select_query(const char *query, sqlite3_stmt **stmt);
 
 #endif // CERT_SERVER_DB_H_

@@ -95,16 +95,12 @@ static bool hasStore(CertStoreType types, CertStoreType type)
 
 char *add_shared_owner_prefix(const char *name)
 {
-	size_t alias_len = strlen(name) + strlen(ckmc_owner_id_system) + strlen(ckmc_owner_id_separator);
-	char *ckm_alias = (char *)malloc(alias_len + 1);
-	if (!ckm_alias) {
+	char *ckm_alias = NULL;
+	int result = asprintf(&ckm_alias, "%s%s%s", ckmc_owner_id_system, ckmc_owner_id_separator, name);
+	if (result < 0 || ckm_alias == NULL) {
 		SLOGE("Failed to allocate memory");
 		return NULL;
 	}
-	memset(ckm_alias, 0, alias_len + 1);
-	strcat(ckm_alias, ckmc_owner_id_system);
-	strcat(ckm_alias, ckmc_owner_id_separator);
-	strcat(ckm_alias, name);
 
 	return ckm_alias;
 }
@@ -143,132 +139,59 @@ char *get_complete_path(const char *str1, const char *str2)
 	return result;
 }
 
-/* TODO: root ssl file system refactor */
-int add_file_to_dir(const char *dir, const char *gname, const char *cert)
+int add_file_to_system_cert_dir(const char *gname)
 {
-	char *systemFile = get_complete_path(dir, gname);
-	if (!systemFile) {
-		SLOGE("Failed to get system file path.");
-		return CERTSVC_FAIL;
+	int ret = CERTSVC_SUCCESS;
+
+	/* find certificate which filehash name is gname in root ca certs path. */
+	char *target = get_complete_path(ROOT_CA_CERTS_DIR, gname);
+	char *link = get_complete_path(SYSTEM_CERT_DIR, gname);
+
+	if (target == NULL || link == NULL) {
+		SLOGE("Failed to get complete path.");
+		ret = CERTSVC_BAD_ALLOC;
+		goto out;
 	}
 
-	char realFile[FILENAME_MAX] = {0};
-	if (!realpath(systemFile, realFile)) {
-		SLOGE("Failed to get realpath. systemFile[%s]", systemFile);
-		return CERTSVC_FAIL;
+	if (symlink(target, link) != 0) {
+		SLOGE("Failed to make symlink from[%s] to[%s]", target, link);
+		ret = CERTSVC_FAIL;
+		goto out;
 	}
 
-	FILE *stream = fopen(realFile, "ab");
-	if (!stream) {
-		SLOGE("Fail to open file [%s]", realFile);
-		return CERTSVC_FAIL;
-	}
+out:
 
-	size_t cert_len = strlen(cert);
-	if (fwrite(cert, sizeof(char), cert_len, stream) != cert_len) {
-		SLOGE("Fail to write file in system store.");
-		fclose(stream);
-		return CERTSVC_FAIL;
-	}
+	free(target);
+	free(link);
 
-	fclose(stream);
-	return CERTSVC_SUCCESS;
-}
-
-int add_file_to_system_cert_dir(const char *gname, const char *cert)
-{
-	return add_file_to_dir(SYSTEM_CERT_DIR, gname, cert);
-}
-
-/* TODO: root ssl file system refactor */
-int del_file_from_dir(const char *dir, const char *gname)
-{
-	const char *systemFile = get_complete_path(dir, gname);
-	if (!systemFile)   {
-		SLOGE("Failed to construct source file path.");
-		return CERTSVC_FAIL;
-	}
-
-	char realFile[FILENAME_MAX] = {0};
-	if (!realpath(systemFile, realFile)) {
-		SLOGE("Failed to get realpath. systemFile[%s]", systemFile);
-		return CERTSVC_FAIL;
-	}
-
-	/* instead of removing the file, the file is trimmed to zero size */
-	FILE *stream = fopen(realFile, "wb");
-	if (!stream) {
-		SLOGE("Failed to open the file for writing, [%s].", realFile);
-		return CERTSVC_FAIL;
-	}
-
-	fclose(stream);
-	return CERTSVC_SUCCESS;
+	return ret;
 }
 
 int del_file_from_system_cert_dir(const char *gname)
 {
-	return del_file_from_dir(SYSTEM_CERT_DIR, gname);
+	int ret = CERTSVC_SUCCESS;
+	char *link = NULL;
+
+	link = get_complete_path(SYSTEM_CERT_DIR, gname);
+	if (!link)   {
+		SLOGE("Failed to construct source file path.");
+		return CERTSVC_FAIL;
+	}
+
+	if (unlink(link) != 0) {
+		SLOGE("unlink %s failed. errno : %d", link, errno);
+		ret = CERTSVC_FAIL;
+		goto out;
+	}
+
+out:
+
+	free(link);
+
+	return ret;
 }
 
-int execute_insert_update_query(char *query)
-{
-	if (!cert_store_db) {
-		SLOGE("Database not initialised.");
-		return CERTSVC_WRONG_ARGUMENT;
-	}
-
-	if (!query) {
-		SLOGE("Query is NULL.");
-		return CERTSVC_WRONG_ARGUMENT;
-	}
-
-	/* Begin transaction */
-	int result = sqlite3_exec(cert_store_db, "BEGIN EXCLUSIVE", NULL, NULL, NULL);
-	if (result != SQLITE_OK) {
-		SLOGE("Failed to begin transaction.");
-		return CERTSVC_FAIL;
-	}
-
-	/* Executing command */
-	result = sqlite3_exec(cert_store_db, query, NULL, NULL, NULL);
-	if (result != SQLITE_OK) {
-		SLOGE("Failed to execute query (%s).", query);
-		return CERTSVC_FAIL;
-	}
-
-	/* Committing the transaction */
-	result = sqlite3_exec(cert_store_db, "COMMIT", NULL, NULL, NULL);
-	if (result) {
-		SLOGE("Failed to commit transaction. Roll back now.");
-		result = sqlite3_exec(cert_store_db, "ROLLBACK", NULL, NULL, NULL);
-		if (result != SQLITE_OK)
-			SLOGE("Failed to commit transaction. Roll back now.");
-
-		return CERTSVC_FAIL;
-	}
-
-	SLOGD("Transaction Commit and End.");
-
-	return CERTSVC_SUCCESS;
-}
-
-int execute_select_query(char *query, sqlite3_stmt **stmt)
-{
-	if (!cert_store_db || !query)
-		return CERTSVC_WRONG_ARGUMENT;
-
-	sqlite3_stmt *stmts = NULL;
-	if (sqlite3_prepare_v2(cert_store_db, query, strlen(query), &stmts, NULL) != SQLITE_OK) {
-		SLOGE("sqlite3_prepare_v2 failed [%s].", query);
-		return CERTSVC_FAIL;
-	}
-
-	*stmt = stmts;
-	return CERTSVC_SUCCESS;
-}
-
-int write_to_file(const char *path, const char *mode, const char *cert)
+int write_to_ca_cert_crt_file(const char *mode, const char *cert)
 {
 	int result = CERTSVC_SUCCESS;
 	FILE *fp = NULL;
@@ -278,8 +201,8 @@ int write_to_file(const char *path, const char *mode, const char *cert)
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	if (!(fp = fopen(path, mode))) {
-		SLOGE("Failed to open the file for writing, [%s].", path);
+	if (!(fp = fopen(CERTSVC_CRT_FILE_PATH, mode))) {
+		SLOGE("Failed to open the file for writing, [%s].", CERTSVC_CRT_FILE_PATH);
 		return CERTSVC_FAIL;
 	}
 
@@ -295,18 +218,13 @@ int write_to_file(const char *path, const char *mode, const char *cert)
 	}
 
 	/* adding empty line at the end */
-	fwrite("\n",sizeof(char), 1, fp);
+	fwrite("\n", sizeof(char), 1, fp);
 
 error:
 	if (fp)
 		fclose(fp);
 
 	return result;
-}
-
-int write_to_ca_cert_crt_file(const char *mode, const char *cert)
-{
-	return write_to_file(CERTSVC_CRT_FILE_PATH, mode, cert);
 }
 
 int saveCertificateToStore(const char *gname, const char *cert)
@@ -346,14 +264,14 @@ int saveCertificateToStore(const char *gname, const char *cert)
 	return CERTSVC_SUCCESS;
 }
 
-int saveCertificateToSystemStore(const char *gname, const char *cert)
+int saveCertificateToSystemStore(const char *gname)
 {
-	if (!gname || !cert) {
+	if (!gname) {
 		SLOGE("Invalid input parameter passed.");
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	int result = add_file_to_system_cert_dir(gname, cert);
+	int result = add_file_to_system_cert_dir(gname);
 	if (result != CERTSVC_SUCCESS)
 		SLOGE("Failed to store the certificate in store.");
 
@@ -674,7 +592,7 @@ int enable_disable_cert_status(
 			}
 
 			if (storeType == SYSTEM_STORE)
-				result = saveCertificateToSystemStore(gname, cert);
+				result = saveCertificateToSystemStore(gname);
 			else
 				result = saveCertificateToStore(gname, cert);
 

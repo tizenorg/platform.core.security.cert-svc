@@ -132,6 +132,7 @@ INSTALL(FILES
     ${VCORE_DIR}/vcore/CertStoreType.h
     ${VCORE_DIR}/vcore/exception.h
     ${VCORE_DIR}/vcore/ValidatorPluginApi.h
+    ${VCORE_DIR}/vcore/Error.h
     DESTINATION ${INCLUDEDIR}/cert-svc/vcore
     )
 

@@ -24,40 +24,38 @@
 
 #include <string>
 #include <list>
+#include <memory>
+
 #include <vcore/Certificate.h>
 #include <vcore/SignatureData.h>
 #include <vcore/SignatureFinder.h>
+#include <vcore/Error.h>
 
 namespace ValidationCore {
 
+using UriList = std::list<std::string>;
+
+/*
+ *  Error code defined on vcore/Error.h
+ */
 class SignatureValidator {
 public:
-    enum Result
-    {
-        SIGNATURE_VALID,
-        SIGNATURE_INVALID,
-        SIGNATURE_VERIFIED,
-        SIGNATURE_DISREGARD,
-        SIGNATURE_REVOKED
-    };
+    SignatureValidator(const SignatureFileInfo &info);
+    virtual ~SignatureValidator();
 
     SignatureValidator() = delete;
     SignatureValidator(const SignatureValidator &) = delete;
     const SignatureValidator &operator=(const SignatureValidator &) = delete;
 
-    virtual ~SignatureValidator();
-
-    static Result check(
-        const SignatureFileInfo &fileInfo,
-        const std::string &widgetContentPath,
+    VCerr check(
+        const std::string &contentPath,
         bool checkOcsp,
         bool checkReferences,
         SignatureData &outData);
 
-    static Result checkList(
-        const SignatureFileInfo &fileInfo,
-        const std::string &widgetContentPath,
-        const std::list<std::string> &uriList,
+    VCerr checkList(
+        const std::string &contentPath,
+        const UriList &uriList,
         bool checkOcsp,
         bool checkReferences,
         SignatureData &outData);
@@ -65,14 +63,16 @@ public:
     /*
      *  @Remarks : cert list isn't completed with self-signed root CA system cert
      *             if completeWithSystemCert is false.
-     *
-     *  return Result::SIGNATURE_VALID if success
-     *  return Result::SIGNATURE_INVALID otherwise
      */
-    static Result makeChainBySignature(
-        const SignatureFileInfo &fileInfo,
+    VCerr makeChainBySignature(
         bool completeWithSystemCert,
         CertificateList &certList);
+
+    std::string errorToString(int code);
+
+private:
+    class Impl;
+    std::unique_ptr<Impl> m_pImpl;
 };
 
 } // namespace ValidationCore

@@ -20,6 +20,8 @@
  * @brief       signature validator plugin sample.
  */
 
+#include <string>
+
 #include <dlog.h>
 
 #include <vcore/ValidatorPluginApi.h>
@@ -43,14 +45,20 @@ public:
 	Plugin() {}
 	virtual ~Plugin() {}
 
-	virtual SignatureValidator::Result step(SignatureValidator::Result result, SignatureData &data);
+	virtual VCerr step(VCerr result, SignatureData &data);
+	virtual std::string errorToString(VCerr code);
 };
 
-SignatureValidator::Result Plugin::step(SignatureValidator::Result result, SignatureData &data)
+VCerr Plugin::step(VCerr result, SignatureData &data)
 {
 	(void)data;
 	SLOGI("Plugin::Step called!");
 	return result;
+}
+
+std::string Plugin::errorToString(VCerr code)
+{
+	return std::string("Plugin errorstring code : ") + std::to_string(code);
 }
 
 } // namespace ValidationCore

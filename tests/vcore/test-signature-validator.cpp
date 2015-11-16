@@ -15,6 +15,7 @@
  *    limitations under the License.
  */
 #include <string>
+#include <iostream>
 
 #include <dpl/test/test_runner.h>
 #include <vcore/SignatureFinder.h>
@@ -91,26 +92,24 @@ RUNNER_TEST(T0012_signature_validator)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_path,
                 false,
                 true,
                 data);
 
         if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
                 "Validation failed");
         else
             if (data.getSignatureNumber() == 1)
-                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+                RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
                     "Validation failed");
             else
-                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
+                RUNNER_ASSERT_MSG(result == E_SIG_NONE,
                     "Validation failed");
     }
 }
@@ -123,22 +122,20 @@ RUNNER_TEST(T00121_signature_validator_negative_hash_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_negative_hash_path,
                 false,
                 true,
                 data);
         if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_INVALID,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
         else
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
     }
 }
 
@@ -150,23 +147,21 @@ RUNNER_TEST(T00122_signature_validator_negative_signature_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_negative_signature_path,
                 false,
                 true,
                 data);
 
         if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_INVALID,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
         else
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
     }
 }
 
@@ -178,19 +173,17 @@ RUNNER_TEST(T00123_signature_validator_partner)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_partner_path,
                 false,
                 true,
                 data);
 
-        RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
-            "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
         if (!data.isAuthorSignature()) {
             RUNNER_ASSERT_MSG(
                     data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
@@ -214,26 +207,25 @@ RUNNER_TEST(T0013_signature_validator)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_path,
                 false,
                 false,
                 data);
 
         if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
                 "Validation failed");
         else
             if (data.getSignatureNumber() == 1)
-                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+                RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
                         "Validation failed");
             else
-                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
+                RUNNER_ASSERT_MSG(result == E_SIG_NONE,
                         "Validation failed");
     }
 }
@@ -246,23 +238,21 @@ RUNNER_TEST(T00131_signature_validator_negative_hash_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_negative_hash_path,
                 false,
                 false,
                 data);
 
         if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_INVALID,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
         else
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
     }
 }
 
@@ -274,23 +264,21 @@ RUNNER_TEST(T00132_signature_validator_negative_signature_input)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_negative_signature_path,
                 false,
                 false,
                 data);
 
         if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_INVALID,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
         else
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
-                "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
     }
 }
 
@@ -302,19 +290,17 @@ RUNNER_TEST(T00133_signature_validator_partner)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_partner_path,
                 false,
                 false,
                 data);
 
-        RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
-            "Wrong input file but success.. Errorcode : " << validatorErrorToString(valResult));
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
 
         if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
@@ -336,36 +322,26 @@ RUNNER_TEST(T0014_signature_reference)
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
 
-    for (SignatureFileInfoSet::reverse_iterator iter = signatureSet.rbegin();
-        iter != signatureSet.rend();
-        ++iter) {
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
         SignatureData data;
-        SignatureValidator::Result valResult = SignatureValidator::check(
-                *iter,
+        VCerr result = validator.check(
                 TestData::widget_path,
                 false,
                 false,
                 data);
 
         if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
                 "Validation failed");
         else
             if (data.getSignatureNumber() == 1)
-                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_DISREGARD,
+                RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
                     "Validation failed");
             else
-                RUNNER_ASSERT_MSG(valResult == SignatureValidator::SIGNATURE_VERIFIED,
+                RUNNER_ASSERT_MSG(result == E_SIG_NONE,
                     "Validation failed");
-
-/*
-        ReferenceValidator val(TestData::widget_path);
-        int temp = val.checkReferences(data);
-        RUNNER_ASSERT_MSG(ReferenceValidator::NO_ERROR == temp,
-                "File[" << iter->getFileName()
-                << "] FileNumber[" << iter->getFileNumber()
-                << "] Errorcode : " << refValidatorErrorToString(temp));
-*/
     }
 }
 
@@ -494,14 +470,34 @@ RUNNER_TEST(T00146_signature_reference_encoding_negative)
 */
 
 
-RUNNER_TEST_GROUP_INIT(T0020_Certificate)
+RUNNER_TEST_GROUP_INIT(T0020_SigVal_errorstring)
+
+RUNNER_TEST(T0021)
+{
+    SignatureValidator validator(SignatureFileInfo("test-dummy", 1));
+
+    for (VCerr code = E_SCOPE_FIRST; code >= E_SCOPE_LAST; code--) {
+        std::cout << "E_SIG code["
+            << code << "] : "
+            << validator.errorToString(code) << std::endl;
+    }
+
+    /* print 10 more error code below last in case of plugin err exist */
+    for (VCerr code = E_SCOPE_LAST - 1; code >= E_SCOPE_LAST - 10; code--) {
+        std::cout << "VCerr from plugin["
+            << code << "] : "
+            << validator.errorToString(code) << std::endl;
+    }
+}
+
+RUNNER_TEST_GROUP_INIT(T0030_Certificate)
 
 /*
  * test: class Certificate
  * description: Certificate should parse data passed to object constructor.
  * expected: Getters should be able to return certificate information.
  */
-RUNNER_TEST(T0021_Certificate)
+RUNNER_TEST(T0031_Certificate)
 {
     Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
     std::string result;
@@ -525,7 +521,7 @@ RUNNER_TEST(T0021_Certificate)
  * description: Certificate should parse data passed to object constructor.
  * expected: Function fingerprint should return valid fingerprint.
  */
-RUNNER_TEST(T0022_Certificate)
+RUNNER_TEST(T0032_Certificate)
 {
     Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
 
@@ -550,7 +546,7 @@ RUNNER_TEST(T0022_Certificate)
  * expected: Function getAlternativeNameDNS should return list of
  * alternativeNames hardcoded in certificate.
  */
-RUNNER_TEST(T0023_Certificate)
+RUNNER_TEST(T0033_Certificate)
 {
     Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
 
@@ -571,7 +567,7 @@ RUNNER_TEST(T0023_Certificate)
  * description: Certificate should parse data passed to object constructor.
  * expected: 1st and 2nd certificate should be identified as CA.
  */
-RUNNER_TEST(T0024_Certificate_isCA)
+RUNNER_TEST(T0034_Certificate_isCA)
 {
     Certificate cert1(TestData::googleCA, Certificate::FORM_BASE64);
     RUNNER_ASSERT(cert1.isCA() > 0);

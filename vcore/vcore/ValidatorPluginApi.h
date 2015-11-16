@@ -22,8 +22,11 @@
  */
 #pragma once
 
+#include <string>
+
 #include <vcore/SignatureData.h>
 #include <vcore/SignatureValidator.h>
+#include <vcore/Error.h>
 
 namespace ValidationCore {
 
@@ -31,8 +34,12 @@ const std::string PLUGIN_PATH = "/usr/lib/libcert-svc-validator-plugin.so";
 
 class ValidatorPlugin {
 public:
-	virtual SignatureValidator::Result step(SignatureValidator::Result result, SignatureData &data) = 0;
 	virtual ~ValidatorPlugin() {}
+	virtual VCerr step(VCerr result, SignatureData &data) = 0;
+	virtual std::string errorToString(VCerr)
+	{
+		return std::string("Plugin developer should implement if error code added");
+	}
 };
 
 /*

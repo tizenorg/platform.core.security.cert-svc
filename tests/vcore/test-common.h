@@ -17,10 +17,6 @@
 
 #include <string>
 
-#include <vcore/SignatureValidator.h>
-
-const char *validatorErrorToString(ValidationCore::SignatureValidator::Result error);
-
 namespace TestData {
 
 extern const std::string widget_path;

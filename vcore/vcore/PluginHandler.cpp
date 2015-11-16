@@ -82,7 +82,7 @@ bool PluginHandler::fail() const
 	return m_fail;
 }
 
-SignatureValidator::Result PluginHandler::step(SignatureValidator::Result result, SignatureData &data)
+VCerr PluginHandler::step(VCerr result, SignatureData &data)
 {
 	if (!m_plugin) {
 		LogError("Plugin is not initialized.");
@@ -90,6 +90,14 @@ SignatureValidator::Result PluginHandler::step(SignatureValidator::Result result
 	}
 
 	return m_plugin->step(result, data);
+}
+
+std::string PluginHandler::errorToString(VCerr code)
+{
+	if (!m_plugin)
+		return "Plugin is not initialized";
+
+	return m_plugin->errorToString(code);
 }
 
 } // namespace ValidationCore

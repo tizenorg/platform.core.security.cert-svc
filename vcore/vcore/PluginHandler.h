@@ -22,9 +22,12 @@
  */
 #pragma once
 
+#include <string>
+
 #include <vcore/SignatureData.h>
 #include <vcore/SignatureValidator.h>
 #include <vcore/ValidatorPluginApi.h>
+#include <vcore/Error.h>
 
 namespace ValidationCore {
 
@@ -37,7 +40,8 @@ public:
 	virtual ~PluginHandler();
 
 	bool fail(void) const;
-	SignatureValidator::Result step(SignatureValidator::Result result, SignatureData &data);
+	VCerr step(VCerr result, SignatureData &data);
+	std::string errorToString(VCerr code);
 
 private:
 	void *m_dlhandle;

@@ -446,7 +446,7 @@ time_t Certificate::getNotAfter() const
                       "Reading Not After error.");
 
     time_t output;
-    if (asn1TimeToTimeT(time, &output))
+    if (asn1TimeToTimeT(time, &output) == 0)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Converting ASN1_time to time_t error.");
 
@@ -461,7 +461,7 @@ time_t Certificate::getNotBefore() const
                       "Reading Not Before error.");
 
     time_t output;
-    if (asn1TimeToTimeT(time, &output))
+    if (asn1TimeToTimeT(time, &output) == 0)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Converting ASN1_time to time_t error.");
 

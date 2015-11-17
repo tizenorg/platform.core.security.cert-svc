@@ -21,6 +21,7 @@ SET(TARGET_PLUGIN_SAMPLE "cert-svc-validator-plugin")
 PKG_CHECK_MODULES(TEST_DEP
     REQUIRED
     libpcrecpp
+    openssl
     )
 
 SET(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -45,7 +46,6 @@ SET(DPL_TEST_SOURCES
 INCLUDE_DIRECTORIES(
     SYSTEM
     ${TEST_DEP_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/vcore
     ${TEST_DIR}/dpl/include
     )

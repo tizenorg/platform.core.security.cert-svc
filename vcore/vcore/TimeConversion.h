@@ -26,12 +26,13 @@
 #include <openssl/asn1.h>
 
 namespace ValidationCore {
-// from OpenSSL asn1/a_utctm.c code
+
+/*
+ * openssl/crypto/asn1/a_time.c based version 1.0.2d
+ * return 1 on success, 0 on error
+ */
 int asn1TimeToTimeT(ASN1_TIME *t, time_t *res);
 
-int asn1GeneralizedTimeToTimeT(ASN1_GENERALIZEDTIME *tm,
-                               time_t *res);
 } // namespace ValidationCore
 
 #endif // _VALIDATION_CORE_TIMECONVERSION_H_
-

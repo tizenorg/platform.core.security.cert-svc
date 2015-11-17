@@ -27,10 +27,10 @@ SET(VCORE_TESTS_SOURCES
     ${CERT_SVC_VCORE_TESTS_DIR}/test-common.cpp
     ${CERT_SVC_VCORE_TESTS_DIR}/test-signature-validator.cpp
     ${CERT_SVC_VCORE_TESTS_DIR}/test-ocsp-check.cpp
+    ${CERT_SVC_VCORE_TESTS_DIR}/test-time-conversion.cpp
     )
 
 INCLUDE_DIRECTORIES(
-    ${PROJECT_SOURCE_DIR}/vcore/src
     ${CERT_SVC_VCORE_TESTS_DIR}
     )
 

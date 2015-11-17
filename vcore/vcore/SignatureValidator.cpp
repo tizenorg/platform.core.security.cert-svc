@@ -53,105 +53,22 @@ enum class CertTimeStatus : int {
 	EXPIRED
 };
 
-struct tm _ASN1_GetTimeT(ASN1_TIME *time)
+inline time_t _getMidTime(time_t lower, time_t upper)
 {
-	struct tm t;
-	const char *str = (const char *)time->data;
-	size_t i = 0;
-
-	memset(&t, 0, sizeof(t));
-
-	if (time->type == V_ASN1_UTCTIME) {
-		/* two digit year */
-		t.tm_year = (str[i] - '0') * 10 + (str[i + 1] - '0');
-		i += 2;
-		if (t.tm_year < 70)
-			t.tm_year += 100;
-	} else if (time->type == V_ASN1_GENERALIZEDTIME) {
-		/* four digit year */
-		t.tm_year =
-			(str[i] - '0') * 1000
-			+ (str[i + 1] - '0') * 100
-			+ (str[i + 2] - '0') * 10
-			+ (str[i + 3] - '0');
-		i += 4;
-		t.tm_year -= 1900;
-	}
-
-	t.tm_mon  = (str[i]     - '0') * 10 + (str[i + 1] - '0') - 1; // -1 since January is 0 not 1.
-	t.tm_mday = (str[i + 2] - '0') * 10 + (str[i + 3] - '0');
-	t.tm_hour = (str[i + 4] - '0') * 10 + (str[i + 5] - '0');
-	t.tm_min  = (str[i + 6] - '0') * 10 + (str[i + 7] - '0');
-	t.tm_sec  = (str[i + 8] - '0') * 10 + (str[i + 9] - '0');
-
-	/* Note: we did not adjust the time based on time zone information */
-	return t;
+	return (lower >> 1) + (upper >> 1);
 }
 
-struct tm getMidTime(const struct tm &tb, const struct tm &ta)
+inline CertTimeStatus _timeValidation(time_t lower, time_t upper, time_t current)
 {
-	struct tm tMid;
-	memset(&tMid, 0, sizeof(tMid));
-
-	LogDebug("Certificate's notBeforeTime : Year["
-		<< (tb.tm_year + 1900)
-		<< "] Month[" << (tb.tm_mon + 1)
-		<< "] Day[" << tb.tm_mday << "]  ");
-
-	LogDebug("Certificate's notAfterTime : Year["
-		<< (ta.tm_year + 1900)
-		<< "] Month[" << (ta.tm_mon + 1)
-		<< "] Day[" << ta.tm_mday << "]  ");
-
-	int year = (ta.tm_year - tb.tm_year) / 4;
-
-	if (year == 0) {
-		tMid.tm_year = tb.tm_year;
-		tMid.tm_mon = tb.tm_mon + 1;
-		tMid.tm_mday = tb.tm_mday;
-
-		if (tMid.tm_mon == 12) {
-			tMid.tm_year = ta.tm_year;
-			tMid.tm_mon = ta.tm_mon - 1;
-			tMid.tm_mday = ta.tm_mday;
-
-			if (tMid.tm_mon < 0) {
-				tMid.tm_year = ta.tm_year;
-				tMid.tm_mon = ta.tm_mon;
-				tMid.tm_mday = ta.tm_mday - 1;
-
-				if (tMid.tm_mday == 0) {
-					tMid.tm_year = tb.tm_year;
-					tMid.tm_mon = tb.tm_mon;
-					tMid.tm_mday = tb.tm_mday + 1;
-				}
-			}
-		}
-	} else {
-		tMid.tm_year = tb.tm_year + year;
-		tMid.tm_mon = (tb.tm_mon + ta.tm_mon) / 2;
-		tMid.tm_mday = (tb.tm_mday + ta.tm_mday) / 2;
-	}
-
-	LogDebug("cmp cert with validation time. Year["
-		<< (tMid.tm_year + 1900)
-		<< "] Month[" << (tMid.tm_mon + 1)
-		<< "] Day[" << tMid.tm_mday << "]  ");
-
-	return tMid;
-}
-
-inline CertTimeStatus timeValidation(ASN1_TIME *min, ASN1_TIME *max, time_t *cur)
-{
-	if (X509_cmp_time(min, cur) > 0)
+	if (current < lower)
 		return CertTimeStatus::NOT_YET;
-	else if (X509_cmp_time(max, cur) < 0)
+	else if (current > upper)
 		return CertTimeStatus::EXPIRED;
 	else
 		return CertTimeStatus::VALID;
 }
 
-inline bool isTimeStrict(const Set &stores)
+inline bool _isTimeStrict(const Set &stores)
 {
 	return (stores.contains(TIZEN_TEST) || stores.contains(TIZEN_VERIFY))
 		? true : false;
@@ -383,22 +300,21 @@ VCerr SignatureValidator::Impl::preStep(void)
 	m_context.certificatePtr = m_data.getCertList().back();
 
 	/* certificate time check */
-	ASN1_TIME *notAfterTime = m_data.getEndEntityCertificatePtr()->getNotAfterTime();
-	ASN1_TIME *notBeforeTime = m_data.getEndEntityCertificatePtr()->getNotBeforeTime();
+	time_t lower = m_data.getEndEntityCertificatePtr()->getNotBefore();
+	time_t upper = m_data.getEndEntityCertificatePtr()->getNotAfter();
+	time_t current = time(NULL);
+	CertTimeStatus status = _timeValidation(lower, upper, current);
 
-	time_t nowTime = time(NULL);
-
-	CertTimeStatus status = timeValidation(notBeforeTime, notAfterTime, &nowTime);
 	if (status != CertTimeStatus::VALID) {
-		if (isTimeStrict(storeIdSet))
+		if (_isTimeStrict(storeIdSet))
 			return status == CertTimeStatus::EXPIRED
 					? E_SIG_CERT_EXPIRED : E_SIG_CERT_NOT_YET;
 
-		struct tm tMid = getMidTime(
-				_ASN1_GetTimeT(notBeforeTime),
-				_ASN1_GetTimeT(notAfterTime));
-
-		m_context.validationTime = mktime(&tMid);
+		LogInfo("Use middle notBeforeTime and notAfterTime. "
+				"lower :" << lower
+				<< "upper :" << upper
+				<< "current: " << current);
+		m_context.validationTime = _getMidTime(lower, upper);
 	}
 
 	return E_SIG_NONE;

@@ -205,6 +205,9 @@ VCerr SignatureValidator::Impl::parseSignature(void)
 		SignatureReader xml;
 		xml.initialize(m_data, SIGNATURE_SCHEMA_PATH);
 		xml.read(m_data);
+	} catch (ParserSchemaException::CertificateLoaderError &e) {
+		LogError("Certificate loader error: " << e.DumpToString());
+		return E_SIG_INVALID_CERT;
 	} catch (...) {
 		LogError("Failed to parse signature file by signature reader.");
 		return E_SIG_INVALID_FORMAT;
@@ -276,11 +279,10 @@ VCerr SignatureValidator::Impl::preStep(void)
 			m_disregarded = true;
 		}
 	} else {
-		LogDebug("signaturefile name = " << m_data.getSignatureFileName());
 		if (storeIdSet.contains(TIZEN_DEVELOPER)) {
-			LogError("distributor has author level siganture! "
-				"Signature will be disregarded.");
-			return E_SIG_INVALID_FORMAT;
+			LogError("distributor should not have developer set: "
+				<< m_data.getSignatureFileName());
+			return E_SIG_INVALID_CHAIN;
 		}
 
 		if (m_data.getSignatureNumber() == 1 && !storeIdSet.isContainsVis()) {
@@ -333,10 +335,7 @@ VCerr SignatureValidator::Impl::baseCheck(
 			return result;
 
 		if (!m_data.isAuthorSignature()) {
-			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&m_context)) {
-				LogWarning("Installation break - invalid package!");
-				return E_SIG_INVALID_FORMAT;
-			}
+			XmlSecSingleton::Instance().validate(m_context);
 
 			m_data.setReference(m_context.referenceSet);
 			if (!checkObjectReferences()) {
@@ -363,8 +362,20 @@ VCerr SignatureValidator::Impl::baseCheck(
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return E_SIG_INVALID_CHAIN;
+	} catch (const XmlSec::Exception::InternalError &e) {
+		LogError("XmlSec internal error : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidFormat &e) {
+		LogError("XmlSec invalid format : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidSig &e) {
+		LogError("XmlSec invalid signature : " << e.DumpToString());
+		return E_SIG_INVALID_SIG;
+	} catch (const XmlSec::Exception::OutOfMemory &e) {
+		LogError("XmlSec out of memory : " << e.DumpToString());
+		return E_SIG_OUT_OF_MEM;
 	} catch (const XmlSec::Exception::Base &e) {
-		LogError("XmlSec exception : " << e.DumpToString());
+		LogError("XmlSec unknown exception : " << e.DumpToString());
 		return E_SIG_INVALID_FORMAT;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
@@ -395,18 +406,10 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		if (result != E_SIG_NONE)
 			return result;
 
-		if (uriList.size() == 0) {
-			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validateNoHash(&m_context)) {
-				LogWarning("Installation break - invalid package! >> validateNoHash");
-				return E_SIG_INVALID_FORMAT;
-			}
-		} else {
-			XmlSecSingleton::Instance().setPartialHashList(uriList);
-			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validatePartialHash(&m_context)) {
-				LogWarning("Installation break - invalid package! >> validatePartialHash");
-				return E_SIG_INVALID_FORMAT;
-			}
-		}
+		if (uriList.size() == 0)
+			XmlSecSingleton::Instance().validateNoHash(m_context);
+		else
+			XmlSecSingleton::Instance().validatePartialHash(m_context, uriList);
 
 		m_data.setReference(m_context.referenceSet);
 		/*
@@ -434,8 +437,20 @@ VCerr SignatureValidator::Impl::baseCheckList(
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return E_SIG_INVALID_CHAIN;
+	} catch (const XmlSec::Exception::InternalError &e) {
+		LogError("XmlSec internal error : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidFormat &e) {
+		LogError("XmlSec invalid format : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidSig &e) {
+		LogError("XmlSec invalid signature : " << e.DumpToString());
+		return E_SIG_INVALID_SIG;
+	} catch (const XmlSec::Exception::OutOfMemory &e) {
+		LogError("XmlSec out of memory : " << e.DumpToString());
+		return E_SIG_OUT_OF_MEM;
 	} catch (const XmlSec::Exception::Base &e) {
-		LogError("XmlSec exception : " << e.DumpToString());
+		LogError("XmlSec unknown exception : " << e.DumpToString());
 		return E_SIG_INVALID_FORMAT;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
@@ -580,4 +595,3 @@ VCerr SignatureValidator::makeChainBySignature(
 }
 
 } // namespace ValidationCore
-

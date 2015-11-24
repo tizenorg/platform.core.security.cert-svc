@@ -14,17 +14,43 @@
  *  limitations under the License.
  */
 /**
- * @file     cert-server-main.c
+ * @file     cert-server-db.c
  * @author   Kyungwook Tak (k.tak@samsung.com)
  * @version  1.0
  * @brief    cert server db utils.
  */
 
+#include <db-util.h>
 #include <cert-server-debug.h>
-
 #include <cert-server-db.h>
 
 sqlite3 *cert_store_db = NULL;
+
+int initialize_db(void)
+{
+	int result = CERTSVC_SUCCESS;
+
+	if (cert_store_db != NULL)
+		return CERTSVC_SUCCESS;
+
+	result = db_util_open(CERTSVC_SYSTEM_STORE_DB, &cert_store_db, 0);
+	if (result != SQLITE_OK) {
+		SLOGE("opening %s failed!", CERTSVC_SYSTEM_STORE_DB);
+		cert_store_db = NULL;
+		return CERTSVC_FAIL;
+	}
+
+	return CERTSVC_SUCCESS;
+}
+
+void deinitialize_db(void)
+{
+	if (cert_store_db == NULL)
+		return;
+
+	db_util_close(cert_store_db);
+	cert_store_db = NULL;
+}
 
 int execute_insert_update_query(const char *query)
 {

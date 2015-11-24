@@ -21,6 +21,7 @@
  * @brief    cert-svc server.
  */
 
+#include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
@@ -40,66 +41,12 @@
 #include <cert-server-logic.h>
 #include <cert-server-db.h>
 
-int initialize_db(void)
-{
-	int result = CERTSVC_SUCCESS;
-
-	if (cert_store_db != NULL)
-		return CERTSVC_SUCCESS;
-
-	result = db_util_open(CERTSVC_SYSTEM_STORE_DB, &cert_store_db, 0);
-	if (result != SQLITE_OK) {
-		SLOGE("connect certs-meta db failed!");
-		cert_store_db = NULL;
-		return CERTSVC_FAIL;
-	}
-
-	return CERTSVC_SUCCESS;
-}
-
-int evaluate_query(sqlite3 *db_handle, char *query)
-{
-	int result = CERTSVC_SUCCESS;
-	sqlite3_stmt *stmt = NULL;
-
-	if (!db_handle) {
-		SLOGE("Database not initialized.");
-		return CERTSVC_WRONG_ARGUMENT;
-	}
-
-	if (!query) {
-		SLOGE("Query is NULL.");
-		return CERTSVC_WRONG_ARGUMENT;
-	}
-
-	result = sqlite3_prepare_v2(db_handle, query, strlen(query), &stmt, NULL);
-	if (result != SQLITE_OK) {
-		SLOGE("Sqlite3 error [%d] : <%s> preparing <%s> query.", result, sqlite3_errmsg(db_handle), query);
-		return CERTSVC_FAIL;
-	}
-
-	result = sqlite3_step(stmt);
-	if (result != SQLITE_DONE) {
-		SLOGE("Sqlite3 error [%d] : <%s> executing <%s> statement.", result, sqlite3_errmsg(db_handle), query);
-		return CERTSVC_FAIL;
-	}
-
-	result = sqlite3_finalize(stmt);
-	if (result != SQLITE_OK) {
-		SLOGE("Sqlite3 error [%d] : <%s> finalising <%s> statement.", result, sqlite3_errmsg(db_handle), query);
-		return CERTSVC_FAIL;
-	}
-
-	return CERTSVC_SUCCESS;
-}
-
 void CertSigHandler(int signo)
 {
 	SLOGD("Got Signal %d, exiting now.", signo);
-	if (cert_store_db != NULL) {
-		sqlite3_close(cert_store_db);
-		cert_store_db = NULL;
-	}
+
+	deinitialize_db();
+
 	exit(1);
 }
 
@@ -348,10 +295,7 @@ void CertSvcServerComm(void)
 Error_close_exit:
 	close(server_sockfd);
 
-	if (cert_store_db) {
-		sqlite3_close(cert_store_db);
-		cert_store_db = NULL;
-	}
+	deinitialize_db();
 
 	free(certListBuffer);
 	free(certBlockBuffer);

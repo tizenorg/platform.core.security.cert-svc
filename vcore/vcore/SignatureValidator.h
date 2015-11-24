@@ -36,6 +36,34 @@ namespace ValidationCore {
 using UriList = std::list<std::string>;
 
 /*
+ *  Types of Reference checking
+ *
+ *  1. XmlSec validate (default)
+ *        - check reference based on Reference tag on signature xml.
+ *        - Get URI from Reference tag, generate digest value and compare it with value written
+ *        - If value with calculated and written isn't same, validate fail returned.
+ *        * What if file doesn't exist which is written on Reference tag?
+ *        * What if Reference tag doesn't exist for existing file? -> cannot checked.
+ *
+ *  2. checkObjectReferences (default on check function, not checkList)
+ *        - check Reference of 'Object' tag.
+ *        - it's mutual-exclusive check with  1. XmlSec validate.
+ *
+ *  3. ReferenceValidator (enabled when flag on)
+ *        - check file based on content path from parameter
+ *        - check is all existing file is on the Reference tag list on signature xml
+ *        - If file path(URI) cannot found on reference set, validate fail returned.
+ *
+ *
+ *  Signature validation disregarded case
+ *
+ *  1. author signature: store id contains TIZEN_DEVELOPER
+ *
+ *  2. distributor signature: signature number is 1
+ *                            and doesn't contain visibility in store id set
+ */
+
+/*
  *  Error code defined on vcore/Error.h
  */
 class SignatureValidator {

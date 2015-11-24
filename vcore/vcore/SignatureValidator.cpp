@@ -505,7 +505,8 @@ std::string SignatureValidator::Impl::errorToString(VCerr code)
 	case E_SIG_INVALID_FORMAT: return "Invalid format of signature file.";
 	case E_SIG_INVALID_CERT:   return "Invalid format of certificate in signature.";
 	case E_SIG_INVALID_CHAIN:  return "Invalid certificate chain with certificate in signature.";
-	case E_SIG_INVALID_REF:    return "Invalid object reference in signature. Files in app should not be changed after app packaged.";
+	case E_SIG_INVALID_SIG:    return "Invalid signature. Signed with wrong key, changed signature file or changed package file.";
+	case E_SIG_INVALID_REF:    return "Invalid file reference. An unsinged file was found.";
 	case E_SIG_CERT_EXPIRED:   return "Certificate in signature is expired.";
 	case E_SIG_CERT_NOT_YET:   return "Certificate in signature is not valid yet.";
 	case E_SIG_DISREGARDED:    return "Signature validation can be disregarded in some cases.";

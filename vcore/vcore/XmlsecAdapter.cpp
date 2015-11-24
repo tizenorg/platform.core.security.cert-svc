@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 /*
  * @file        XmlsecAdapter.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
- * @version     1.0
+ * @version     2.0
  * @brief
  */
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 
 #include <libxml/tree.h>
 #include <libxml/xmlmemory.h>
@@ -28,7 +29,7 @@
 
 #ifndef XMLSEC_NO_XSLT
 #include <libxslt/xslt.h>
-#endif /*   XMLSEC_NO_XSLT */
+#endif
 
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/xmltree.h>
@@ -40,15 +41,45 @@
 
 #include <dpl/assert.h>
 #include <dpl/log/log.h>
+#include <dpl/singleton_impl.h>
 
 #include <vcore/XmlsecAdapter.h>
 
-#include <vcore/ValidatorCommon.h>
-
-#include <dpl/singleton_impl.h>
 IMPLEMENT_SINGLETON(ValidationCore::XmlSec)
 
 namespace {
+
+template <typename Type>
+struct CustomPtr {
+    Type ptr;
+    std::function<void(Type)> deleter;
+
+    CustomPtr() = delete;
+
+    explicit CustomPtr(Type in, std::function<void(Type)> d)
+        : ptr(in)
+        , deleter(d) {}
+
+    ~CustomPtr()
+    {
+        deleter(ptr);
+    }
+
+    inline Type get(void) const
+    {
+        return ptr;
+    }
+
+    inline Type operator->() const
+    {
+        return ptr;
+    }
+
+    inline bool operator!() const
+    {
+        return (ptr == nullptr) ? true : false;
+    }
+};
 
 struct FileWrapper {
     FileWrapper(void *argFile, bool argReleased)
@@ -62,24 +93,24 @@ struct FileWrapper {
 } // anonymous namespace
 
 namespace ValidationCore {
-VC_DECLARE_DELETER(xmlSecKeysMngr, xmlSecKeysMngrDestroy)
 
-static const char* DIGEST_MD5 = "md5";
+static const std::string DIGEST_MD5 = "md5";
 
 std::string XmlSec::s_prefixPath;
 
 int XmlSec::fileMatchCallback(const char *filename)
 {
     std::string path = s_prefixPath + filename;
+
     return xmlFileMatch(path.c_str());
 }
 
-void* XmlSec::fileOpenCallback(const char *filename)
+void *XmlSec::fileOpenCallback(const char *filename)
 {
     std::string path = s_prefixPath + filename;
 
-   // LogDebug("Xmlsec opening : " << path);
-    return new FileWrapper(xmlFileOpen(path.c_str()),false);
+    LogDebug("Xmlsec opening : " << path);
+    return new FileWrapper(xmlFileOpen(path.c_str()), false);
 }
 
 int XmlSec::fileReadCallback(void *context,
@@ -87,14 +118,15 @@ int XmlSec::fileReadCallback(void *context,
         int len)
 {
     FileWrapper *fw = static_cast<FileWrapper*>(context);
-    if (fw->released) {
+    if (fw->released)
         return 0;
-    }
+
     int output = xmlFileRead(fw->file, buffer, len);
     if (output == 0) {
         fw->released = true;
         xmlFileClose(fw->file);
     }
+
     return output;
 }
 
@@ -102,52 +134,51 @@ int XmlSec::fileCloseCallback(void *context)
 {
     FileWrapper *fw = static_cast<FileWrapper*>(context);
     int output = 0;
-    if (!(fw->released)) {
+    if (!fw->released)
         output = xmlFileClose(fw->file);
-    }
+
     delete fw;
+
     return output;
 }
 
-void XmlSec::fileExtractPrefix(XmlSecContext *context)
+void XmlSec::fileExtractPrefix(XmlSecContext &context)
 {
-    if (!(context->workingDirectory.empty())) {
-        s_prefixPath = context->workingDirectory;
+    if (!context.workingDirectory.empty()) {
+        s_prefixPath = context.workingDirectory;
         return;
     }
 
-    s_prefixPath = context->signatureFile;
+    s_prefixPath = context.signatureFile;
     size_t pos = s_prefixPath.rfind('/');
-    if (pos == std::string::npos) {
+    if (pos == std::string::npos)
         s_prefixPath.clear();
-    } else {
-        s_prefixPath.erase(pos + 1, std::string::npos);
-    }
-}
-
-void LogDebugPrint(const char* file, int line, const char* func, 
-       const char* errorObject, const char* errorSubject, 
-       int reason, const char* msg)
-{
-    char total[1024];
-    snprintf(total, sizeof(total), "[%s:%d][%s] : [%s] : [%s] : [%s]", file, line, func, errorObject, errorSubject, msg);
-
-    if(reason != 256)
-    {
-       fprintf(stderr, "## [validate error]: %s\n", total);
-       LogError(" " << total);
-    }
     else
-    {
-       LogDebug(" " << total);
-    }
+        s_prefixPath.erase(pos + 1, std::string::npos);
 }
 
-XmlSec::XmlSec() :
-    m_initialized(false),
-    m_noHash(false),
-    m_partialHash(false),
-    m_pList(NULL)
+void LogDebugPrint(const char *file,
+                   int line,
+                   const char *func,
+                   const char *errorObject,
+                   const char *errorSubject,
+                   int reason,
+                   const char *msg)
+{
+    std::stringstream ss;
+    ss << "[" << file << ":" << line << "][" << func
+        << "] : [" << errorObject << "] : [" << errorSubject
+        << "] : [" << msg << "]" << std::endl;
+
+    if (reason == 256)
+        LogError(ss.str());
+    else
+        LogDebug(ss.str());
+}
+
+XmlSec::XmlSec()
+    : m_initialized(false)
+    , m_pList(nullptr)
 {
     LIBXML_TEST_VERSION
         xmlLoadExtDtdDefaultValue = XML_DETECT_IDS | XML_COMPLETE_ATTRS;
@@ -156,14 +187,11 @@ XmlSec::XmlSec() :
     xmlIndentTreeOutput = 1;
 #endif
 
-    if (xmlSecInit() < 0) {
-        LogError("Xmlsec initialization failed.");
+    if (xmlSecInit() < 0)
         ThrowMsg(Exception::InternalError, "Xmlsec initialization failed.");
-    }
 
     if (xmlSecCheckVersion() != 1) {
         xmlSecShutdown();
-        LogError("Loaded xmlsec library version is not compatible.");
         ThrowMsg(Exception::InternalError,
                  "Loaded xmlsec library version is not compatible.");
     }
@@ -180,16 +208,14 @@ XmlSec::XmlSec() :
     }
 #endif
 
-    if (xmlSecCryptoAppInit(NULL) < 0) {
+    if (xmlSecCryptoAppInit(nullptr) < 0) {
         xmlSecShutdown();
-        LogError("Crypto initialization failed.");
         ThrowMsg(Exception::InternalError, "Crypto initialization failed.");
     }
 
     if (xmlSecCryptoInit() < 0) {
         xmlSecCryptoAppShutdown();
         xmlSecShutdown();
-        LogError("Xmlsec-crypto initialization failed.");
         ThrowMsg(Exception::InternalError,
                  "Xmlsec-crypto initialization failed.");
     }
@@ -197,45 +223,25 @@ XmlSec::XmlSec() :
     m_initialized = true;
 }
 
-void XmlSec::deinitialize(void)
+XmlSec::~XmlSec()
 {
-    Assert(m_initialized);
+    if (m_initialized)
+        return;
 
-    /*   Shutdown xmlsec-crypto library */
     xmlSecCryptoShutdown();
-
-    /*   Shutdown crypto library */
     xmlSecCryptoAppShutdown();
-
-    /*   Shutdown xmlsec library */
     xmlSecShutdown();
 
-    /*   Shutdown libxslt/libxml */
 #ifndef XMLSEC_NO_XSLT
     xsltCleanupGlobals();
-#endif /*   XMLSEC_NO_XSLT */
+#endif
 
     s_prefixPath.clear();
     m_initialized = false;
 }
 
-XmlSec::~XmlSec()
+void XmlSec::validateFile(XmlSecContext &context, xmlSecKeysMngrPtr mngrPtr)
 {
-   m_noHash= false;
-   m_partialHash = false;
-    if (m_initialized) {
-        deinitialize();
-    }
-}
-
-XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
-        xmlSecKeysMngrPtr mngr)
-{
-    xmlDocPtr doc = NULL;
-    xmlNodePtr node = NULL;
-    xmlSecDSigCtxPtr dsigCtx = NULL;
-    int size, res = -1;
-
     fileExtractPrefix(context);
     LogDebug("Prefix path : " << s_prefixPath);
 
@@ -247,266 +253,168 @@ XmlSec::Result XmlSec::validateFile(XmlSecContext *context,
         fileReadCallback,
         fileCloseCallback);
 
-    /*   load file */
-    doc = xmlParseFile(context->signatureFile.c_str());
-    if ((doc == NULL) || (xmlDocGetRootElement(doc) == NULL)) {
-        LogWarning("Unable to parse file " << context->signatureFile);
-        goto done;
-    }
+    CustomPtr<xmlDocPtr> docPtr(xmlParseFile(context.signatureFile.c_str()), xmlFreeDoc);
+    if (!docPtr || xmlDocGetRootElement(docPtr.get()) == nullptr)
+        ThrowMsg(Exception::InvalidFormat,
+                "Unable to parse sig xml file: " << context.signatureFile);
 
-    /*   find start node */
-    node = xmlSecFindNode(xmlDocGetRootElement(
-                              doc), xmlSecNodeSignature, xmlSecDSigNs);
-    if (node == NULL) {
-        LogWarning("Start node not found in " << context->signatureFile);
-        goto done;
-    }
+    xmlNodePtr node = xmlSecFindNode(
+            xmlDocGetRootElement(docPtr.get()),
+            xmlSecNodeSignature,
+            xmlSecDSigNs);
+    if (node == nullptr)
+        ThrowMsg(Exception::InvalidFormat,
+                "Start node not found in " << context.signatureFile);
 
-    /*   create signature context */
-    dsigCtx = xmlSecDSigCtxCreate(mngr);
-    if (dsigCtx == NULL) {
-        LogError("Failed to create signature context.");
-        goto done;
-    }
+    CustomPtr<xmlSecDSigCtxPtr> dsigCtx(xmlSecDSigCtxCreate(mngrPtr), xmlSecDSigCtxDestroy);
+    if (!dsigCtx)
+        ThrowMsg(Exception::OutOfMemory, "Failed to create signature context.");
 
-    if (context->allowBrokenChain) {
-        dsigCtx->keyInfoReadCtx.flags |=
-            XMLSEC_KEYINFO_FLAGS_ALLOW_BROKEN_CHAIN;
-    }
+    if (context.allowBrokenChain)
+        dsigCtx->keyInfoReadCtx.flags |= XMLSEC_KEYINFO_FLAGS_ALLOW_BROKEN_CHAIN;
 
-    if (context->validationTime) {
+    if (context.validationTime) {
         LogDebug("Setting validation time.");
-        dsigCtx->keyInfoReadCtx.certsVerificationTime = context->validationTime;
+        dsigCtx->keyInfoReadCtx.certsVerificationTime = context.validationTime;
     }
 
-    if( m_noHash == true || m_partialHash == true ) {
-        LogDebug("SignatureEx start >> ");
-        if( m_pList == NULL ) {
-            LogWarning("## [validate]: uriList does not exist" );
-            fprintf(stderr, "## [validate]: uriList does not exist\n");
-            res = xmlSecDSigCtxVerifyEx(dsigCtx, node, 1, NULL);
-    } else {
-        int n = 0;
-        int i = 0;
+    int res;
+    switch (m_mode) {
+    case ValidateMode::NORMAL:
+        res = xmlSecDSigCtxVerify(dsigCtx.get(), node);
+        break;
 
-        if(m_pList == NULL)
-        {
-          LogWarning("## [validate]: uriList does not exist" );
-          fprintf(stderr, "## [validate]: uriList does not exist\n");
-          res = -1;
-          goto done;
-        }
+    case ValidateMode::NO_HASH:
+        res = xmlSecDSigCtxVerifyEx(dsigCtx.get(), node, 1, nullptr);
+        break;
 
-        n = m_pList->size();
+    case ValidateMode::PARTIAL_HASH:
+    {
+        size_t n = m_pList->size();
+        const char *pList[n + 1] = {0};
 
-        char* pList[n + 1];
-        std::list<std::string>::const_iterator itr = m_pList->begin();
-        std::string tmpString;
-        char* uri = NULL;
-        int len;
+        size_t i = 0;
+        for (auto uri : *m_pList)
+            pList[i++] = uri.c_str();
 
-        for(; itr != m_pList->end(); ++itr) {
-           tmpString = (*itr);
-           uri = (char*)tmpString.c_str();
-           len = strlen(uri);
-           pList[i] = (char*)malloc(len + 1);
-           memcpy(pList[i], uri, len);
-           pList[i][len] = '\0';
-           fprintf(stderr, "## [validate]: uriList[%d] = %s\n", i, pList[i]);
-           ++i;
-        }
-        pList[n] = '\0';
-
-        res = xmlSecDSigCtxVerifyEx(dsigCtx, node, 0, (void*)pList);
-        i = 0;
-        while(pList[i] != NULL) {
-          free(pList[i]);
-          ++i;
-        }
-     }
-
-     if(res < 0) {
-        LogError("SignatureEx verify error.");
-        fprintf(stderr, "## [validate error]: SignatureEx verify error\n");
-        res = -1;
-        goto done;
-     }
-    } else {
-       LogDebug("Signature start >> ");
-
-       /*  Verify signature */
-       if (xmlSecDSigCtxVerify(dsigCtx, node) < 0) {
-         LogError("Signature verify error.");
-         fprintf(stderr, "## [validate error]: Signature verify error\n");
-         res = -1;
-         goto done;
-      }
+        res = xmlSecDSigCtxVerifyEx(dsigCtx.get(), node, 0, pList);
+        break;
+    }
+    default:
+        ThrowMsg(Exception::InternalError, "ValidateMode is invalid");
     }
 
-    if (dsigCtx->keyInfoReadCtx.flags2 &
-     XMLSEC_KEYINFO_ERROR_FLAGS_BROKEN_CHAIN) {
-        LogWarning("XMLSEC_KEYINFO_FLAGS_ALLOW_BROKEN_CHAIN was set to true!");
+    if (res != 0)
+        ThrowMsg(Exception::InvalidSig, "Signature verify error.");
+
+    if (dsigCtx->keyInfoReadCtx.flags2 & XMLSEC_KEYINFO_ERROR_FLAGS_BROKEN_CHAIN) {
         LogWarning("Signature contains broken chain!");
-        context->errorBrokenChain = true;
+        context.errorBrokenChain = true;
     }
 
-    /*   print verification result to stdout */
-    if (dsigCtx->status == xmlSecDSigStatusSucceeded) {
-        LogDebug("Signature is OK");
-        res = 0;
-    } else {
-        LogDebug("Signature is INVALID");
-        res = -1;
-        goto done;
-    }
+    if (dsigCtx->status != xmlSecDSigStatusSucceeded)
+        ThrowMsg(Exception::InvalidSig, "Signature status is not succedded.");
 
-    if (dsigCtx->c14nMethod && dsigCtx->c14nMethod->id &&
-        dsigCtx->c14nMethod->id->name) {
-       // LogInfo("Canonicalization method: " << (reinterpret_cast<const char *>(dsigCtx->c14nMethod->id->name)).c_str());
-    }
+    xmlSecSize refSize = xmlSecPtrListGetSize(&(dsigCtx->signedInfoReferences));
+    for (xmlSecSize i = 0; i < refSize; ++i) {
+        xmlSecDSigReferenceCtxPtr dsigRefCtx = static_cast<xmlSecDSigReferenceCtxPtr>(
+                xmlSecPtrListGetItem(&(dsigCtx->signedInfoReferences), i));
 
-    size = xmlSecPtrListGetSize(&(dsigCtx->signedInfoReferences));
-    for (int i = 0; i < size; ++i) {
-        xmlSecDSigReferenceCtxPtr dsigRefCtx =
-            (xmlSecDSigReferenceCtxPtr)xmlSecPtrListGetItem(&(dsigCtx->
-                                                                  signedInfoReferences),
-                                                            i);
-        if (dsigRefCtx && dsigRefCtx->uri) {
-            if (dsigRefCtx->digestMethod && dsigRefCtx->digestMethod->id &&
-                dsigRefCtx->digestMethod->id->name) {
-                const char* pDigest =
-                    reinterpret_cast<const char *>(dsigRefCtx->digestMethod->id
-                                                       ->name);
-                std::string strDigest(pDigest);
-                /*LogInfo("reference digest method: " << (reinterpret_cast<const char *>(dsigRefCtx->digestMethod->id->name)).c_str());*/
-                if (strDigest == DIGEST_MD5) {
-                    LogWarning("MD5 digest method used! Please use sha");
-                    res = -1;
-                    break;
-                }
-            }
-            context->referenceSet.insert(std::string(reinterpret_cast<char *>(
-                                                         dsigRefCtx->uri)));
+        if (!dsigRefCtx || !dsigRefCtx->uri)
+            continue;
+
+        if (dsigRefCtx->digestMethod
+            && dsigRefCtx->digestMethod->id
+            && dsigRefCtx->digestMethod->id->name) {
+            auto digest = reinterpret_cast<const char * const>(
+                    dsigRefCtx->digestMethod->id->name);
+
+            if (DIGEST_MD5.compare(digest) == 0)
+                ThrowMsg(Exception::InvalidFormat,
+                        "MD5 digest method used! Please use sha");
         }
-    }
 
-done:
-    m_pList = NULL;
-    m_noHash = false;
-    m_partialHash = false;
-
-    /*   cleanup */
-    if (dsigCtx != NULL) {
-        xmlSecDSigCtxDestroy(dsigCtx);
-    }
-
-    if (doc != NULL) {
-        xmlFreeDoc(doc);
-    }
-
-    if (res) {
-        return ERROR_INVALID_SIGNATURE;
-    }
-    return NO_ERROR;
-}
-
-void XmlSec::loadDERCertificateMemory(XmlSecContext *context,
-        xmlSecKeysMngrPtr mngr)
-{
-    unsigned char *derCertificate = NULL;
-    int size = i2d_X509(context->certificatePtr->getX509(), &derCertificate);
-
-    if (!derCertificate) {
-        LogError("Failed during x509 conversion to der format.");
-        ThrowMsg(Exception::InternalError,
-                 "Failed during x509 conversion to der format.");
-    }
-
-    if (xmlSecCryptoAppKeysMngrCertLoadMemory(mngr,
-                                              derCertificate,
-                                              size,
-                                              xmlSecKeyDataFormatDer,
-                                              xmlSecKeyDataTypeTrusted) < 0) {
-        OPENSSL_free(derCertificate);
-        LogError("Failed to load der certificate from memory.");
-        ThrowMsg(Exception::InternalError,
-                 "Failed to load der certificate from memory.");
-    }
-
-    OPENSSL_free(derCertificate);
-}
-
-void XmlSec::loadPEMCertificateFile(XmlSecContext *context,
-        xmlSecKeysMngrPtr mngr)
-{
-    if (xmlSecCryptoAppKeysMngrCertLoad(mngr,
-                                        context->certificatePath.c_str(),
-                                        xmlSecKeyDataFormatPem,
-                                        xmlSecKeyDataTypeTrusted) < 0) {
-        LogError("Failed to load PEM certificate from file.");
-        ThrowMsg(Exception::InternalError,
-                 "Failed to load PEM certificate from file.");
+        context.referenceSet.emplace(reinterpret_cast<char *>(dsigRefCtx->uri));
     }
 }
 
-XmlSec::Result XmlSec::validate(XmlSecContext *context)
+void XmlSec::loadDERCertificateMemory(XmlSecContext &context, xmlSecKeysMngrPtr mngrPtr)
 {
-    Assert(context);
-    Assert(!(context->signatureFile.empty()));
-    Assert(context->certificatePtr.get() || !(context->certificatePath.empty()));
+    std::string derCert;
+
+    try {
+        derCert = context.certificatePtr->getDER();
+    } catch (Certificate::Exception::Base &e) {
+        ThrowMsg(Exception::InternalError,
+                 "Failed during x509 conversion to der format: " << e.DumpToString());
+    }
+
+    if (xmlSecCryptoAppKeysMngrCertLoadMemory(
+            mngrPtr,
+            reinterpret_cast<const xmlSecByte *>(derCert.data()),
+            reinterpret_cast<xmlSecSize>(derCert.length()),
+            xmlSecKeyDataFormatDer,
+            xmlSecKeyDataTypeTrusted) < 0)
+        ThrowMsg(Exception::InternalError, "Failed to load der cert from memory.");
+}
+
+void XmlSec::loadPEMCertificateFile(XmlSecContext &context, xmlSecKeysMngrPtr mngrPtr)
+{
+    if (xmlSecCryptoAppKeysMngrCertLoad(
+            mngrPtr,
+            context.certificatePath.c_str(),
+            xmlSecKeyDataFormatPem,
+            xmlSecKeyDataTypeTrusted) < 0)
+        ThrowMsg(Exception::InternalError, "Failed to load PEM cert from file.");
+}
+
+void XmlSec::validateInternal(XmlSecContext &context)
+{
+    Assert(!context.signatureFile.empty());
+    Assert(!!context.certificatePtr || !context.certificatePath.empty());
 
     xmlSecErrorsSetCallback(LogDebugPrint);
 
-    if (!m_initialized) {
-        LogError("XmlSec is not initialized.");
+    if (!m_initialized)
         ThrowMsg(Exception::InternalError, "XmlSec is not initialized");
-    }
 
-    AutoPtr<xmlSecKeysMngr> mngr(xmlSecKeysMngrCreate());
+    CustomPtr<xmlSecKeysMngrPtr> mngrPtr(xmlSecKeysMngrCreate(), xmlSecKeysMngrDestroy);
 
-    if (!mngr.get()) {
-        LogError("Failed to create keys manager.");
+    if (!mngrPtr)
         ThrowMsg(Exception::InternalError, "Failed to create keys manager.");
-    }
 
-    if (xmlSecCryptoAppDefaultKeysMngrInit(mngr.get()) < 0) {
-        LogError("Failed to initialize keys manager.");
+    if (xmlSecCryptoAppDefaultKeysMngrInit(mngrPtr.get()) < 0)
         ThrowMsg(Exception::InternalError, "Failed to initialize keys manager.");
-    }
-    context->referenceSet.clear();
 
-    if (context->certificatePtr.get()) {
-        loadDERCertificateMemory(context, mngr.get());
-    }
+    context.referenceSet.clear();
 
-    if (!context->certificatePath.empty()) {
-        loadPEMCertificateFile(context, mngr.get());
-    }
+    if (!!context.certificatePtr)
+        loadDERCertificateMemory(context, mngrPtr.get());
 
-    return validateFile(context, mngr.get());
+    if (!context.certificatePath.empty())
+        loadPEMCertificateFile(context, mngrPtr.get());
+
+    validateFile(context, mngrPtr.get());
 }
 
-XmlSec::Result XmlSec::validateNoHash(XmlSecContext *context)
+void XmlSec::validate(XmlSecContext &context)
 {
-    xmlSecErrorsSetCallback(LogDebugPrint);
-
-    m_noHash = true;
-    return validate(context);
+    m_mode = ValidateMode::NORMAL;
+    validateInternal(context);
 }
 
-XmlSec::Result XmlSec::validatePartialHash(XmlSecContext *context)
+void XmlSec::validateNoHash(XmlSecContext &context)
 {
-    xmlSecErrorsSetCallback(LogDebugPrint);
-
-    m_partialHash = true;
-    return validate(context);
+    m_mode = ValidateMode::NO_HASH;
+    validateInternal(context);
 }
 
-XmlSec::Result XmlSec::setPartialHashList(const std::list<std::string>& targetUri)
+void XmlSec::validatePartialHash(XmlSecContext &context, const std::list<std::string> &targetUri)
 {
-  xmlSecErrorsSetCallback(LogDebugPrint);
+    m_mode = ValidateMode::PARTIAL_HASH;
+    m_pList = &targetUri;
 
-    m_pList = (std::list<std::string>*)&targetUri;
-    return NO_ERROR;
+    validateInternal(context);
 }
+
 } // namespace ValidationCore

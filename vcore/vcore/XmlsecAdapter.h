@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 /*
  * @file        XmlSecAdapter.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
- * @version     1.0
+ * @version     2.0
  * @brief
  */
-#ifndef _VALIDATION_CORE_XMLSECADAPTER_H_
-#define _VALIDATION_CORE_XMLSECADAPTER_H_
+#pragma once
+
+#include <string>
+#include <list>
 
 #include <xmlsec/keysmngr.h>
 
@@ -32,19 +34,15 @@
 #include <vcore/SignatureData.h>
 
 namespace ValidationCore {
-class XmlSec : public VcoreDPL::Noncopyable
-{
-  public:
+class XmlSec : public VcoreDPL::Noncopyable {
 
-    struct XmlSecContext
-    {
+public:
+    struct XmlSecContext {
         /* You _must_ set one of the value: certificatePath or certificate. */
-        XmlSecContext() :
-            validationTime(0),
-            allowBrokenChain(false),
-            errorBrokenChain(false)
-        {
-        }
+        XmlSecContext()
+            : validationTime(0)
+            , allowBrokenChain(false)
+            , errorBrokenChain(false) {}
 
         /*
          * Absolute path to signature file.
@@ -88,57 +86,47 @@ class XmlSec : public VcoreDPL::Noncopyable
         ReferenceSet referenceSet;
     };
 
-    enum Result
-    {
-        NO_ERROR,
-        ERROR_INVALID_SIGNATURE
-    };
-
-    class Exception
-    {
-      public:
+    struct Exception {
         DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, InternalError)
+        DECLARE_EXCEPTION_TYPE(Base, InvalidFormat)
+        DECLARE_EXCEPTION_TYPE(Base, InvalidSig)
+        DECLARE_EXCEPTION_TYPE(Base, OutOfMemory)
     };
 
-    /*
-     * Context - input/output param.
-     */
-    Result validate(XmlSecContext *context);
-    Result validateNoHash(XmlSecContext *context);
-    Result validatePartialHash(XmlSecContext *context);
-    Result setPartialHashList(const std::list<std::string>& targetUri);
- 
- protected:
+    /* context - input/output param. */
+    void validate(XmlSecContext &context);
+    void validateNoHash(XmlSecContext &context);
+    void validatePartialHash(XmlSecContext &context, const std::list<std::string> &targetUri);
+
+protected:
     XmlSec();
     ~XmlSec();
-  private:
-    void deinitialize(void);
 
-    void loadDERCertificateMemory(XmlSecContext *context,
-            xmlSecKeysMngrPtr mngr);
-    void loadPEMCertificateFile(XmlSecContext *context,
-            xmlSecKeysMngrPtr mngr);
-    Result validateFile(XmlSecContext *context,
-            xmlSecKeysMngrPtr mngr);
+private:
+    enum class ValidateMode : int {
+        NORMAL,
+        NO_HASH,
+        PARTIAL_HASH
+    };
 
+    ValidateMode m_mode;
     bool m_initialized;
-    bool m_noHash;
-    bool m_partialHash;
-    std::list<std::string>* m_pList;
+    const std::list<std::string> *m_pList;
+
+    void loadDERCertificateMemory(XmlSecContext &context, xmlSecKeysMngrPtr mngr);
+    void loadPEMCertificateFile(XmlSecContext &context, xmlSecKeysMngrPtr mngr);
+    void validateInternal(XmlSecContext &context);
+    void validateFile(XmlSecContext &context, xmlSecKeysMngrPtr mngr);
 
     static std::string s_prefixPath;
     static int fileMatchCallback(const char *filename);
-    static void* fileOpenCallback(const char *filename);
-    static int fileReadCallback(void *context,
-            char *buffer,
-            int len);
+    static void *fileOpenCallback(const char *filename);
+    static int fileReadCallback(void *context, char *buffer, int len);
     static int fileCloseCallback(void *context);
-    static void fileExtractPrefix(XmlSecContext *context);
+    static void fileExtractPrefix(XmlSecContext &context);
 };
 
 typedef VcoreDPL::Singleton<XmlSec> XmlSecSingleton;
 
 } // namespace ValidationCore
-
-#endif // _VALIDATION_CORE_XMLSECVERIFICATOR_H_

@@ -43,6 +43,8 @@ public:
 	std::string signature;
 };
 
+extern const std::string SelfSignedCAPath;
+
 extern const std::string subjectGoogleCA;
 /*
  *  Not Before: Jan 29 00:00:00 1996 GMT

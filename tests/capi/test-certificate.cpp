@@ -62,7 +62,7 @@ RUNNER_TEST(T0101_certificate_new_from_file)
 	CertSvcCertificate cert;
 	int result = certsvc_certificate_new_from_file(
 			vinstance,
-			"/usr/share/cert-svc/cert-type/root_cacert0.pem",
+			TestData::SelfSignedCAPath.c_str(),
 			&cert);
 	RUNNER_ASSERT_MSG(CERTSVC_TRUE == result, "Error reading certificate");
 

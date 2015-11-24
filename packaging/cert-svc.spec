@@ -43,7 +43,6 @@ Summary:  Certification service (tests)
 Group:    Security/Testing
 Requires: ca-certificates-tizen
 Requires: %{name} = %{version}-%{release}
-Conflicts: %name
 
 %description test
 Certification service (tests)
@@ -136,9 +135,7 @@ fi
 %if 0%{?certsvc_test_build}
 %files test
 %TZ_SYS_BIN/cert-svc-test*
-%TZ_SYS_RO_APP/widget/tests
-%TZ_SYS_SHARE/cert-svc/cert-type
-%TZ_SYS_SHARE/cert-svc/tests
+%TZ_SYS_RO_APP/cert-svc-tests
 %TZ_SYS_SHARE/ca-certificates/tizen/root_cacert0.pem
 %_libdir/libcert-svc-validator-plugin.so
 %endif

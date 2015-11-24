@@ -39,6 +39,8 @@
 
 #include <dpl/test/test_runner.h>
 
+#include "test-common.h"
+
 static CertSvcInstance instance;
 
 static CertSvcString wrapper_certsvc_string_new(const char *cStr)
@@ -123,7 +125,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1003_add_pem_file_in_individual_store)
 
 	CREATE_INSTANCE
 
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifi-server.pem");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerCertPemPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new(NULL);
 
 	CertSvcString Alias = wrapper_certsvc_string_new("PEM-wifi-server-1");
@@ -182,7 +184,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1004_add_pem_file_in_all_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("PEM-wifi-server-all-store");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifi-server.pem");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerCertPemPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new(NULL);
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, allStoreType, Path, Pass, Alias);
@@ -209,7 +211,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1005_add_crt_file_in_individual_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("CRT-TestingCRT1");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/Testing.crt");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::CertCrtPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new(NULL);
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, WIFI_STORE, Path, Pass, Alias);
@@ -260,7 +262,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1006_add_crt_file_in_all_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("CRT-TestingCRT1-all-store");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/Testing.crt");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::CertCrtPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new(NULL);
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, allStoreType, Path, Pass, Alias);
@@ -321,8 +323,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1008_install_p12_file_to_all_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("P12-WifiUser-all-store");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifiuser.p12");
-	CertSvcString Pass = wrapper_certsvc_string_new("wifi");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::UserP12WithPassPath.c_str());
+	CertSvcString Pass = wrapper_certsvc_string_new(TestData::UserP12Pass.c_str());
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, allStoreType, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing p12 file to WIFI store failed.");
@@ -349,8 +351,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1009_install_pfx_file_to_individual_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("PFX-WifiServer");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifiserver.pfx");
-	CertSvcString Pass = wrapper_certsvc_string_new("wifi");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerPfxWithPassPath.c_str());
+	CertSvcString Pass = wrapper_certsvc_string_new(TestData::ServerPfxPass.c_str());
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, WIFI_STORE, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing PFX file to WIFI store failed.");
@@ -383,8 +385,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1010_install_pfx_file_to_all_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("PFX-WifiServer-all-store");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifiserver.pfx");
-	CertSvcString Pass = wrapper_certsvc_string_new("wifi");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerPfxWithPassPath.c_str());
+	CertSvcString Pass = wrapper_certsvc_string_new(TestData::ServerPfxPass.c_str());
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, allStoreType, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing PFX file to WIFI store failed.");
@@ -475,8 +477,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1013_install_pfx_file_to_one_store_and_get_list_from_
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("PFX-WifiServer-one-store");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifiserver.pfx");
-	CertSvcString Pass = wrapper_certsvc_string_new("wifi");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerPfxWithPassPath.c_str());
+	CertSvcString Pass = wrapper_certsvc_string_new(TestData::ServerPfxPass.c_str());
 
 	int isUnique = 0;
 	result = certsvc_pkcs12_check_alias_exists_in_store(instance, allStoreType, Alias, &isUnique);
@@ -514,7 +516,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1014_installing_pfx_without_password_to_individual_st
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("PFX-WifiServer-without-password");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/without_pass.p12");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerPfxWithoutPassPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new("");
 
 	int isUnique = 0;
@@ -774,7 +776,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1021_add_pem_file_to_invalid_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("PFX-WifiServer-one-store");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifi-server.pem");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerCertPemPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new(NULL);
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, (CertStoreType)-1, Path, Pass, Alias);
@@ -841,7 +843,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1024_certsvc_set_and_get_for_invalid_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("TestingCRT1");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/Invalidcrt.crt");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::InvalidCertCrtPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new(NULL);
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, WIFI_STORE, Path, Pass, Alias);
@@ -869,8 +871,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1025_install_invalid_pfx_file_to_individual_and_all_s
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("WifiServer-123");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/test.pfx");
-	CertSvcString Pass = wrapper_certsvc_string_new("wifi");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerPfxWithPass2Path.c_str());
+	CertSvcString Pass = wrapper_certsvc_string_new(TestData::ServerPfx2Pass.c_str());
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, SYSTEM_STORE, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result != CERTSVC_SUCCESS, "Importing invalid PFX file should be failed.");

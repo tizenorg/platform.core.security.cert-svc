@@ -27,14 +27,7 @@ using namespace ValidationCore;
 
 RUNNER_TEST_GROUP_INIT(T0010_SIGNATURE_VALIDATOR)
 
-/*
- * test: Class SignatureFinder
- * description: SignatureFinder should search directory passed as
- * param of constructor.
- * expected: Signature finder should put information about 3
- * signture files in SinatureFileInfoSet.
- */
-RUNNER_TEST(T0011_signature_finder)
+RUNNER_TEST(T00101_finder)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(TestData::widget_path);
@@ -76,15 +69,7 @@ RUNNER_TEST(T0011_signature_finder)
     RUNNER_ASSERT_MSG(count == 3, "Wrong signature file count.");
 }
 
-/*
- * test: Integration test of SignatureFinder, SignatureReader,
- * SignatureValidator
- * description: Directory passed to SignatureFinded constructor should be searched
- * and 3 signature should be find. All signature should be parsed and verified.
- * expected: Verificator should DISREGARD author signature and VERIFY
- * distrubutor signature.
- */
-RUNNER_TEST(T0012_signature_validator)
+RUNNER_TEST(T00102_positive_public_check_ref)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(TestData::widget_path);
@@ -97,75 +82,27 @@ RUNNER_TEST(T0012_signature_validator)
         SignatureData data;
         VCerr result = validator.check(
                 TestData::widget_path,
-                false,
+                true,
                 true,
                 data);
 
         if (data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "Validation failed");
+                "author sig validation should be disregarded: "
+                << validator.errorToString(result));
         else
             if (data.getSignatureNumber() == 1)
                 RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                    "Validation failed");
+                    "dist1 sig validation should be disregarded: "
+                    << validator.errorToString(result));
             else
                 RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                    "Validation failed");
+                    "dist22 sig validation should be success: "
+                    << validator.errorToString(result));
     }
 }
 
-RUNNER_TEST(T00121_signature_validator_negative_hash_input)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(TestData::widget_negative_hash_path);
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    for (auto &sig : signatureSet) {
-        SignatureValidator validator(sig);
-        SignatureData data;
-        VCerr result = validator.check(
-                TestData::widget_negative_hash_path,
-                false,
-                true,
-                data);
-        if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-        else
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-    }
-}
-
-RUNNER_TEST(T00122_signature_validator_negative_signature_input)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(TestData::widget_negative_signature_path);
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    for (auto &sig : signatureSet) {
-        SignatureValidator validator(sig);
-        SignatureData data;
-        VCerr result = validator.check(
-                TestData::widget_negative_signature_path,
-                false,
-                true,
-                data);
-
-        if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-        else
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-    }
-}
-
-RUNNER_TEST(T00123_signature_validator_partner)
+RUNNER_TEST(T00103_positive_partner_check_ref)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(TestData::widget_partner_path);
@@ -178,28 +115,22 @@ RUNNER_TEST(T00123_signature_validator_partner)
         SignatureData data;
         VCerr result = validator.check(
                 TestData::widget_partner_path,
-                false,
+                true,
                 true,
                 data);
 
         RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-            "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
+            "sig validation should be success: "
+            << validator.errorToString(result));
+
         if (!data.isAuthorSignature()) {
-            RUNNER_ASSERT_MSG(
-                    data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
-                    "visibility check failed.");
+            RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
+                "visibility check failed.");
         }
     }
 }
-/*
- * test: Integration test of SignatureFinder, SignatureReader,
- * SignatureValidator
- * description: Directory passed to SignatureFinded constructor should be searched
- * and 3 signature should be find. All signature should be parsed and verified.
- * expected: Verificator should DISREGARD author signature and VERIFY
- * distrubutor signature.
- */
-RUNNER_TEST(T0013_signature_validator)
+
+RUNNER_TEST(T00104_positive_public_uncheck_ref)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(TestData::widget_path);
@@ -213,76 +144,27 @@ RUNNER_TEST(T0013_signature_validator)
         SignatureData data;
         VCerr result = validator.check(
                 TestData::widget_path,
-                false,
+                true,
                 false,
                 data);
 
         if (data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "Validation failed");
+                "author sig validation should be disregraded: "
+                << validator.errorToString(result));
         else
             if (data.getSignatureNumber() == 1)
                 RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                        "Validation failed");
+                    "disg1 sig validation should be disregarded: "
+                    << validator.errorToString(result));
             else
                 RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                        "Validation failed");
+                    "dist22 sig validation should be success: "
+                    << validator.errorToString(result));
     }
 }
 
-RUNNER_TEST(T00131_signature_validator_negative_hash_input)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(TestData::widget_negative_hash_path);
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    for (auto &sig : signatureSet) {
-        SignatureValidator validator(sig);
-        SignatureData data;
-        VCerr result = validator.check(
-                TestData::widget_negative_hash_path,
-                false,
-                false,
-                data);
-
-        if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-        else
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-    }
-}
-
-RUNNER_TEST(T00132_signature_validator_negative_signature_input)
-{
-    SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(TestData::widget_negative_signature_path);
-    RUNNER_ASSERT_MSG(
-        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
-        "SignatureFinder failed");
-
-    for (auto &sig : signatureSet) {
-        SignatureValidator validator(sig);
-        SignatureData data;
-        VCerr result = validator.check(
-                TestData::widget_negative_signature_path,
-                false,
-                false,
-                data);
-
-        if (!data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_FORMAT,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-        else
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
-    }
-}
-
-RUNNER_TEST(T00133_signature_validator_partner)
+RUNNER_TEST(T00105_positive_partner_uncheck_ref)
 {
     SignatureFileInfoSet signatureSet;
     SignatureFinder signatureFinder(TestData::widget_partner_path);
@@ -295,12 +177,13 @@ RUNNER_TEST(T00133_signature_validator_partner)
         SignatureData data;
         VCerr result = validator.check(
                 TestData::widget_partner_path,
-                false,
+                true,
                 false,
                 data);
 
         RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-            "Wrong input file but success.. Errorcode : " << validator.errorToString(result));
+            "sig validation should be success: "
+            << validator.errorToString(result));
 
         if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
@@ -308,167 +191,250 @@ RUNNER_TEST(T00133_signature_validator_partner)
     }
 }
 
-/*
- * test: Integration test of SignatureFinder, SignatureReader,
- * SignatureValidator, ReferenceValidator
- * description: As above but this test also checks reference from signatures.
- * expected: All reference checks should return NO_ERROR.
- */
-RUNNER_TEST(T0014_signature_reference)
+RUNNER_TEST(T00106_positive_tpk)
 {
     SignatureFileInfoSet signatureSet;
-    SignatureFinder signatureFinder(TestData::widget_path);
+    SignatureFinder signatureFinder(TestData::tpk_path);
     RUNNER_ASSERT_MSG(
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
-
 
     for (auto &sig : signatureSet) {
         SignatureValidator validator(sig);
         SignatureData data;
         VCerr result = validator.check(
-                TestData::widget_path,
-                false,
+                TestData::tpk_path,
+                true,
+                true,
+                data);
+
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+                "author sig validation should be success: "
+                << validator.errorToString(result));
+        else
+            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+                "dist sig validation should be success: "
+                << validator.errorToString(result));
+    }
+}
+
+RUNNER_TEST(T00107_positive_tpk_with_userdata)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::tpk_with_userdata_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    UriList uriList;
+    uriList.emplace_back("author-siganture.xml");
+    uriList.emplace_back("bin/preference");
+    uriList.emplace_back("res/edje/pref_buttons_panel.edj");
+    uriList.emplace_back("res/edje/pref_edit_panel.edj");
+    uriList.emplace_back("res/edje/preference.edj");
+    uriList.emplace_back("res/images/icon_delete.png");
+    uriList.emplace_back("res/res.xml");
+    uriList.emplace_back("shared/res/preference.png");
+    uriList.emplace_back("tizen-manifest.xml");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.checkList(
+                true,
+                uriList,
+                data);
+
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+                "author sig validation should be success: "
+                << validator.errorToString(result));
+        else
+            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+                "dist sig validation should be success: "
+                << validator.errorToString(result));
+    }
+}
+
+RUNNER_TEST(T00151_negative_hash_check_ref)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_negative_hash_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_negative_hash_path,
+                true,
+                true,
+                data);
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                "author sig shouldn't be failed because it only checks cert chain: "
+                << validator.errorToString(result));
+        else
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
+                "dist sig shouldn't be success: "
+                << validator.errorToString(result));
+    }
+}
+
+RUNNER_TEST(T00152_negative_hash_uncheck_ref)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_negative_hash_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_negative_hash_path,
+                true,
                 false,
                 data);
 
         if (data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "Validation failed");
+                "author sig shouldn't be failed because it only checks cert chain: "
+                << validator.errorToString(result));
         else
-            if (data.getSignatureNumber() == 1)
-                RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                    "Validation failed");
-            else
-                RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                    "Validation failed");
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
+                "dist sig shouldn't be success: "
+                << validator.errorToString(result));
     }
 }
 
-/*
- * test: ReferenceValidator::checkReference
- * description: Simple test. File "encoding test.empty" exists.
- * expected: checkReference should return NO_ERROR.
- */
-/*
-RUNNER_TEST(T00141_signature_reference_encoding_dummy)
+RUNNER_TEST(T00153_negative_signature_check_ref)
 {
-    ReferenceSet referenceSet;
-    SignatureData data;
-    ReferenceValidator val("/usr/apps/widget/tests/reference");
-    referenceSet.insert("encoding test.empty");
-    data.setReference(referenceSet);
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_negative_signature_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
 
-    int temp = val.checkReferences(data);
-    RUNNER_ASSERT_MSG(ReferenceValidator::NO_ERROR == temp,
-            "Errorcode : " << refValidatorErrorToString(temp));
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_negative_signature_path,
+                true,
+                true,
+                data);
+
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                "author sig validation should be disregarded: "
+                << validator.errorToString(result));
+        else
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
+                "dist sig validation should be failed: "
+                << validator.errorToString(result));
+    }
 }
-*/
 
-/*
- * test: ReferenceValidator::checkReference
- * description: Negative test. File "encoding test" does not exists.
- * expected: checkReference should return ERROR_REFERENCE_NOT_FOUND
- */
-/*
-RUNNER_TEST(T00142_signature_reference_encoding_negative)
+RUNNER_TEST(T00154_negative_signature_uncheck_ref)
 {
-    ReferenceSet referenceSet;
-    SignatureData data;
-    ReferenceValidator val("/usr/apps/widget/tests/reference");
-    referenceSet.insert("encoding test");
-    data.setReference(referenceSet);
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_negative_signature_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
 
-    int temp = val.checkReferences(data);
-    RUNNER_ASSERT_MSG(ReferenceValidator::ERROR_REFERENCE_NOT_FOUND == temp,
-            "Errorcode : " << refValidatorErrorToString(temp));
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_negative_signature_path,
+                true,
+                false,
+                data);
+
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                "author sig validation should be disregarded: "
+                << validator.errorToString(result));
+        else
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
+                "dist sig should be failed: "
+                 << validator.errorToString(result));
+    }
 }
-*/
 
-/*
- * test: ReferenceValidator::checkReference, ReferenceValidator::decodeProcent
- * description: File "encoding test.empty" exists. Name set in referenceSet must
- * be encoded first by decodeProcent function.
- * expected: checkReference should return NO_ERROR
- */
-/*
-RUNNER_TEST(T00143_signature_reference_encoding_space)
+RUNNER_TEST(T00155_negative_tpk_with_added_malfile)
 {
-    ReferenceSet referenceSet;
-    SignatureData data;
-    ReferenceValidator val("/usr/apps/widget/tests/reference");
-    referenceSet.insert("encoding%20test.empty");
-    data.setReference(referenceSet);
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::attacked_tpk_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
 
-    int temp = val.checkReferences(data);
-    RUNNER_ASSERT_MSG(ReferenceValidator::NO_ERROR == temp,
-            "Errorcode : " << refValidatorErrorToString(temp));
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::attacked_tpk_path,
+                true,
+                true,
+                data);
+
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+                "author sig validation should be success: "
+                << validator.errorToString(result));
+        else
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_REF,
+                "dist sig validation should be failed: "
+                << validator.errorToString(result));
+    }
 }
-*/
 
-/*
- * test: ReferenceValidator::checkReference, ReferenceValidator::decodeProcent
- * description: Negative test. File "encoding test" does not exists. Name set in
- * referenceSet must be encoded first by decodeProcent function.
- * expected: checkReference should return ERROR_REFERENCE_NOT_FOUND
- */
-/*
-RUNNER_TEST(T00144_signature_reference_encoding_space_negative)
+RUNNER_TEST(T00156_negative_tpk_with_userdata_file_changed_in_list)
 {
-    ReferenceSet referenceSet;
-    SignatureData data;
-    ReferenceValidator val("/usr/apps/widget/tests/reference");
-    referenceSet.insert("encoding%20test");
-    data.setReference(referenceSet);
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::attacked_tpk_with_userdata_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
 
-    int temp = val.checkReferences(data);
-    RUNNER_ASSERT_MSG(ReferenceValidator::ERROR_REFERENCE_NOT_FOUND == temp,
-            "Errorcode : " << refValidatorErrorToString(temp));
+    UriList uriList;
+    uriList.emplace_back("author-siganture.xml");
+    uriList.emplace_back("bin/preference");
+    uriList.emplace_back("res/edje/pref_buttons_panel.edj");
+    uriList.emplace_back("res/edje/pref_edit_panel.edj");
+    uriList.emplace_back("res/edje/preference.edj");
+    uriList.emplace_back("res/images/icon_delete.png");
+    uriList.emplace_back("res/res.xml");
+    uriList.emplace_back("shared/res/preference.png");
+
+    /* this file is modified after signing app */
+    uriList.emplace_back("tizen-manifest.xml");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.checkList(
+                true,
+                uriList,
+                data);
+
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
+                "author sig validation should be failed: "
+                << validator.errorToString(result));
+        else
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
+                "dist sig validation should be failed: "
+                << validator.errorToString(result));
+    }
 }
-*/
-
-/*
- * test: ReferenceValidator::checkReference, ReferenceValidator::decodeProcent
- * description: File "encoding test.empty" exists. Name set in
- * referenceSet must be encoded first by decodeProcent function.
- * expected: checkReference should return NO_ERROR
- */
-/*
-RUNNER_TEST(T00145_signature_reference_encoding)
-{
-    ReferenceSet referenceSet;
-    SignatureData data;
-    ReferenceValidator val("/usr/apps/widget/tests/reference");
-    referenceSet.insert("e%6Ec%6Fding%20te%73%74.e%6d%70ty");
-    data.setReference(referenceSet);
-
-    int temp = val.checkReferences(data);
-    RUNNER_ASSERT_MSG(ReferenceValidator::NO_ERROR == temp,
-            "Errorcode : " << refValidatorErrorToString(temp));
-}
-*/
-
-/*
- * test: ReferenceValidator::checkReference, ReferenceValidator::decodeProcent
- * description: Negative test. "%%" is illegal combination of char. decodeProcent
- * should throw exception.
- * expected: checkReference should return ERROR_DECODING_URL
- */
-/*
-RUNNER_TEST(T00146_signature_reference_encoding_negative)
-{
-    ReferenceSet referenceSet;
-    SignatureData data;
-    ReferenceValidator val("/usr/apps/widget/tests/reference");
-    referenceSet.insert("e%6Ec%6Fding%%0test%2ete%73%74");
-    data.setReference(referenceSet);
-
-    int temp = val.checkReferences(data);
-    RUNNER_ASSERT_MSG(ReferenceValidator::ERROR_DECODING_URL == temp,
-            "Errorcode : " << refValidatorErrorToString(temp));
-}
-*/
-
 
 RUNNER_TEST_GROUP_INIT(T0020_SigVal_errorstring)
 
@@ -488,93 +454,4 @@ RUNNER_TEST(T0021)
             << code << "] : "
             << validator.errorToString(code) << std::endl;
     }
-}
-
-RUNNER_TEST_GROUP_INIT(T0030_Certificate)
-
-/*
- * test: class Certificate
- * description: Certificate should parse data passed to object constructor.
- * expected: Getters should be able to return certificate information.
- */
-RUNNER_TEST(T0031_Certificate)
-{
-    Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
-    std::string result;
-
-    result = cert.getCommonName(Certificate::FIELD_SUBJECT);
-    RUNNER_ASSERT_MSG(!result.empty(), "No common name");
-    RUNNER_ASSERT_MSG(!result.compare("www.verisign.com"), "CommonName mismatch");
-
-    result = cert.getCommonName(Certificate::FIELD_ISSUER);
-    RUNNER_ASSERT_MSG(!result.empty(), "No common name");
-    RUNNER_ASSERT_MSG(!result.compare("VeriSign Class 3 Extended Validation SSL SGC CA"),
-            "CommonName mismatch");
-
-    result = cert.getCountryName();
-    RUNNER_ASSERT_MSG(!result.empty(), "No country");
-    RUNNER_ASSERT_MSG(!result.compare("US"), "Country mismatch");
-}
-
-/*
- * test: Certificate::getFingerprint
- * description: Certificate should parse data passed to object constructor.
- * expected: Function fingerprint should return valid fingerprint.
- */
-RUNNER_TEST(T0032_Certificate)
-{
-    Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
-
-    Certificate::Fingerprint fin =
-        cert.getFingerprint(Certificate::FINGERPRINT_SHA1);
-
-    unsigned char buff[20] = {
-        0xb9, 0x72, 0x1e, 0xd5, 0x49,
-        0xed, 0xbf, 0x31, 0x84, 0xd8,
-        0x27, 0x0c, 0xfe, 0x03, 0x11,
-        0x19, 0xdf, 0xc2, 0x2b, 0x0a};
-    RUNNER_ASSERT_MSG(fin.size() == 20, "Wrong size of fingerprint");
-
-    for (size_t i = 0; i<20; ++i) {
-        RUNNER_ASSERT_MSG(fin[i] == buff[i], "Fingerprint mismatch");
-    }
-}
-
-/*
- * test: Certificate::getAlternativeNameDNS
- * description: Certificate should parse data passed to object constructor.
- * expected: Function getAlternativeNameDNS should return list of
- * alternativeNames hardcoded in certificate.
- */
-RUNNER_TEST(T0033_Certificate)
-{
-    Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
-
-    Certificate::AltNameSet nameSet = cert.getAlternativeNameDNS();
-
-    RUNNER_ASSERT(nameSet.size() == 8);
-
-    std::string str("verisign.com");
-    RUNNER_ASSERT(nameSet.find(str) != nameSet.end());
-
-    str = std::string("fake.com");
-    RUNNER_ASSERT(nameSet.find(str) == nameSet.end());
-
-}
-
-/*
- * test: Certificate::isCA
- * description: Certificate should parse data passed to object constructor.
- * expected: 1st and 2nd certificate should be identified as CA.
- */
-RUNNER_TEST(T0034_Certificate_isCA)
-{
-    Certificate cert1(TestData::googleCA, Certificate::FORM_BASE64);
-    RUNNER_ASSERT(cert1.isCA() > 0);
-
-    Certificate cert2(TestData::google2nd, Certificate::FORM_BASE64);
-    RUNNER_ASSERT(cert2.isCA() > 0);
-
-    Certificate cert3(TestData::google3rd, Certificate::FORM_BASE64);
-    RUNNER_ASSERT(cert3.isCA() == 0);
 }

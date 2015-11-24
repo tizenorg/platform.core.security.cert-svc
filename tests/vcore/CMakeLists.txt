@@ -20,18 +20,17 @@
 # @version     1.0
 # @brief
 #
-SET(CERT_SVC_VCORE_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
 SET(VCORE_TESTS_SOURCES
-    ${CERT_SVC_VCORE_TESTS_DIR}/main.cpp
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-common.cpp
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-signature-validator.cpp
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-ocsp-check.cpp
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-time-conversion.cpp
+    main.cpp
+    test-common.cpp
+    test-signature-validator.cpp
+    test-certificate.cpp
+    test-ocsp-check.cpp
+    test-time-conversion.cpp
     )
 
 INCLUDE_DIRECTORIES(
-    ${CERT_SVC_VCORE_TESTS_DIR}
+    .
     )
 
 ADD_EXECUTABLE(${TARGET_VCORE_TEST}
@@ -55,70 +54,24 @@ INSTALL(TARGETS ${TARGET_VCORE_TEST}
     )
 
 INSTALL(FILES
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/author-signature.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/signature1.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/signature22.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/config.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget/index.html
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed
-    )
-
-INSTALL(FILES
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/author-signature.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/signature1.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/signature22.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/config.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_hash/index.html
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_hash
-    )
-
-INSTALL(FILES
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/author-signature.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/signature1.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/signature22.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/config.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_signature/index.html
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_signature
-    )
-
-INSTALL(FILES
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/author-signature.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/signature1.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/config.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_negative_certificate/index.html
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_negative_certificate
-    )
-
-INSTALL(FILES
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/author-signature.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/signature1.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/config.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner/index.html
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_partner
-    )
-
-INSTALL(FILES
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/author-signature.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/signature1.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/config.xml
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/widget_partner_operator/index.html
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/vcore_widget_uncompressed_partner_operator
-    )
-
-INSTALL(FILES
-    "${CERT_SVC_VCORE_TESTS_DIR}/test-cases/reference/encoding test.empty"
-    DESTINATION
-    ${TZ_SYS_RO_APP}/widget/tests/reference
-    )
-
-INSTALL(FILES
-    ${CERT_SVC_VCORE_TESTS_DIR}/test-cases/root_cacert0.pem
+    resource/root_cacert0.pem
     DESTINATION
     ${TZ_SYS_SHARE}/ca-certificates/tizen
+    )
+
+INSTALL(
+    DIRECTORY
+        resource/wgt
+        resource/wgt_negative_hash
+        resource/wgt_negative_signature
+        resource/wgt_negative_certificate
+        resource/wgt_partner
+        resource/wgt_partner_operator
+        resource/tpk
+        resource/attacked-tpk
+        resource/tpk-with-userdata
+        resource/attacked-tpk-with-userdata
+
+    DESTINATION
+        ${TZ_SYS_RO_APP}/cert-svc-tests/apps
     )

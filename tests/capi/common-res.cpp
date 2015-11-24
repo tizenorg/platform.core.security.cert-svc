@@ -22,6 +22,7 @@
 
 #include "common-res.h"
 
+const std::string TestData::SelfSignedCAPath = std::string(TESTAPP_RES_DIR) + "certs/root_cacert0.pem";
 const std::string TestData::subjectGoogleCA = "/C=US/O=VeriSign, Inc./OU=Class 3 Public Primary Certification Authority";
 
 const std::string TestData::googleCA =

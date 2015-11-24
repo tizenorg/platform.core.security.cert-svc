@@ -205,6 +205,9 @@ VCerr SignatureValidator::Impl::parseSignature(void)
 		SignatureReader xml;
 		xml.initialize(m_data, SIGNATURE_SCHEMA_PATH);
 		xml.read(m_data);
+	} catch (ParserSchemaException::CertificateLoaderError &e) {
+		LogError("Certificate loader error: " << e.DumpToString());
+		return E_SIG_INVALID_CERT;
 	} catch (...) {
 		LogError("Failed to parse signature file by signature reader.");
 		return E_SIG_INVALID_FORMAT;
@@ -276,11 +279,10 @@ VCerr SignatureValidator::Impl::preStep(void)
 			m_disregarded = true;
 		}
 	} else {
-		LogDebug("signaturefile name = " << m_data.getSignatureFileName());
 		if (storeIdSet.contains(TIZEN_DEVELOPER)) {
-			LogError("distributor has author level siganture! "
-				"Signature will be disregarded.");
-			return E_SIG_INVALID_FORMAT;
+			LogError("distributor should not have developer set: "
+				<< m_data.getSignatureFileName());
+			return E_SIG_INVALID_CHAIN;
 		}
 
 		if (m_data.getSignatureNumber() == 1 && !storeIdSet.isContainsVis()) {
@@ -333,10 +335,7 @@ VCerr SignatureValidator::Impl::baseCheck(
 			return result;
 
 		if (!m_data.isAuthorSignature()) {
-			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validate(&m_context)) {
-				LogWarning("Installation break - invalid package!");
-				return E_SIG_INVALID_FORMAT;
-			}
+			XmlSecSingleton::Instance().validate(m_context);
 
 			m_data.setReference(m_context.referenceSet);
 			if (!checkObjectReferences()) {
@@ -363,8 +362,23 @@ VCerr SignatureValidator::Impl::baseCheck(
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return E_SIG_INVALID_CHAIN;
+	} catch (const XmlSec::Exception::InternalError &e) {
+		LogError("XmlSec internal error : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidFormat &e) {
+		LogError("XmlSec invalid format : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidSig &e) {
+		LogError("XmlSec invalid signature : " << e.DumpToString());
+		return E_SIG_INVALID_SIG;
+	} catch (const XmlSec::Exception::InvalidRef &e) {
+		LogError("XmlSec invalid reference : " << e.DumpToString());
+		return E_SIG_INVALID_REF;
+	} catch (const XmlSec::Exception::OutOfMemory &e) {
+		LogError("XmlSec out of memory : " << e.DumpToString());
+		return E_SIG_OUT_OF_MEM;
 	} catch (const XmlSec::Exception::Base &e) {
-		LogError("XmlSec exception : " << e.DumpToString());
+		LogError("XmlSec unknown exception : " << e.DumpToString());
 		return E_SIG_INVALID_FORMAT;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
@@ -395,27 +409,20 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		if (result != E_SIG_NONE)
 			return result;
 
-		if (uriList.size() == 0) {
-			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validateNoHash(&m_context)) {
-				LogWarning("Installation break - invalid package! >> validateNoHash");
-				return E_SIG_INVALID_FORMAT;
-			}
-		} else {
-			XmlSecSingleton::Instance().setPartialHashList(uriList);
-			if (XmlSec::NO_ERROR != XmlSecSingleton::Instance().validatePartialHash(&m_context)) {
-				LogWarning("Installation break - invalid package! >> validatePartialHash");
-				return E_SIG_INVALID_FORMAT;
-			}
-		}
+		if (uriList.size() == 0)
+			XmlSecSingleton::Instance().validateNoHash(m_context);
+		else
+			XmlSecSingleton::Instance().validatePartialHash(m_context, uriList);
 
 		m_data.setReference(m_context.referenceSet);
-		/*
 		if (!checkObjectReferences()) {
 			LogWarning("Failed to check Object References");
 			return E_SIG_INVALID_REF;
 		}
-		*/
 
+		(void) contentPath;
+		(void) checkReferences;
+		/*
 		if (checkReferences) {
 			ReferenceValidator fileValidator(contentPath);
 			if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(m_data)) {
@@ -423,6 +430,7 @@ VCerr SignatureValidator::Impl::baseCheckList(
 				return E_SIG_INVALID_REF;
 			}
 		}
+		*/
 
 		if (checkOcsp && Ocsp::check(m_data) == Ocsp::Result::REVOKED) {
 			LogError("Certificate is Revoked by OCSP server.");
@@ -434,8 +442,23 @@ VCerr SignatureValidator::Impl::baseCheckList(
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return E_SIG_INVALID_CHAIN;
+	} catch (const XmlSec::Exception::InternalError &e) {
+		LogError("XmlSec internal error : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidFormat &e) {
+		LogError("XmlSec invalid format : " << e.DumpToString());
+		return E_SIG_INVALID_FORMAT;
+	} catch (const XmlSec::Exception::InvalidSig &e) {
+		LogError("XmlSec invalid signature : " << e.DumpToString());
+		return E_SIG_INVALID_SIG;
+	} catch (const XmlSec::Exception::InvalidRef &e) {
+		LogError("XmlSec invalid reference : " << e.DumpToString());
+		return E_SIG_INVALID_REF;
+	} catch (const XmlSec::Exception::OutOfMemory &e) {
+		LogError("XmlSec out of memory : " << e.DumpToString());
+		return E_SIG_OUT_OF_MEM;
 	} catch (const XmlSec::Exception::Base &e) {
-		LogError("XmlSec exception : " << e.DumpToString());
+		LogError("XmlSec unknown exception : " << e.DumpToString());
 		return E_SIG_INVALID_FORMAT;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
@@ -505,6 +528,7 @@ std::string SignatureValidator::Impl::errorToString(VCerr code)
 	case E_SIG_INVALID_FORMAT: return "Invalid format of signature file.";
 	case E_SIG_INVALID_CERT:   return "Invalid format of certificate in signature.";
 	case E_SIG_INVALID_CHAIN:  return "Invalid certificate chain with certificate in signature.";
+	case E_SIG_INVALID_SIG:    return "Invalid signature on signature xml.";
 	case E_SIG_INVALID_REF:    return "Invalid object reference in signature. Files in app should not be changed after app packaged.";
 	case E_SIG_CERT_EXPIRED:   return "Certificate in signature is expired.";
 	case E_SIG_CERT_NOT_YET:   return "Certificate in signature is not valid yet.";
@@ -520,8 +544,7 @@ std::string SignatureValidator::Impl::errorToString(VCerr code)
 
 SignatureValidator::SignatureValidator(const SignatureFileInfo &info)
 {
-	std::unique_ptr<SignatureValidator::Impl> impl(new(std::nothrow) SignatureValidator::Impl(info))
-;
+	std::unique_ptr<SignatureValidator::Impl> impl(new(std::nothrow) SignatureValidator::Impl(info));
 	m_pImpl = std::move(impl);
 }
 SignatureValidator::~SignatureValidator() {}
@@ -579,4 +602,3 @@ VCerr SignatureValidator::makeChainBySignature(
 }
 
 } // namespace ValidationCore
-

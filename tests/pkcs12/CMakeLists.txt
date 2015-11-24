@@ -19,13 +19,14 @@
 #
 
 SET(PKCS12_TEST_SOURCES
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/pkcs12_test.cpp
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/new_test_cases.cpp
+    pkcs12_test.cpp
+    new_test_cases.cpp
+    test-common.cpp
     )
 
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/vcore/src
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12
+    .
     )
 
 ADD_EXECUTABLE(${TARGET_PKCS12_TEST} ${PKCS12_TEST_SOURCES} ${DPL_TEST_SOURCES})
@@ -46,19 +47,14 @@ INSTALL(TARGETS ${TARGET_PKCS12_TEST}
                 WORLD_EXECUTE
     )
 
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/without_pass.p12
-    DESTINATION ${TZ_SYS_RO_APP}/widget/tests/pkcs12/
-)
-
-INSTALL(FILES
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/without_pass.p12
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/Invalidcrt.crt
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/Testing.crt
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/test.pfx
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/wifi-server.pem
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/wifiserver.pfx
-    ${PROJECT_SOURCE_DIR}/tests/pkcs12/wifiuser.p12
-    DESTINATION ${TZ_SYS_SHARE}/cert-svc/tests/
+INSTALL(
+    FILES
+        without_pass.p12
+        Invalidcrt.crt
+        Testing.crt
+        test.pfx
+        wifi-server.pem
+        wifiserver.pfx
+        wifiuser.p12
+    DESTINATION ${TZ_SYS_RO_APP}/cert-svc-tests/p12
 )

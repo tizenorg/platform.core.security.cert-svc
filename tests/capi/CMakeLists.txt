@@ -55,9 +55,7 @@ INSTALL(TARGETS ${TARGET_CAPI_TEST}
 
 INSTALL(FILES
     ${CERT_SVC_CAPI_TESTS_DIR}/data/root_cacert0.pem
-    ${CERT_SVC_CAPI_TESTS_DIR}/data/root_ca_cert.pem
-    ${CERT_SVC_CAPI_TESTS_DIR}/data/second_ca_cert.pem
-    DESTINATION ${TZ_SYS_SHARE}/cert-svc/cert-type/
+    DESTINATION ${TZ_SYS_RO_APP}/cert-svc-tests/certs
     PERMISSIONS OWNER_READ
                 GROUP_READ
                 WORLD_READ

@@ -91,10 +91,8 @@ public:
 		SignatureData &outData);
 
 	VCerr checkList(
-		const std::string &contentPath,
-		const UriList &uriList,
 		bool checkOcsp,
-		bool checkReferences,
+		const UriList &uriList,
 		SignatureData &outData);
 
 	VCerr makeChainBySignature(
@@ -110,10 +108,8 @@ private:
 		bool checkReferences);
 
 	VCerr baseCheckList(
-		const std::string &contentPath,
-		const UriList &uriList,
 		bool checkOcsp,
-		bool checkReferences);
+		const UriList &uriList);
 
 	VCerr makeDataBySignature(bool completeWithSystemCert);
 	VCerr additionalCheck(VCerr result);
@@ -399,10 +395,8 @@ VCerr SignatureValidator::Impl::baseCheck(
 }
 
 VCerr SignatureValidator::Impl::baseCheckList(
-	const std::string &contentPath,
-	const UriList &uriList,
 	bool checkOcsp,
-	bool checkReferences)
+	const UriList &uriList)
 {
 	try {
 		VCerr result = preStep();
@@ -415,19 +409,9 @@ VCerr SignatureValidator::Impl::baseCheckList(
 			XmlSecSingleton::Instance().validatePartialHash(m_context, uriList);
 
 		m_data.setReference(m_context.referenceSet);
-		/*
 		if (!checkObjectReferences()) {
 			LogWarning("Failed to check Object References");
 			return E_SIG_INVALID_REF;
-		}
-		*/
-
-		if (checkReferences) {
-			ReferenceValidator fileValidator(contentPath);
-			if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(m_data)) {
-				LogWarning("Invalid package - file references broken");
-				return E_SIG_INVALID_REF;
-			}
 		}
 
 		if (checkOcsp && Ocsp::check(m_data) == Ocsp::Result::REVOKED) {
@@ -490,15 +474,13 @@ VCerr SignatureValidator::Impl::check(
 }
 
 VCerr SignatureValidator::Impl::checkList(
-	const std::string &contentPath,
-	const UriList &uriList,
 	bool checkOcsp,
-	bool checkReferences,
+	const UriList &uriList,
 	SignatureData &outData)
 {
 	VCerr result;
 
-	result = baseCheckList(contentPath, uriList, checkOcsp, checkReferences);
+	result = baseCheckList(checkOcsp, uriList);
 	result = additionalCheck(result);
 
 	outData = m_data;
@@ -542,8 +524,7 @@ std::string SignatureValidator::Impl::errorToString(VCerr code)
 
 SignatureValidator::SignatureValidator(const SignatureFileInfo &info)
 {
-	std::unique_ptr<SignatureValidator::Impl> impl(new(std::nothrow) SignatureValidator::Impl(info))
-;
+	std::unique_ptr<SignatureValidator::Impl> impl(new(std::nothrow) SignatureValidator::Impl(info));
 	m_pImpl = std::move(impl);
 }
 SignatureValidator::~SignatureValidator() {}
@@ -573,20 +554,16 @@ VCerr SignatureValidator::check(
 }
 
 VCerr SignatureValidator::checkList(
-	const std::string &contentPath,
-	const UriList &uriList,
 	bool checkOcsp,
-	bool checkReferences,
+	const UriList &uriList,
 	SignatureData &outData)
 {
 	if (!m_pImpl)
 		return E_SIG_OUT_OF_MEM;
 
 	return m_pImpl->checkList(
-			contentPath,
-			uriList,
 			checkOcsp,
-			checkReferences,
+			uriList,
 			outData);
 }
 

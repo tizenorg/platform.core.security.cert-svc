@@ -352,7 +352,7 @@ void XmlSec::loadDERCertificateMemory(XmlSecContext &context, xmlSecKeysMngrPtr 
     if (xmlSecCryptoAppKeysMngrCertLoadMemory(
             mngrPtr,
             reinterpret_cast<const xmlSecByte *>(derCert.data()),
-            reinterpret_cast<xmlSecSize>(derCert.length()),
+            static_cast<xmlSecSize>(derCert.length()),
             xmlSecKeyDataFormatDer,
             xmlSecKeyDataTypeTrusted) < 0)
         ThrowMsg(Exception::InternalError, "Failed to load der cert from memory.");

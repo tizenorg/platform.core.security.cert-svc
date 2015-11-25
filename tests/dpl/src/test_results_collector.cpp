@@ -221,22 +221,22 @@ class ConsoleCollector :
         using namespace VcoreDPL::Colors::Text;
         printf("\n%sResults [%s]: %s\n", BOLD_GREEN_BEGIN,
                title.c_str(), BOLD_GREEN_END);
-        printf("%s%s%3d%s\n",
+        printf("%s%s%3zu%s\n",
                CYAN_BEGIN,
                "Total tests:            ",
                stats.GetTotal(),
                CYAN_END);
-        printf("  %s%s%3d%s\n",
+        printf("  %s%s%3zu%s\n",
                CYAN_BEGIN,
                "Succeeded:            ",
                stats.GetPassed(),
                CYAN_END);
-        printf("  %s%s%3d%s\n",
+        printf("  %s%s%3zu%s\n",
                CYAN_BEGIN,
                "Failed:               ",
                stats.GetFailed(),
                CYAN_END);
-        printf("  %s%s%3d%s\n",
+        printf("  %s%s%3zu%s\n",
                CYAN_BEGIN,
                "Ignored:              ",
                stats.GetIgnored(),
@@ -401,16 +401,16 @@ class HtmlCollector :
             m_fp.Get(), "\n%sResults [%s]:%s\n", BOLD_GREEN_BEGIN,
             name.c_str(), BOLD_GREEN_END);
         fprintf(
-            m_fp.Get(), "%s%s%3d%s\n", CYAN_BEGIN,
+            m_fp.Get(), "%s%s%3zu%s\n", CYAN_BEGIN,
             "Total tests:            ", stats.GetTotal(), CYAN_END);
         fprintf(
-            m_fp.Get(), "  %s%s%3d%s\n", CYAN_BEGIN,
+            m_fp.Get(), "  %s%s%3zu%s\n", CYAN_BEGIN,
             "Succeeded:            ", stats.GetPassed(), CYAN_END);
         fprintf(
-            m_fp.Get(), "  %s%s%3d%s\n", CYAN_BEGIN,
+            m_fp.Get(), "  %s%s%3zu%s\n", CYAN_BEGIN,
             "Failed:               ", stats.GetFailed(), CYAN_END);
         fprintf(
-            m_fp.Get(), "  %s%s%3d%s\n", CYAN_BEGIN,
+            m_fp.Get(), "  %s%s%3zu%s\n", CYAN_BEGIN,
             "Ignored:              ", stats.GetIgnored(), CYAN_END);
     }
 

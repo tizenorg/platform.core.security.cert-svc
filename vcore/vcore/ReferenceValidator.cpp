@@ -110,11 +110,6 @@ std::string ReferenceValidator::Impl::decodeProcent(const std::string &path) {
                     throw ERROR_DECODING_URL;
 
                 int result = hexToInt(input[i+1])*16 + hexToInt(input[i+2]);
-
-                // RFC 1738 - octets 80 to FF are not allowed
-                if (result >= 128)
-                    throw ERROR_DECODING_URL;
-
                 output.push_back(static_cast<char>(result));
                 i+=3;
             } else {

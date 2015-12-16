@@ -23,6 +23,7 @@ BuildRequires: pkgconfig(key-manager)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: pkgconfig(sqlite3)
+BuildRequires: ca-certificates-devel
 BuildRequires: ca-certificates-tizen
 BuildRequires: ca-certificates-mozilla
 
@@ -67,17 +68,14 @@ export CXXFLAGS="$CXXFLAGS -DTIZEN_EMULATOR_MODE"
 export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 %endif
 
-# concatenated cert path defined in ca-certificates package
-%define SYS_CONCATENATED_CERT /var/lib/ca-certificates/ca-bundle.pem
-%define SYS_CERTS %TZ_SYS_ETC/ssl/certs
-
 %{!?build_type:%define build_type "Release"}
 %cmake . -DVERSION=%version \
         -DINCLUDEDIR=%_includedir \
         -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
         -DTZ_SYS_BIN=%TZ_SYS_BIN \
-        -DTZ_SYS_CERTS=%SYS_CERTS \
-        -DTZ_SYS_CONCATENATED_CERT=%SYS_CONCATENATED_CERT \
+        -DTZ_SYS_CA_CERTS=%TZ_SYS_CA_CERTS \
+        -DTZ_SYS_CA_CERTS_ORIG=%TZ_SYS_CA_CERTS_ORIG \
+        -DTZ_SYS_CA_BUNDLE_RW=%TZ_SYS_CA_BUNDLE_RW \
 %if 0%{?certsvc_test_build}
         -DCERTSVC_TEST_BUILD=1 \
         -DTZ_SYS_RO_APP=%TZ_SYS_RO_APP \
@@ -94,7 +92,7 @@ make %{?_smp_mflags}
 
 mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/pkcs12
 mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/dbspace
-ln -s %SYS_CONCATENATED_CERT %buildroot%TZ_SYS_SHARE/cert-svc/ca-certificate.crt
+ln -s %TZ_SYS_CA_BUNDLE_RW %buildroot%TZ_SYS_SHARE/cert-svc/ca-certificate.crt
 
 %preun
 # erase

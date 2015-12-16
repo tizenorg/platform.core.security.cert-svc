@@ -135,13 +135,13 @@ CertificatePtr searchCert(const std::string &dir, const CertificatePtr &certPtr,
 
 CertificatePtr getIssuerCertFromStore(const CertificatePtr &certPtr)
 {
-	CertificatePtr found = searchCert(ROOT_CA_CERTS_TIZEN_DIR, certPtr, false);
+	CertificatePtr found = searchCert(TZ_SYS_CA_CERTS_TIZEN, certPtr, false);
 	if (found.get() != NULL) {
 		LogDebug("Found issuer cert in tizen root CA dir");
 		return found;
 	}
 
-	return searchCert(SYSTEM_CERT_DIR, certPtr, true);
+	return searchCert(TZ_SYS_CA_CERTS, certPtr, true);
 }
 
 } // namespace

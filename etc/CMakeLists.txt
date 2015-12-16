@@ -23,7 +23,7 @@ EXECUTE_PROCESS(
     COMMAND
         ${ETC_DIR}/initialize_store_db.sh
         ${ETC_DIR}/certs-meta.db
-        ${TZ_SYS_CERTS}
+        ${TZ_SYS_CA_CERTS}
     RESULT_VARIABLE ERROR_CODE
     )
 

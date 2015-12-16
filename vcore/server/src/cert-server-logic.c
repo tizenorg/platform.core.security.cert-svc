@@ -146,8 +146,8 @@ int add_file_to_system_cert_dir(const char *gname)
 	int ret = CERTSVC_SUCCESS;
 
 	/* find certificate which filehash name is gname in root ca certs path. */
-	char *target = get_complete_path(ROOT_CA_CERTS_DIR, gname);
-	char *link = get_complete_path(SYSTEM_CERT_DIR, gname);
+	char *target = get_complete_path(TZ_SYS_CA_CERTS_ORIG, gname);
+	char *link = get_complete_path(TZ_SYS_CA_CERTS, gname);
 
 	if (target == NULL || link == NULL) {
 		SLOGE("Failed to get complete path.");
@@ -174,7 +174,7 @@ int del_file_from_system_cert_dir(const char *gname)
 	int ret = CERTSVC_SUCCESS;
 	char *link = NULL;
 
-	link = get_complete_path(SYSTEM_CERT_DIR, gname);
+	link = get_complete_path(TZ_SYS_CA_CERTS, gname);
 	if (!link)   {
 		SLOGE("Failed to construct source file path.");
 		return CERTSVC_FAIL;
@@ -203,8 +203,8 @@ int write_to_ca_cert_crt_file(const char *mode, const char *cert)
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	if (!(fp = fopen(CERTSVC_CRT_FILE_PATH, mode))) {
-		SLOGE("Failed to open the file for writing, [%s].", CERTSVC_CRT_FILE_PATH);
+	if (!(fp = fopen(TZ_SYS_CA_BUNDLE_RW, mode))) {
+		SLOGE("Failed to open the file for writing, [%s].", TZ_SYS_CA_BUNDLE_RW);
 		return CERTSVC_FAIL;
 	}
 

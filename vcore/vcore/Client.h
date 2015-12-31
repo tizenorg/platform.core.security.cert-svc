@@ -103,7 +103,6 @@ int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char 
 int vcore_client_install_certificate_to_store(CertStoreType storeType, const char *gname, const char *common_name, const char *private_key_gname, const char *associated_gname, const char *dataBlock, size_t dataBlockLen, CertType certType);
 int vcore_client_get_certificate_from_store(CertStoreType storeType, const char *gname, char **certData, size_t *certSize, CertType certType);
 int vcore_client_delete_certificate_from_store(CertStoreType storeType, const char *gname);
-VcoreResponseData cert_svc_client_comm(VcoreRequestData *client_data);
 int vcore_client_get_certificate_list_from_store(CertStoreType storeType, int is_root_app, CertSvcStoreCertList **certList, size_t *length);
 int vcore_client_get_root_certificate_list_from_store(CertStoreType storeType, CertSvcStoreCertList **certList, size_t *length);
 int vcore_client_get_end_user_certificate_list_from_store(CertStoreType storeType, CertSvcStoreCertList **certList, size_t *length);

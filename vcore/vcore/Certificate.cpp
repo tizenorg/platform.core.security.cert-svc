@@ -421,7 +421,10 @@ Certificate::AltNameSet Certificate::getAlternativeNameDNS() const
             X509_get_ext_d2i(m_x509,NID_subject_alt_name,NULL,NULL));
 
     while (sk_GENERAL_NAME_num(san) > 0) {
-        namePart = sk_GENERAL_NAME_pop(san);
+        if ((namePart = sk_GENERAL_NAME_pop(san)) == NULL)
+            VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
+                          "openssl sk_GENERAL_NAME_pop err.");
+
         if (GEN_DNS == namePart->type) {
             char *temp = reinterpret_cast<char *>(ASN1_STRING_data(namePart->d.dNSName));
             if (!temp) {

@@ -23,9 +23,10 @@ BuildRequires: pkgconfig(key-manager)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: pkgconfig(sqlite3)
+BuildRequires: ca-certificates
 BuildRequires: ca-certificates-devel
-BuildRequires: ca-certificates-tizen
-BuildRequires: ca-certificates-mozilla
+Requires: ca-certificates
+Requires: ca-certificates-tizen
 
 %description
 Certification service

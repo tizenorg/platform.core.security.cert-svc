@@ -289,8 +289,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1007_install_p12_file_to_individual_store)
 	CREATE_INSTANCE
 
 	CertSvcString Alias = wrapper_certsvc_string_new("P12-WifiUser");
-	CertSvcString Path = wrapper_certsvc_string_new("/usr/share/cert-svc/tests/wifiuser.p12");
-	CertSvcString Pass = wrapper_certsvc_string_new("wifi");
+	CertSvcString Path = wrapper_certsvc_string_new(TestData::UserP12WithPassPath.c_str());
+	CertSvcString Pass = wrapper_certsvc_string_new(TestData::UserP12Pass.c_str());
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, WIFI_STORE, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing p12 file to WIFI store failed.");

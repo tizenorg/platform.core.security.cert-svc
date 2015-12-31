@@ -302,6 +302,9 @@ Error_close_exit:
 
 	if (client_sockfd >= 0) {
 		result = send(client_sockfd, (char*)&send_data, sizeof(send_data), 0);
+		if (result <= 0)
+			SLOGE("send failed :%d, errno %d try once", result, errno);
+
 		close(client_sockfd);
 	} else {
 		SLOGE("cannot connect to client socket.");

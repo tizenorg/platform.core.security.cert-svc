@@ -38,7 +38,7 @@ function initialize_store()
 {
 	for fname in `find $SYSTEM_SSL_DIR/*`
 	do
-		gname=`echo $fname | cut -f 5 -d '/'`
+		gname=`echo ${fname##*/}`
 		if [[ ! $gname =~ ^[0-9a-z]{8}\.[0-9]$ ]]; then
 			continue
 		fi

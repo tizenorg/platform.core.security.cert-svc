@@ -93,17 +93,21 @@ CertificatePtr searchCert(const std::string &dir, const CertificatePtr &certPtr,
 			if (dirp->d_type == DT_DIR)
 				continue;
 
+			std::string candidatePath(dir);
+			candidatePath += "/";
+			candidatePath += dirp->d_name;
+
 			if (withHash) {
 				if (!isHashMatchedName(dirp->d_name, hash))
 					continue;
 			} else {
-				if (!isHashMatchedFile(dir + dirp->d_name, hash))
+				if (!isHashMatchedFile(candidatePath, hash))
 					continue;
 			}
 
-			LogDebug("Found hash matched file! : " << (dir + dirp->d_name));
+			LogDebug("Found hash matched file! : " << candidatePath);
 
-			CertificatePtr candidate = Certificate::createFromFile(dir + dirp->d_name);
+			CertificatePtr candidate = Certificate::createFromFile(candidatePath);
 			if (candidate->getOneLine().compare(certPtr->getOneLine(Certificate::FIELD_ISSUER)) != 0)
 				continue;
 

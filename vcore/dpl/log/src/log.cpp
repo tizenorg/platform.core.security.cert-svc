@@ -47,7 +47,7 @@ const char *const JOURNALD = "JOURNALD";
 
 LogSystem::LogSystem()
   : m_providerCtor({
-#ifdef BUILD_TYPE_DEBUG
+#ifdef TIZEN_ENGINEER_MODE
         { CONSOLE,  []{ return static_cast<AbstractLogProvider *>(new OldStyleLogProvider()); }},
 #endif
         { DLOG,     []{ return static_cast<AbstractLogProvider *>(new DLOGLogProvider());     }},
@@ -60,7 +60,7 @@ LogSystem::LogSystem()
     try {
         prv = m_providerCtor.at(getenv(CERTSVC_LOG_PROVIDER))();
     } catch (const std::exception &) {
-        prv = m_providerCtor[JOURNALD]();
+        prv = m_providerCtor[DLOG]();
     }
 
     AddProvider(prv);
@@ -97,10 +97,14 @@ void LogSystem::SelectProvider(const std::string &name)
 
 void LogSystem::SetLogLevel(const char *level)
 {
-    try {
-        m_level = static_cast<AbstractLogProvider::LogLevel>(std::stoi(level));
-    } catch(const std::exception&) {
+    if (!level) {
         m_level = AbstractLogProvider::LogLevel::Debug;
+    } else {
+        try {
+            m_level = static_cast<AbstractLogProvider::LogLevel>(std::stoi(level));
+        } catch(const std::exception&) {
+            m_level = AbstractLogProvider::LogLevel::Debug;
+        }
     }
 
     if (m_level < AbstractLogProvider::LogLevel::None)
@@ -108,10 +112,10 @@ void LogSystem::SetLogLevel(const char *level)
     else if (m_level > AbstractLogProvider::LogLevel::Pedantic)
         m_level = AbstractLogProvider::LogLevel::Pedantic;
 
-#ifndef BUILD_TYPE_DEBUG
+#ifndef TIZEN_ENGINEER_MODE
     if (m_level > AbstractLogProvider::LogLevel::Error)
         m_level = AbstractLogProvider::LogLevel::Error;
-#endif // BUILD_TYPE_DEBUG
+#endif
 }
 
 void LogSystem::Log(AbstractLogProvider::LogLevel level,

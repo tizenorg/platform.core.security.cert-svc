@@ -48,6 +48,7 @@ SET(VCORE_SOURCES
     ${VCORE_DIR}/vcore/Ocsp.cpp
     ${VCORE_DIR}/vcore/CryptoInit.cpp
     ${VCORE_DIR}/vcore/PluginHandler.cpp
+    ${VCORE_DIR}/vcore/init-lib.cpp
     )
 
 SET(VCORE_INCLUDES

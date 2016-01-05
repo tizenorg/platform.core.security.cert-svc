@@ -146,13 +146,13 @@ do                                                                              
 } while (0)
 
 
-#ifdef BUILD_TYPE_DEBUG
+#ifdef TIZEN_ENGINEER_MODE
     #define LogDebug(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
     #define LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
 #else
     #define LogDebug(message)    DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
     #define LogPedantic(message) DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
-#endif // BUILD_TYPE_DEBUG
+#endif // TIZEN_ENGINEER_MODE
 
 #define LogInfo(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Info)
 #define LogWarning(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Warning)

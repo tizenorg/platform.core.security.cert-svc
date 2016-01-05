@@ -581,3 +581,56 @@ RUNNER_TEST(T0205_certificate_verify_with_caflag_selfsign_root)
 	RUNNER_ASSERT_MSG(CERTSVC_SUCCESS == result, "Error in certificate verification function.");
 	RUNNER_ASSERT_MSG(CERTSVC_FAIL == status, "Error in certificate verification process.");
 }
+
+RUNNER_TEST(T0206_certificate_get_visibility)
+{
+	/*
+	 * format : DER_BASE64 FORM
+	 * which is identical to pem format without header and tail
+	 */
+	const char *tizen_distributor_root_ca_partner_der_base64 =
+		"MIICozCCAgwCCQD9IBoOxzq2hjANBgkqhkiG9w0BAQUFADCBlTELMAkGA1UEBhMC\n"
+		"S1IxDjAMBgNVBAgMBVN1d29uMQ4wDAYDVQQHDAVTdXdvbjEWMBQGA1UECgwNVGl6\n"
+		"ZW4gVGVzdCBDQTEiMCAGA1UECwwZVGl6ZW4gRGlzdHJpYnV0b3IgVGVzdCBDQTEq\n"
+		"MCgGA1UEAwwhVGl6ZW4gUGFydG5lciBEaXN0cmlidXRvciBSb290IENBMB4XDTEy\n"
+		"MTAyNjA4MTIzMVoXDTIyMTAyNDA4MTIzMVowgZUxCzAJBgNVBAYTAktSMQ4wDAYD\n"
+		"VQQIDAVTdXdvbjEOMAwGA1UEBwwFU3V3b24xFjAUBgNVBAoMDVRpemVuIFRlc3Qg\n"
+		"Q0ExIjAgBgNVBAsMGVRpemVuIERpc3RyaWJ1dG9yIFRlc3QgQ0ExKjAoBgNVBAMM\n"
+		"IVRpemVuIFBhcnRuZXIgRGlzdHJpYnV0b3IgUm9vdCBDQTCBnzANBgkqhkiG9w0B\n"
+		"AQEFAAOBjQAwgYkCgYEAnIBA2qQEaMzGalP0kzvwUxdCC6ybSC/fb+M9iGvt8QXp\n"
+		"ic2yARQB+bIhfbEu1XHwE1jCAGxKd6uT91b4FWr04YwnBPoRX4rBGIYlqo/dg+pS\n"
+		"rGyFjy7vfr0BOdWp2+WPlTe7SOS6bVauncrSoHxX0spiLaU5LU686BKr7YaABV0C\n"
+		"AwEAATANBgkqhkiG9w0BAQUFAAOBgQAX0Tcfmxcs1TUPBdr1U1dx/W/6Y4PcAF7n\n"
+		"DnMrR0ZNRPgeSCiVLax1bkHxcvW74WchdKIb24ZtAsFwyrsmUCRV842YHdfddjo6\n"
+		"xgUu7B8n7hQeV3EADh6ft/lE8nalzAl9tALTxAmLtYvEYA7thvDoKi1k7bN48izL\n"
+		"gS9G4WEAUg==";
+
+	CertSvcInstance instance;
+	CertSvcCertificate certificate;
+	int retval;
+
+	RUNNER_ASSERT_MSG(
+		(retval = certsvc_instance_new(&instance)) == CERTSVC_SUCCESS,
+		"Failed to certsvc_instance_new. retval:" << retval);
+
+	RUNNER_ASSERT_MSG(
+		(retval = certsvc_certificate_new_from_memory(
+			instance,
+			(const unsigned char *)tizen_distributor_root_ca_partner_der_base64,
+			strlen(tizen_distributor_root_ca_partner_der_base64),
+			CERTSVC_FORM_DER_BASE64,
+			&certificate) == CERTSVC_SUCCESS),
+		"Failed to certsvc_certificate_new_from_memory. retval: " << retval);
+
+	CertSvcVisibility visibility;
+	RUNNER_ASSERT_MSG(
+		(retval == certsvc_certificate_get_visibility(certificate, &visibility)) == CERTSVC_SUCCESS,
+		"Failed to certsvc_certificate_get_visibility. retval: " << retval);
+
+	RUNNER_ASSERT_MSG(
+		visibility == CERTSVC_VISIBILITY_PARTNER,
+		"returned visibility should be partner(" << CERTSVC_VISIBILITY_PARTNER
+			<< ") but returned(" << visibility << ")");
+
+	certsvc_instance_free(instance);
+}

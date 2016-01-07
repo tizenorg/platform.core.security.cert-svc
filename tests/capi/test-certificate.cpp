@@ -335,12 +335,17 @@ RUNNER_TEST(T0106_chain_sort)
 
 	RUNNER_ASSERT_MSG(CERTSVC_SUCCESS == certsvc_certificate_chain_sort(collection, 3), "FAIL TO SORT CERTIFICATE");
 
-	RUNNER_ASSERT_MSG(collection[2].privateHandler == cert3.privateHandler, "certsvc_certificate_chain_sort failed");
+	RUNNER_ASSERT_MSG(
+		(memcmp(&collection[2], &cert3, sizeof(CertSvcCertificate)) == 0
+			&& memcmp(&collection[1], &cert2, sizeof(CertSvcCertificate)) == 0
+			&& memcmp(&collection[0], &cert1, sizeof(CertSvcCertificate)) == 0),
+		"certsvc_certificate_chain_sort success but it's not sorted really.");
 
 	collection[0] = cert1;
 	collection[1] = cert3;
 
-	RUNNER_ASSERT_MSG(CERTSVC_FAIL == certsvc_certificate_chain_sort(collection, 2), "certsvc_certificate_chain_sort failed");
+	RUNNER_ASSERT_MSG(CERTSVC_FAIL == certsvc_certificate_chain_sort(collection, 2),
+		"certsvc_certificate_chain_sort must be failed");
 }
 
 RUNNER_TEST_GROUP_INIT(T0200_CAPI_CERTIFICATE_VERIFY)

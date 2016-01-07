@@ -46,15 +46,15 @@ static CertSvcInstance instance;
 static CertSvcString wrapper_certsvc_string_new(const char *cStr)
 {
 	CertSvcString certsvcStr;
+	int retval;
 
-	if (!cStr) {
-		certsvcStr.privateHandler = NULL;
-		return certsvcStr;
-	}
+	if (cStr == NULL)
+		retval = certsvc_string_new(instance, NULL, 0, &certsvcStr);
+	else
+		retval = certsvc_string_new(instance, cStr, strlen(cStr), &certsvcStr);
 
-	RUNNER_ASSERT_MSG(
-		certsvc_string_new(instance, cStr, strlen(cStr), &certsvcStr) == CERTSVC_SUCCESS,
-		"Failed to certsvc_string_new");
+	RUNNER_ASSERT_MSG(retval == CERTSVC_SUCCESS,
+		"Failed to certsvc_string_new with retval: " << retval);
 
 	return certsvcStr;
 }

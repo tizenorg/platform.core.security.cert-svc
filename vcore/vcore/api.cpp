@@ -635,21 +635,27 @@ public:
         size_t size,
         CertSvcString *output)
     {
-        if (!output) {
+        if (!output)
             return CERTSVC_WRONG_ARGUMENT;
+
+        /* return struct for empty string */
+        if (size == 0 || str == NULL) {
+            output->privateHandler = NULL;
+            output->privateLength = 0;
+            output->privateInstance = instance;
+
+            return CERTSVC_SUCCESS;
         }
 
-        size_t allocSize = size;
+        if (strlen(str) < size)
+            return CERTSVC_WRONG_ARGUMENT;
 
-        if (allocSize == 0 || str[allocSize - 1] != 0)
-            allocSize++;
-
-        char *ptr = new char[allocSize];
+        char *ptr = new(std::nothrow) char[size + 1];
         if (ptr == NULL)
             return CERTSVC_BAD_ALLOC;
 
         memcpy(ptr, str, size);
-        ptr[allocSize - 1] = 0;
+        ptr[size] = '\0';
 
         output->privateHandler = ptr;
         output->privateLength = size;

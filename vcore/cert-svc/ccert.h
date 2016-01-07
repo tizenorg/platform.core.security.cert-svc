@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -117,13 +117,20 @@ typedef enum CertSvcVisibility_t {
 } CertSvcVisibility;
 
 /**
- * This function will return certificate for the unique name identifier passed (gname).
+ * Get certificate with gname provided.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to the store (WIFI_STORE, VPN_STORE, EMAIL_STORE, SSL_STORE).
- * @oaran[in] gname Refers to the unique name identifier associated for the certificate.
- * @param[out] certificate Certificate for the gname passed.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance     CertSvcInstance object
+ * @param[in]  storeType    cert-svc store type to query
+ * @oaran[in]  gname        Single certificate identifier
+ * @param[out] certificate  Must be freed by certsvc_certificate_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_certificate_free()
+ * @see #CertStoreType
+ * @see #CertSvcCertificate
  */
 int certsvc_get_certificate(CertSvcInstance instance,
                             CertStoreType storeType,
@@ -131,26 +138,40 @@ int certsvc_get_certificate(CertSvcInstance instance,
                             CertSvcCertificate *certificate);
 
 /**
- * Read certificate from file. Certificate must be in PEM/CER/DER format.
+ * Load certificate to @a CertSvcCertificate from file.
+ * Certificate must be in PEM/CER/DER format.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] location Path to file with certificate file.
- * @param[out] certificate Certificate id assigned to loaded certificate.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance     CertSvcInstance object
+ * @param[in]  location     Path of file to load
+ * @param[out] certificate  Certificate id assigned to loaded certificate
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_certificate_free()
+ * @see #CertSvcCertificate
  */
 int certsvc_certificate_new_from_file(CertSvcInstance instance,
                                       const char *location,
                                       CertSvcCertificate *certificate);
 
 /**
- * Read certificate stored in memory.
+ * Load certificate to @a CertSvcCertificate from memory.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] memory Pointer to memory with certificate data.
- * @param[in] len Size of certificate.
- * @param[in] form Certificate format.
- * @param[out] certificate Certificate id assigned to loaded certificate.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL
+ * @param[in]  instance     CertSvcInstance object
+ * @param[in]  memory       Pointer to memory with certificate data
+ * @param[in]  len          Size of certificate in @a memory
+ * @param[in]  form         Certificate format in @a memory
+ * @param[out] certificate  Must be freed by certsvc_certificate_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_certificate_free()
+ * @see #CertSvcCertificate
+ * @see #CertSvcCertificateForm
  */
 int certsvc_certificate_new_from_memory(CertSvcInstance instance,
                                         const unsigned char *memory,
@@ -161,16 +182,19 @@ int certsvc_certificate_new_from_memory(CertSvcInstance instance,
 /**
  * Free structures connected with certificate.
  *
- * @param[in] certificate Certificate id.
+ * @param[in] certificate  Certificate to free
  */
 void certsvc_certificate_free(CertSvcCertificate certificate);
 
 /**
- * Save certificate to file. It saves certificate in DER format.
+ * Save certificate to file in @a location in DER format.
  *
- * @param[in] certificate Certificate id.
- * @param[in] location Path to file.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in] certificate  Certificate
+ * @param[in] location     Location
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see #CertSvcCertificate
  */
 int certsvc_certificate_save_file(CertSvcCertificate certificate, const char *location);
 
@@ -181,11 +205,21 @@ int certsvc_certificate_save_file(CertSvcCertificate certificate, const char *lo
  *
  * You can search by fields: CERTSVC_SUBJECT, CERTSVC_ISSUER, CERTSVC_SUBJECT_COMMON_NAME
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] field Certificate filed name.
- * @param[in] value Value to search for.
- * @param[out] handler Handler to search result.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance  CertSvcInstance object
+ * @param[in]  field     Certificate field to find with
+ * @param[in]  value     Value to search for
+ * @param[out] handler   Handler to search result. Must be freed by
+ *                       certsvc_certificate_list_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_certificate_list_free()
+ * @see certsvc_certificate_list_get_one()
+ * @see certsvc_certificate_list_get_length()
+ * @see #CertSvcCertificateField
+ * @see #CertSvcCertificateList
  */
 int certsvc_certificate_search(CertSvcInstance instance,
                                CertSvcCertificateField field,
@@ -193,13 +227,21 @@ int certsvc_certificate_search(CertSvcInstance instance,
                                CertSvcCertificateList *handler);
 
 /**
- * This function will return certificate id founded by certsvc_certificate_search.
- * You can call this function multiple times to get all results.
+ * Get certificate from list founded by certsvc_certificate_search().
+ * Can be called multiple times to get all results.
+ * Returned certificate can be freed. certsvc_certificate_list_free() doesn't
+ * free certificates in the list.
  *
- * @param[in] hadler Hander to search results.
- * @param[in] position
- * @param[out] certificate Certficate id.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  hadler      Hander to search results.
+ * @param[in]  position    List index start from 0
+ * @param[out] certificate Certficate i
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_certificate_search()
+ * @see certsvc_certificate_free()
+ * @see #CertSvcCertificate
+ * @see #CertSvcCertificateList
  */
 int certsvc_certificate_list_get_one(CertSvcCertificateList handler,
                                      size_t position,
@@ -208,18 +250,27 @@ int certsvc_certificate_list_get_one(CertSvcCertificateList handler,
 /**
  * Return number of elements on the list.
  *
- * @param[in] handler Handler to certifiacte list.
- * @param[out] length Size of list.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  handler  Handler to certifiacte list
+ * @param[out] length   Size of list
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_certificate_search()
+ * @see #CertSvcCertificateList
  */
 int certsvc_certificate_list_get_length(CertSvcCertificateList handler,
                                         size_t *size);
 
 /**
- * This function will free list. It will not free certificates on the list.
- * You may free each certificate with certsvc_certificate_free.
+ * Free @a CertSvcCertificateList. It will not free certificates on the list.
+ * You may free each certificate with certsvc_certificate_free().
  *
- * @param[in] handler Handler to search result.
+ * @param[in] handler  Handler to search result
+ *
+ * @see certsvc_certificate_search()
+ * @see certsvc_certificate_list_get_one()
+ * @see certsvc_certificate_free()
+ * @see #CertSvcCertificateList
  */
 void certsvc_certificate_list_free(CertSvcCertificateList handler);
 
@@ -234,100 +285,128 @@ void certsvc_certificate_list_all_free(CertSvcCertificateList handler);
 /**
  * Compare parent certificate subject with child issuer field.
  *
- * @param[in] child
- * @param[in] parent
- * @param[out] status CERTSVC_TRUE if "signer" was used to sign "child" certificate in other cases it will return CERTSVC_FALSE.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  child   Child certificate. Issuer field will be used
+ * @param[in]  parent  Parent certificate. Subject field will be used
+ * @param[out] status  #CERTSVC_TRUE if @a child is signed by @a parent,
+ *                     else #CERTSVC_FALSE
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see #CertSvcCertificate
  */
 int certsvc_certificate_is_signed_by(CertSvcCertificate child,
                                      CertSvcCertificate parent,
                                      int *status);
 
 /**
- * Extract specific data from certificate. Data in buffer could be free
- * by certsvc_free_string function or by
- * certsvc_instance_free or vcore_instance_reset.
+ * Extract data field from certificate. Data in buffer could be free by
+ * certsvc_string_free() function or by certsvc_instance_free or vcore_instance_reset.
  *
- * @param[in] certificate Certificate id.
- * @param[in] field Type of data to extract.
- * @param[out] buffer Extracted data.
- * return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL
+ * @param[in]  certificate  Certificate
+ * @param[in]  field        Certificate field to get
+ * @param[out] buffer       output string. Must be freed by certsvc_string_free()
+ *                          or certsvc_instance_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_free()
+ * @see certsvc_string_free()
+ * @see #CertSvcCertificate
+ * @see #CertSvcCertificateField
  */
 int certsvc_certificate_get_string_field(CertSvcCertificate certificate,
                                          CertSvcCertificateField field,
                                          CertSvcString *buffer);
 
 /**
- * Extract NOT AFTER data from certificate.
+ * Extract NOT AFTER field from certificate.
  *
- * @param[in] certificate Certificate id.
- * @param[out] result date
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  certificate  Certificate
+ * @param[out] result       not after time_t
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see #CertSvcCertificate
  */
 int certsvc_certificate_get_not_after(CertSvcCertificate certificate, time_t *result);
 
 /**
- * Extract NOT AFTER data from certificate.
+ * Extract NOT BEFORE field from certificate.
  *
- * @param[in] certificate Certificate id.
- * @param[out] result date
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]   certificate  Certificate
+ * @param[out]  result       not before time_t
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_certificate_get_not_before(CertSvcCertificate certificate, time_t *result);
 
 /**
- * Check certificate. This fuction compares SUBJECT and ISSUER fields.
+ * Check whether the certificate is root ca by checking self-signedness.
  * TODO: This fuction should also check ROOTCA field in certificate.
  *
- * @param[in] certificate Certificate id.
- * @param[out] status CERTSVC_TRUE or CERTSVC_FALSE
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
+ * @param[in]   certificate  Certificate
+ * @param[out]  status       #CERTSVC_TRUE or #CERTSVC_FALSE
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see #CertSvcCertificate
  */
 int certsvc_certificate_is_root_ca(CertSvcCertificate certificate, int *status);
 
 /**
  * Sort certificates chain. This fuction modifies certificate_array.
  *
- * If function success:
- *  * certificate array will contain end entity certificate as first element
- *  * last element on the certificate_array will contain Root CA certificate or
- *    CA certificate (if Root CA is not present).
+ * @param[in/out] unsortedChain  unsorted chain in form of @a CertSvcCertificate array
+ *                               which will be sorted from end entity certificate on
+ *                               the first position and (root) CA certificate on the
+ *                               last position
+ * @param[in]     size           Size of @a unsortedChain
  *
- * @param[in/out] certificate_array
- * @param[in] size Size of certificate_array
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see #CertSvcCertificate
  */
 int certsvc_certificate_chain_sort(CertSvcCertificate *unsortedChain, size_t size);
 
 /**
  * Base64 string will be connected with same instance as message.
- * You can free base64 string with certsvc_string_free (or certsvc_instance_reset).
  *
- * @param[in] message Buffer with input data.
- * @param[out] base64 Buffer with output data.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  message  Buffer with input data
+ * @param[out] base64   Buffer with output data which must be freed by
+ *                      certsvc_string_free() or certsvc_instance_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_free()
+ * @see certsvc_string_free()
  */
 int certsvc_base64_encode(CertSvcString message, CertSvcString *base64);
 
 /**
  * Message string will be connected with same certsvc instance as base64.
- * You can free base64 string with certsvc_string_free (or certsvc_instance_reset).
  *
- * @param[in] base64 Buffer with input data.
- * @param[out] message Buffer with output data.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  base64   Buffer with input data
+ * @param[out] message  Buffer with output data which must be freed by
+ *                      certsvc_string_free() or certsvc_instance_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_free()
+ * @see certsvc_string_free()
  */
 int certsvc_base64_decode(CertSvcString base64, CertSvcString *message);
 
 /**
- * Use certificate to verify message.
+ * Verify signature with given arguments.
  *
- * @param[in] certificate
- * @param[in] message
- * @param[in] algorithm May be set to NULL.
- * @param[out] status Will be set only if function return CERTSVC_SUCCESS.
- *                    It could be set to: CERTSVC_SUCCESS, CERTSVC_INVALID_SIGNATURE
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_ALGORITHM
+ * @param[in]  certificate  Certificate
+ * @param[in]  message      Message
+ * @param[in]  signature    Signature to verify
+ * @param[in]  algorithm    May be set to NULL
+ * @param[out] status       #CERTSVC_SUCCESS if success, else #CERTSVC_INVALID_SIGNATURE
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
  */
 int certsvc_message_verify(
     CertSvcCertificate certificate,
@@ -337,21 +416,16 @@ int certsvc_message_verify(
     int *status);
 
 /**
- * This function will create full chain and verify in.
+ * Verify certificate. Root CA certificate should be stored in @a trusted.
  *
- * First argument of function will be treatet as endentity certificate.
+ * @param[in]  certificate    Certificate
+ * @param[in]  trusted        Array with trusted certificates
+ * @param[in]  trustedSize    Array size of @a trusted
+ * @param[in]  untrusted      Array with untrusted certificates
+ * @param[in]  untrustedSize  Array size of @a untrusted
+ * @param[out] status         #CERTSVC_SUCCESS if success, else #CERTSVC_FAIL
  *
- * This function will success if root CA certificate is stored in
- * trusted array.
- *
- * @param[in] certificate Certificate to verify.
- * @param[in] trusted Array with trusted certificates.
- * @param[in] trustedSize Number of trusted certificates in array.
- * @param[in] untrusted Array with untrusted certificates.
- * @param[in] untrustedSize Number of untrusted certificate in array.
- * @param[out] status Will be set only if function return CERTSVC_SUCCESS.
- *                    It could be set to: CERTSVC_SUCCESS, CERTSVC_FAIL
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_certificate_verify(
     CertSvcCertificate certificate,
@@ -362,38 +436,35 @@ int certsvc_certificate_verify(
     int *status);
 
 /**
- * This function will create full chain and verify in.
- * And this function checks the CA Flag strictly.
+ * Verify certificate with strict check of CA flag. Root CA certificate should
+ * be stored in @a trusted.
  *
- * First argument of function will be treatet as endentity certificate.
+ * @param[in]  certificate    Certificate
+ * @param[in]  trusted        Array with trusted certificates
+ * @param[in]  trustedSize    Array size of @a trusted
+ * @param[in]  untrusted      Array with untrusted certificates
+ * @param[in]  untrustedSize  Array size of @a untrusted
+ * @param[out] status         #CERTSVC_SUCCESS if success, else #CERTSVC_FAIL
  *
- * This function will success if root CA certificate is stored in
- * trusted array.
- *
- * @param[in] certificate Certificate to verify.
- * @param[in] trusted Array with trusted certificates.
- * @param[in] trustedSize Number of trusted certificates in array.
- * @param[in] untrusted Array with untrusted certificates.
- * @param[in] untrustedSize Number of untrusted certificate in array.
- * @param[out] status Will be set only if function return CERTSVC_SUCCESS.
- *                    It could be set to: CERTSVC_SUCCESS, CERTSVC_FAIL
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_certificate_verify_with_caflag(
-	    CertSvcCertificate certificate,
-	    const CertSvcCertificate *trusted,
-	    size_t trustedSize,
-	    const CertSvcCertificate *untrusted,
-	    size_t untrustedSize,
-	    int *status);
+    CertSvcCertificate certificate,
+    const CertSvcCertificate *trusted,
+    size_t trustedSize,
+    const CertSvcCertificate *untrusted,
+    size_t untrustedSize,
+    int *status);
 
 /**
- * This function returns visibility of input certificate.
+ * Get visibility from Tizen app signing root certificate.
  *
- * @param[in] The root certificate to check visibility.
- * @param[out] Visibility level
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR
+ * @param[in]  certificate  Tizen app signing root certificate to get visibility
+ * @param[out] visibility   Visibilitay level of @a certificate
  *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see #CertSvcVisibility
  */
 int certsvc_certificate_get_visibility(CertSvcCertificate certificate, CertSvcVisibility *visibility);
 

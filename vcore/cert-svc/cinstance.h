@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -36,32 +36,31 @@ typedef struct CertSvcInstance_t {
  * Allocate internal data of CertSvc library and put it in the CertSvcInstance structure.
  * Initialize Openssl interanal structures.
  *
- * @param[out] instance Pointer to CertSvcInstance.
- * @return CERTSVC_SUCCESS or CERTSVC_FAIL.
+ * @param[out] instance  Pointer to CertSvcInstance
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_instance_new(CertSvcInstance *instance);
 
 /**
- * This function will free all allocated data. All certificate identificator will
- * be released and all strings allocated by certsvc_certificate_get_string field will be
- * released also.
+ * Free all allocated data. All certificate identificator will be released and all
+ * strings allocated by certsvc_certificate_get_string_field() will be released also.
  *
- * This fucntion does not release CertSvcInstnace!
+ * This fucntion does not release CertSvcInstnace itself!
  *
- * Plese note: It is safe to use this function after use certsvc_string_free.
+ * Plese note: It is safe to use this function after use certsvc_string_free().
  *
- * @param[in] instance CertSvcInstance object.
+ * @param[in] instance  CertSvcInstance object
  */
 void certsvc_instance_reset(CertSvcInstance instance);
 
 /**
- * This function will free all allocated data. All certificate identificator will
- * be released and all strings allocated by certsvc_certificate_get_string field will be
- * released also.
+ * Free all allocated data. All certificate identificator will be released and all strings
+ * allocated by certsvc_certificate_get_string_field() will be released also.
  *
  * This fucntion also release CertSvcInstnace!
  *
- * Please note: It is safe use this function after use certsvc_string_free.
+ * Please note: It is safe use this function after use certsvc_string_free().
  *
  * @param[in] instance CertSvcInstance object
  */

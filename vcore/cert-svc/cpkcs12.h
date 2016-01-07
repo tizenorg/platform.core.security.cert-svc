@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -33,10 +33,16 @@ extern "C" {
 /**
  * Check whenever PKCS#12 container is password protected.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] path Path to container file.
- * @param[out] has_password CERTSVC_TRUE (if container is password protected) or CERTSVC_FALSE.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance      CertSvcInstance object
+ * @param[in]  filepath      File path to check
+ * @param[out] has_password  #1 if password protectedm, else #0
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
  */
 int certsvc_pkcs12_has_password(CertSvcInstance instance,
                                 CertSvcString filepath,
@@ -45,158 +51,230 @@ int certsvc_pkcs12_has_password(CertSvcInstance instance,
 /**
  * Couter-routine for certsvc_pkcs12_private_key_dup.
  *
- * @param[in] pointer Memory claimed by private key.
+ * @param[in] buffer   Memory claimed by private key
  */
 void certsvc_pkcs12_private_key_free(char *buffer);
 
 /**
- * This function will load to memory private file content. This functin will
- * not parse it in any way.
- * This memory must be freed by certsvc_private_key_free.
+ * Load to memory of private key in cert-svc store with @a gname.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] gname Container bundle identifier.
- * @param[out] certBuffer Poiner to newly-allocated memory with private key data.
- * @param[out] certsize Size of the newly-allocated buffer. Zero means there is no key.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance   CertSvcInstance object
+ * @param[in]  storeType  cert-svc store type to query
+ * @param[in]  gname      Single certificate identifier. It has to be end user's
+ *                        to extract private key
+ * @param[out] buffer     Private key buffer which must be freed after use
+ * @param[out] size       Size of the returned buffer. Zero when no key is found
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStoreType
  */
 int certsvc_pkcs12_private_key_dup_from_store(CertSvcInstance instance,
                                               CertStoreType storeType,
                                               CertSvcString gname,
-                                              char **certBuffer,
-                                              size_t *certsize);
+                                              char **buffer,
+                                              size_t *size);
 
 /**
- * This function will set the status for the specified certificate in a particular
- * store to enabled / disabled.
+ * Set the status for the specified certificate in cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] is_root_app Set to ENABLED/DISABLED. Should be ENABLED if master application is changing the status, else DISABLED for other applications.
- * @param[in] gname Referred as group name, is the key for accessing the certificate.
- * @param[in] status Allows to set the status of the certificate to enabled / disabled.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in] instance     CertSvcInstance object
+ * @param[in] storeType    cert-svc store type to query
+ * @param[in] is_root_app  Should be #ENABLED if master application is changing the status,
+ *                         else #DISABLED for other applications
+ * @param[in] gname        Single certificate identifier
+ * @param[in] status       Status of the certificate to set. [#ENABLED | #DISABLED]
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStoreType
+ * @see #CertStatus
  */
 int certsvc_pkcs12_set_certificate_status_to_store(CertSvcInstance instance,
-                                            CertStoreType storeType,
-                                            int is_root_app,
-                                            CertSvcString gname,
-                                            CertStatus status);
+                                                   CertStoreType storeType,
+                                                   int is_root_app,
+                                                   CertSvcString gname,
+                                                   CertStatus status);
 
 /**
- * This function will get the status for the specified certificate in a particular
- * store.
+ * Get the status for the specified certificate in cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] gname Referred as group name, is the key for accessing the certificate.
- * @param[out] status refers to weather the certificate is enabled/disabled.
- * @return Disable=0, Enable=1, Fail=-1
+ * @param[in]  instance   CertSvcInstance object
+ * @param[in]  storeType  cert-svc store type to query
+ * @param[in[  gname      Single certificate identifier
+ * @param[out] status     Status of the certificate. Enabled:1, Disabled:0, Fail:-1
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStroeType
  */
 int certsvc_pkcs12_get_certificate_status_from_store(CertSvcInstance instance,
-                                              CertStoreType storeType,
-                                              CertSvcString gname,
-                                              CertStatus *status);
+                                                     CertStoreType storeType,
+                                                     CertSvcString gname,
+                                                     CertStatus *status);
 
 /**
- * This function will get the Alias name, Path to certificate, Certificate status of all
- * the certificates present in the specified certificate store.
+ * Get the certificates in cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[out] certList Linked-list having all the information about each certificate present in a store.
- * @param[out] length Provides the length of the linked list.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in]  instance     CertSvcInstance object
+ * @param[in]  storeType    cert-svc store type to query
+ * @param[in]  is_root_app  Should be #ENABLED if master application is changing the
+ *                          status, else #DISABLED for other applications
+ * @param[out] certList     cert list in store returned in linked list. Free by
+ *                          certsvc_pkcs12_free_certificate_list_loaded_from_store()
+ *                          after use
+ * @param[out] length       length of output @a certList
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see #CertStoreType
+ * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
-                                            CertStoreType storeType,
-                                            int is_root_app,
-                                            CertSvcStoreCertList** certList,
-                                            size_t *length);
+                                                   CertStoreType storeType,
+                                                   int is_root_app,
+                                                   CertSvcStoreCertList** certList,
+                                                   size_t *length);
 
 /**
- * This function will get the Alias name, Path to certificate, Certificate status of all
- * the end user certificates present in the specified certificate store.
+ * Get the end user certificates in cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[out] certList Linked-list having all the information about each certificate present in a store.
- * @param[out] length Provides the length of the linked list.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in]  instance   CertSvcInstance object
+ * @param[in]  storeType  cert-svc store type to query
+ * @param[out] certList   cert list in store returned in linked list. Free by
+ *                        certsvc_pkcs12_free_certificate_list_loaded_from_store() after use
+ * @param[out] length     length of output @a certList
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see #CertStoreType
+ * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance instance,
-                                            CertStoreType storeType,
-                                            CertSvcStoreCertList** certList,
-                                            size_t* length);
+                                                            CertStoreType storeType,
+                                                            CertSvcStoreCertList** certList,
+                                                            size_t* length);
 
 /**
- * This function will get the Alias name, Path to certificate, Certificate status of all
- * the root/trusted certificates present in the specified certificate store.
+ * Get the root/trusted certificates in cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[out] certList Linked-list having all the information about each certificate present in a store.
- * @param[out] length Provides the length of the linked list.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in]  instance   CertSvcInstance object
+ * @param[in]  storeType  cert-svc store type to query
+ * @param[out] certList   cert list in store returned in linked list. Free by
+ *                        certsvc_pkcs12_free_certificate_list_loaded_from_store() after use
+ * @param[out] length     length of output @a certList
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_pkcs12_free_certificate_list_loaded_from_store()
+ * @see #CertStoreType
+ * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_get_root_certificate_list_from_store(CertSvcInstance instance,
-                                            CertStoreType storeType,
-                                            CertSvcStoreCertList** certList,
-                                            size_t* length);
+                                                        CertStoreType storeType,
+                                                        CertSvcStoreCertList** certList,
+                                                        size_t* length);
 
 /**
- * This function will free all the linked list of data structure holding the information about
- * all the certificates present in a store which was previously by calling the
- * certsvc_get_certificate_list_from_store() function.
+ * Free all @a CertSvcStoreCertList in linked list of data structure.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] certList The structure which need to be freed.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in] instance  CertSvcInstance object
+ * @param[in] certList  The structure which need to be freed
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_pkcs12_get_certificate_list_from_store()
+ * @see certsvc_pkcs12_get_end_user_certificate_list_from_store()
+ * @see certsvc_pkcs12_get_root_certificate_list_from_store()
+ * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_free_certificate_list_loaded_from_store(CertSvcInstance instance,
-                                                    CertSvcStoreCertList** certList);
+                                                           CertSvcStoreCertList** certList);
 
 /**
- * This function will provide the certificate back for the gname provided.
+ * Get the certificate with the gname provided from cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in[ gname Referred as group name, is the key for accessing the certificate.
- * @param[out] certificate Certificate holding the information.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_BAD_ALLOC
+ * @param[in]  instance     CertSvcInstance object
+ * @param[in]  storeType    cert-svc store type to query
+ * @param[in]  gname        Single certificate identifier
+ * @param[out] certificate  output in @a CertSvcCertificate format
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_certificate_free()
+ * @see #CertStoreType
  */
 int certsvc_pkcs12_get_certificate_from_store(CertSvcInstance instance,
-                                       CertStoreType storeType,
-                                       const char *gname,
-                                       CertSvcCertificate *certificate);
+                                              CertStoreType storeType,
+                                              const char *gname,
+                                              CertSvcCertificate *certificate);
 
 /**
- * This function will give back the the encoded certificate buffer for the matching
- * alias present in the specified store.
+ * Get the encoded certificate buffer with the gname provided from cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] gname Referred as group name, is the key for accessing the certificate.
- * @param[out] certBuffer Buffer containing the encoded certificate.
- * @param[out] certSize Size of the buffer.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in]  instance   CertSvcInstance object
+ * @param[in]  storeType  cert-svc store type to query
+ * @param[in]  gname      Single certificate identifier
+ * @param[out] buffer     The base64 encoded certificate which must be freed after
+ *                        use
+ * @param[out] size       Size of the buffer
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStoreType
  */
 int certsvc_pkcs12_get_certificate_info_from_store(CertSvcInstance instance,
-                                            CertStoreType storeType,
-                                            CertSvcString gname,
-                                            char** certBuffer,
-                                            size_t* certSize);
+                                                   CertStoreType storeType,
+                                                   CertSvcString gname,
+                                                   char** buffer,
+                                                   size_t* size);
 
 /**
- * This function will import a .pfx/.p12 file to specified store (WIFI, VPN, EMAIL).
+ * Import PKCS#12 bundle(with .pfx or .p12) or certificate(base64 form with .crt
+ * or .pem suffix) from file to specified store. If password isn't needed, create
+ * CertSvcString @a password with null input on certsvc_string_new(). Refer
+ * certsvc_string_new() API description
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] path Path of the certificate which needs to be imported.
- * @param[in] password Password to open the pfx/p12 file.
- * @param[in] alias Logical name for certificate bundle identification (can't be empty).
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in] instance   CertSvcInstance object
+ * @param[in] storeType  cert-svc store type to query
+ * @param[in] path       Path of the certificate which needs to be imported
+ * @param[in] password   Password if the file to import is password-protected which can be
+ *                       empty CertSvcString in case of not-password-protected
+ * @param[in] alias      Primary key for certificate bundle identification (can't be empty)
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStoreType
  */
 int certsvc_pkcs12_import_from_file_to_store(CertSvcInstance instance,
                                              CertStoreType storeType,
@@ -205,58 +283,90 @@ int certsvc_pkcs12_import_from_file_to_store(CertSvcInstance instance,
                                              CertSvcString alias);
 
 /**
- * This function will delete the certificate from the path specified present in the specified store.
+ * Delete the certificate with gname provided from cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] gname Referred as group name, is the key for accessing the certificate.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_INVALID_STORE_TYPE
+ * @param[in] instance   CertSvcInstance object
+ * @param[in] storeType  cert-svc store type to query
+ * @param[in] gname      Single certificate identifier
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStoreType
  */
 int certsvc_pkcs12_delete_certificate_from_store(CertSvcInstance instance,
-                                          CertStoreType storeType,
-                                          CertSvcString gname);
+                                                 CertStoreType storeType,
+                                                 CertSvcString gname);
 
 /**
- * Query PKCS#12 storage to find out whenever new alias proposal is unique.
+ * Check the uniqueness of the alias in cert-svc store.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] proposal Desired alias name.
- * @param[out] is_unique CERTSVC_TRUE (if there isn't such alias already) or CERTSVC_FALSE.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance   CertSvcInstance object
+ * @param[in]  storeType  cert-svc store type to query
+ * @param[in]  alias      Certificates bundle identifier used when importing
+ * @param[out] is_unique  #CERTSVC_TRUE if the alias is unique, else #CERTSVC_FALSE
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStoreType
  */
 int certsvc_pkcs12_check_alias_exists_in_store(CertSvcInstance instance,
-                                         CertStoreType storeType,
-                                         CertSvcString alias,
-                                         int *is_unique);
+                                               CertStoreType storeType,
+                                               CertSvcString alias,
+                                               int *is_unique);
 
 /**
- * Get a list of certificates from PKCS#12 bundle. You may free this list by:
- * certsvc_certificate_list_free. You may free certificates from list with:
- * certsvc_certificate_free.
+ * Get list of certificates from PKCS#12 bundle or single certificate which
+ * is saved in cert-svc store with the alias.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] pfxIdString Identification of pfx/pkcs file.
- * @param[out] certificateList List of certificates.
- * @return CERTSVC_SUCCESS, CERTSVC_BAD_ALLOC, CERTSVC_FAIL, CERTSVC_IO_ERROR
+ * @param[in]  instance         CertSvcInstance object
+ * @param[in]  alias            Certificates bundle identifier used when importing
+ * @param[out] certificateList  List of certificates. Free by
+ *                              certsvc_certificate_list_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see certsvc_certificate_free()
+ * @see certsvc_certificate_list_free()
+ * @see #CertStoreType
+ * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_load_certificate_list_from_store(CertSvcInstance instance,
                                                     CertStoreType storeType,
-                                                    CertSvcString pfxIdString,
+                                                    CertSvcString alias,
                                                     CertSvcCertificateList *certificateList);
 
 /**
- * Gets the alias name for the gname passed.
+ * Get the alias name with the gname provided.
  *
- * @param[in] instance CertSvcInstance object.
- * @param[in] gname Certificate identification of pfx/pkcs file.
- * @param[out] alias Alias name for the given gname.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance  CertSvcInstance object
+ * @param[in]  gname     Single certificate identifier which is associated with alias
+ * @param[out] alias     Certificates bundle identifier used when importing which must
+ *                       be freed after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
+ * @see #CertStoreType
  */
 int certsvc_pkcs12_get_alias_name_for_certificate_in_store(CertSvcInstance instance,
-                                                    CertStoreType storeType,
-                                                    CertSvcString gname,
-                                                    char **alias);
+                                                           CertStoreType storeType,
+                                                           CertSvcString gname,
+                                                           char **alias);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -47,13 +47,21 @@ typedef struct CertSvcString_t {
 } CertSvcString;
 
 /**
- * This function will duplicate input data. Data in ouput string will be managed by certsvc.
+ * Create CertSvcString with input cstring and size. Newly allocated memory
+ * is in same lifecycle with @a instance param unless freed by certsvc_string_free().
+ * If empty string is needed, put NULL on @a input param and 0 on @a size param.
  *
- * @param[in] instance CertSvcString will be conected with this instance.
- * @param[in] input Input data.
- * @param[in] size Input buffer size.
- * @param[out] output Buffer with output data.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance  CertSvcInstance object
+ * @param[in]  input     null-terminated string. Put #NULL if empty string needed
+ * @param[in]  size      size of @a input to make. put #0 if empty string needed.
+ *                       Can be smaller than length of @a input
+ * @param[out] output    Output CertSvcString with newly allocated memory
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_new()
+ * @see certsvc_instance_free()
+ * @see certsvc_string_free()
  */
 int certsvc_string_new(
     CertSvcInstance instance,
@@ -62,14 +70,19 @@ int certsvc_string_new(
     CertSvcString *output);
 
 /**
- * This function wont duplicate input data. Output param will contain pointer to input
- * so input could not be free as long as ouput param is used.
+ * Create CertSvcString with @a input null-terminated string. @a output CertSvcString will
+ * contain pointer to @a input so input could not be freed as long as ouput param is used.
  *
- * @param[in] instance CertSvcString will be conected with this instance.
- * @param[in] input Input data.
- * @param[in] size Input buffer size.
- * @param[out] output Buffer with output data.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  instance  CertSvcInstance object
+ * @param[in]  input     null-terminated string. Put #NULL if empty string needed
+ * @param[in]  size      size of @a input to make. put #0 if empty string needed.
+ *                       Can be smaller than length of @a input
+ * @param[out] output    Output CertSvcString based on @a input
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_string_new()
+ * @see certsvc_string_free()
  */
 int certsvc_string_not_managed(
     CertSvcInstance instance,
@@ -78,51 +91,55 @@ int certsvc_string_not_managed(
     CertSvcString *output);
 
 /**
- * Extract next result from result set. Function certsvc_string_list_free
- * does not free results returned by this function. CertSvcString is valid
- * until certsvc_string_free or vcore_instance_reset or vcore_instance_free
- * is called.
+ * Get CertSvcString from CertSvcStringList with newly allocated memory.
+ * Output CertSvcString can be freed by certsvc_string_free() or reset/free instance
+ * of CertSvcInstance which is used to get the CertSvcStringList.
  *
- * @param[in] handler Handler to set of strings.
- * @param[out] buffer The buffer will be pointing to string with distrubution point url or will be set to NULL if error occures.
- * @param[out] size Size of data pointed by buffer or 0 if error occures.
- * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC
+ * @param[in]  handler   Handler to string list
+ * @param[in]  position  Index of CertSvcString to get in CertSvcStringList
+ * @param[out] buffer    Output CertSvcString must be freed by
+ *                       certsvc_string_free() after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_instance_free()
+ * @see certsvc_string_free()
  */
 int certsvc_string_list_get_one(CertSvcStringList hander,
                                 size_t position,
                                 CertSvcString *buffer);
 
 /**
- * Extract CertSvcStringList size.
+ * Get list size of CertSvcStringList.
  *
- * @param[in] handler Handler to string list.
- * @param[out] size Number of elements on the list.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT
+ * @param[in]  handler  Handler to string list
+ * @param[out] size     Number of elements on the list
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_string_list_get_length(CertSvcStringList hander, size_t *size);
 
 /**
- * Free data.
+ * Free CertSvcString.
  *
- * @param[in] string Data allocated by certsvc_certificate_get_string_field
+ * @param[in]  string   CertSvcString to free
  */
 void certsvc_string_free(CertSvcString string);
 
 /**
- * Free string list.
+ * Free CertSvcStringList.
  *
- * Note: This function does not free strings returned by certsvc_string_list_get_one_result.
- *
- * @param[in] handler String set handler.
+ * @param[in]  handler   Handler to string list
  */
 void certsvc_string_list_free(CertSvcStringList handler);
 
 /**
- * Convert CertSvcStringPtr into pure c pointer. Please note that this pointer is valid as long as CertSvcString is valid.
+ * Convert CertSvcString into null-terminated C string. Please note that this pointer
+ * is valid as long as CertSvcString is valid.
  *
- * @param[in] string CertSvcStringPtr.
- * @param[out] buffer cstring
- * @param[out] len Length of cstring
+ * @param[in]  string  CertSvcString
+ * @param[out] buffer  null-terminated c string
+ * @param[out] len     Length of string
  */
 void certsvc_string_to_cstring(CertSvcString string, const char **buffer, size_t *len);
 

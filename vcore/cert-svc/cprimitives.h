@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  *    limitations under the License.
  */
 /*
- * @file        vcore_api_extension.h
+ * @file        cprimitives.h
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @version     1.0
- * @brief       This is C api for ValidationCore.
+ * @brief       cert-svc capi primitives
  */
 #ifndef _CERTSVC_C_API_EXTENDED_H_
 #define _CERTSVC_C_API_EXTENDED_H_
@@ -33,51 +33,70 @@ extern "C" {
 #endif
 
 /**
- * This will return pointer to X509 base openssl struct. This struct must be release by function
- * certsvc_certificate_free_x509.
+ * Duplicate @a CertSvcCertificate structure to openssl X509 structure.
+ * openssl X509 structure should be freed by certsvc_certificate_free_x509().
+ * @a CertSvcInstance isn't free duplicated openssl X509 structure.
  *
- * vcore_instance_free or vcore_instance_reset will not free memory allocated by this function!
+ * @param[in]  certificate  Certificate
+ * @param[out] x509         Duplicated @a certificate
  *
- * @param[in] certificate Pointer to certificate.
- * @param[out] cert Duplicate of certificate.
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT, CERTSVC_FAIL
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_certificate_free_x509()
  */
-int certsvc_certificate_dup_x509(CertSvcCertificate certificate, X509** cert);
+int certsvc_certificate_dup_x509(CertSvcCertificate certificate, X509** x509);
 
 /**
- * Release X509 struct allocated by certsvc_certificate_new_x509_copy function.
+ * Free openssl x509 structure duplicated by certsvc_certificate_dup_x509().
  *
- * @param[in] x509_copy Pointer to openssl struct.
+ * @param[in] x509  openssl X509 structure to free
+ *
+ * @see certsvc_certificate_dup_x509()
  */
-void certsvc_certificate_free_x509(X509 *x509_copy);
+void certsvc_certificate_free_x509(X509 *x509);
 
 /**
  * Duplicate pubkey in DER form from CertSvcCertificate.
  * Remarks: Free returned pubkey after use by free()
  *
- * @param[in] certificate Pointer to certificate.
- * @param[out] pubkey Duplicated certificate in DER form
- * @param[out] len    Duplicated certificate length
- * @return CERTSVC_SUCCESS, CERTSVC_WRONG_ARGUMENT, CERTSVC_FAIL
+ * @param[in]  certificate  Pointer to certificate.
+ * @param[out] pubkey       Duplicated certificate in DER form which must be
+ *                          freed after use
+ * @param[out] len          Duplicated certificate length
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_certificate_dup_pubkey_der(CertSvcCertificate certificate, unsigned char **pubkey, size_t *len);
 
 /**
- * This will return pointer to EVP_PKEY base openssl struct. This struct must
- * be release with function certsvc_pkcs12_free_evp_pkey
+ * Get private key from cert-svc store in openssl EVP_PKEY structure.
+ * openssl EVP_PKEY structure should be freed by certsvc_pkcs12_free_evp_pkey().
+ * @a CertSvcInstance isn't free duplicated openssl EVP_PKEY structure.
  *
- * @param[in] instance
- * @param[in] storeType Refers to VPN_STORE / WIFI_STORE / EMAIL_STORE / SYSTEM_STORE / ALL_STORE.
- * @param[in] gname Pkcs12 identificator.
- * @param[out] pkey Duplicate of private key.
- * @return CERTSVC_SUCCESS, CERT_FAIL
+ * @param[in]  instance   CertSvcInstance object
+ * @param[in]  storeType  cert-svc store type to query
+ * @param[in]  gname      Single certificate identifier which is associated with
+ *                        private key
+ * @param[out] pkey       private key from storage which must be freed after use
+ *
+ * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
+ *
+ * @see certsvc_pkcs12_free_evp_pkey()
  */
-
 int certsvc_pkcs12_dup_evp_pkey_from_store(CertSvcInstance instance,
                                            CertStoreType storeType,
                                            CertSvcString gname,
                                            EVP_PKEY** pkey);
 
+/**
+ * Free openssl EVP_PKEY structure duplicated by certsvc_pkcs12_dup_ev_pkey()
+ * or certsvc_pkcs12_dup_evp_pkey_from_store().
+ *
+ * @param[in] x509  openssl EVP_PKEY structure to free
+ *
+ * @see certsvc_pkcs12_dup_evp_pkey()
+ * @see certsvc_pkcs12_dup_evp_pkey_from_store()
+ */
 void certsvc_pkcs12_free_evp_pkey(EVP_PKEY* pkey);
 
 #ifdef __cplusplus

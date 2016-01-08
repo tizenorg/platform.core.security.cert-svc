@@ -1,4 +1,4 @@
-%define certsvc_test_build 0
+%define certsvc_test_build 0 
 
 Name:    cert-svc
 Summary: Certification service
@@ -135,6 +135,5 @@ fi
 %files test
 %TZ_SYS_BIN/cert-svc-test*
 %TZ_SYS_RO_APP/cert-svc-tests
-%TZ_SYS_SHARE/ca-certificates/tizen/root_cacert0.pem
 %_libdir/libcert-svc-validator-plugin.so
 %endif

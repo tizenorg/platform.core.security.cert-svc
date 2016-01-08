@@ -34,39 +34,13 @@ RUNNER_TEST(T00101_finder)
     RUNNER_ASSERT_MSG(
         SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
         "SignatureFinder failed");
-    RUNNER_ASSERT_MSG(signatureSet.size() == 3, "Some signature has not been found");
+    RUNNER_ASSERT_MSG(signatureSet.size() == 2, "Some signature has not been found");
 
-    int count = 0;
-
-    auto iter = signatureSet.begin();
-    SignatureFileInfo fileInfo = *iter++;
-    std::string fileName = fileInfo.getFileName();
-    int fileNum = fileInfo.getFileNumber();
-    if ((fileName.find("author-signature.xml") != std::string::npos && fileNum == -1)
-        || (fileName.find("signature1.xml") != std::string::npos && fileNum == 1)
-        || (fileName.find("signature22.xml") != std::string::npos && fileNum == 22))
-        count++;
-    RUNNER_ASSERT_MSG(iter != signatureSet.end(), "There should be more items");
-
-    fileInfo = *iter++;
-    fileName = fileInfo.getFileName();
-    fileNum = fileInfo.getFileNumber();
-    if ((fileName.find("author-signature.xml") != std::string::npos && fileNum == -1)
-        || (fileName.find("signature1.xml") != std::string::npos && fileNum == 1)
-        || (fileName.find("signature22.xml") != std::string::npos && fileNum == 22))
-        count++;
-    RUNNER_ASSERT_MSG(iter != signatureSet.end(), "There should be more items");
-
-    fileInfo = *iter++;
-    fileName = fileInfo.getFileName();
-    fileNum = fileInfo.getFileNumber();
-    if ((fileName.find("author-signature.xml") != std::string::npos && fileNum == -1)
-        || (fileName.find("signature1.xml") != std::string::npos && fileNum == 1)
-        || (fileName.find("signature22.xml") != std::string::npos && fileNum == 22))
-        count++;
-    RUNNER_ASSERT_MSG(iter == signatureSet.end(), "It should be last item");
-
-    RUNNER_ASSERT_MSG(count == 3, "Wrong signature file count.");
+    for (auto &fileInfo : signatureSet)
+        RUNNER_ASSERT_MSG(
+            ((fileInfo.getFileName().find("author-signature.xml") != std::string::npos && fileInfo.getFileNumber() == -1)
+                || (fileInfo.getFileName().find("signature1.xml") != std::string::npos && fileInfo.getFileNumber() == 1)),
+            "invalid signature xml found: " << fileInfo.getFileName() << " with number: " << fileInfo.getFileNumber());
 }
 
 RUNNER_TEST(T00102_positive_public_check_ref)
@@ -86,19 +60,13 @@ RUNNER_TEST(T00102_positive_public_check_ref)
                 true,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "author sig validation should be disregarded: "
-                << validator.errorToString(result));
-        else
-            if (data.getSignatureNumber() == 1)
-                RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                    "dist1 sig validation should be disregarded: "
-                    << validator.errorToString(result));
-            else
-                RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                    "dist22 sig validation should be success: "
-                    << validator.errorToString(result));
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "sig validation should be success: "
+            << validator.errorToString(result));
+
+        if (!data.isAuthorSignature() && data.getSignatureNumber() == 1)
+            RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PUBLIC,
+                "visibility check failed.");
     }
 }
 
@@ -123,10 +91,9 @@ RUNNER_TEST(T00103_positive_partner_check_ref)
             "sig validation should be success: "
             << validator.errorToString(result));
 
-        if (!data.isAuthorSignature()) {
+        if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PARTNER,
                 "visibility check failed.");
-        }
     }
 }
 
@@ -148,19 +115,13 @@ RUNNER_TEST(T00104_positive_public_uncheck_ref)
                 false,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "author sig validation should be disregraded: "
-                << validator.errorToString(result));
-        else
-            if (data.getSignatureNumber() == 1)
-                RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                    "disg1 sig validation should be disregarded: "
-                    << validator.errorToString(result));
-            else
-                RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                    "dist22 sig validation should be success: "
-                    << validator.errorToString(result));
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "sig validation should be success: "
+            << validator.errorToString(result));
+
+        if (!data.isAuthorSignature() && data.getSignatureNumber() == 1)
+            RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PUBLIC,
+                "visibility check failed.");
     }
 }
 
@@ -208,14 +169,9 @@ RUNNER_TEST(T00106_positive_tpk)
                 true,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                "author sig validation should be success: "
-                << validator.errorToString(result));
-        else
-            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                "dist sig validation should be success: "
-                << validator.errorToString(result));
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "sig validation should be success: "
+            << validator.errorToString(result));
     }
 }
 
@@ -246,14 +202,9 @@ RUNNER_TEST(T00107_positive_tpk_with_userdata)
                 uriList,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                "author sig validation should be success: "
-                << validator.errorToString(result));
-        else
-            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                "dist sig validation should be success: "
-                << validator.errorToString(result));
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "sig validation should be success: "
+            << validator.errorToString(result));
     }
 }
 
@@ -273,11 +224,8 @@ RUNNER_TEST(T00151_negative_hash_check_ref)
                 true,
                 true,
                 data);
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "author sig shouldn't be failed because it only checks cert chain: "
-                << validator.errorToString(result));
-        else
+
+        if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
                 "dist sig shouldn't be success: "
                 << validator.errorToString(result));
@@ -301,11 +249,7 @@ RUNNER_TEST(T00152_negative_hash_uncheck_ref)
                 false,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "author sig shouldn't be failed because it only checks cert chain: "
-                << validator.errorToString(result));
-        else
+        if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
                 "dist sig shouldn't be success: "
                 << validator.errorToString(result));
@@ -329,11 +273,7 @@ RUNNER_TEST(T00153_negative_signature_check_ref)
                 true,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "author sig validation should be disregarded: "
-                << validator.errorToString(result));
-        else
+        if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
                 "dist sig validation should be failed: "
                 << validator.errorToString(result));
@@ -357,11 +297,7 @@ RUNNER_TEST(T00154_negative_signature_uncheck_ref)
                 false,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
-                "author sig validation should be disregarded: "
-                << validator.errorToString(result));
-        else
+        if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
                 "dist sig should be failed: "
                  << validator.errorToString(result));

@@ -128,9 +128,9 @@ private:
 };
 
 
-SignatureValidator::Impl::Impl(const SignatureFileInfo &info)
-	: m_fileInfo(info)
-	, m_disregarded(false)
+SignatureValidator::Impl::Impl(const SignatureFileInfo &info) :
+	m_fileInfo(info),
+	m_disregarded(false)
 {
 }
 
@@ -270,20 +270,16 @@ VCerr SignatureValidator::Impl::preStep(void)
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
 	if (m_data.isAuthorSignature()) {
 		if (!storeIdSet.contains(TIZEN_DEVELOPER)) {
-			LogWarning("author-signature.xml has got unrecognized Root CA certificate. "
-				"Signature will be disregarded.");
-			m_disregarded = true;
+			LogError("author-signature.xml's root certificate isn't in tizen developer domain.");
+			return E_SIG_INVALID_CHAIN;
 		}
 	} else {
 		if (storeIdSet.contains(TIZEN_DEVELOPER)) {
-			LogError("distributor should not have developer set: "
-				<< m_data.getSignatureFileName());
+			LogError("distributor signautre root certificate shouldn't be in tizen developer domain.");
 			return E_SIG_INVALID_CHAIN;
 		}
-
 		if (m_data.getSignatureNumber() == 1 && !storeIdSet.isContainsVis()) {
-			LogWarning("signature1.xml has got unrecognized Root CA certificate. "
-				"Signature will be disregarded.");
+			LogError("signature1.xml has got unrecognized root CA certificate.");
 			m_disregarded = true;
 		}
 	}
@@ -377,7 +373,6 @@ VCerr SignatureValidator::Impl::baseCheck(
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
 		 *  Don't care ocsp exception here.
-		 *  just return signature disregard or verified
 		 *  because exception case will be handled by cert-checker after app installed
 		 */
 	} catch (const std::exception &e) {
@@ -440,7 +435,6 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
 		 *  Don't care ocsp exception here.
-		 *  just return signature disregard or verified
 		 *  because exception case will be handled by cert-checker after app installed
 		 */
 	} catch (...) {

@@ -53,12 +53,6 @@ INSTALL(TARGETS ${TARGET_VCORE_TEST}
                 WORLD_EXECUTE
     )
 
-INSTALL(FILES
-    resource/root_cacert0.pem
-    DESTINATION
-    ${TZ_SYS_SHARE}/ca-certificates/tizen
-    )
-
 INSTALL(
     DIRECTORY
         resource/wgt

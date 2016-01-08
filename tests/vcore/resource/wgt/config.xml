@@ -1,6 +1,9 @@
-<widget xmlns="http://www.w3.org/ns/widgets" id="Test Widget">
-    <name shortname="ShortName">Widget Name OK</name>
-    <version>1.2.3.4</version>
-    <description>A short description of widget</description>
-    <author>Author Name</author>
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://yourdomain/TestApp" version="1.0.0" viewmodes="maximized">
+    <tizen:application id="N75lVtaOnD.TestApp" package="N75lVtaOnD" required_version="2.2"/>
+    <content src="index.html"/>
+    <feature name="http://tizen.org/feature/screen.size.all"/>
+    <icon src="icon.png"/>
+    <name>TestApp</name>
+    <tizen:profile name="wearable"/>
 </widget>

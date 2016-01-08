@@ -53,14 +53,6 @@ using UriList = std::list<std::string>;
  *        - check file based on content path from parameter
  *        - check is all existing file is on the Reference tag list on signature xml
  *        - If file path(URI) cannot found on reference set, validate fail returned.
- *
- *
- *  Signature validation disregarded case
- *
- *  1. author signature: store id contains TIZEN_DEVELOPER
- *
- *  2. distributor signature: signature number is 1
- *                            and doesn't contain visibility in store id set
  */
 
 /*

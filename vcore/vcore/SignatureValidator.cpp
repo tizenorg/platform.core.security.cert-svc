@@ -124,11 +124,13 @@ private:
 	SignatureFileInfo m_fileInfo;
 	XmlSec::XmlSecContext m_context;
 	SignatureData m_data;
+	bool m_disregarded;
 };
 
 
 SignatureValidator::Impl::Impl(const SignatureFileInfo &info)
 	: m_fileInfo(info)
+	, m_disregarded(false)
 {
 }
 
@@ -266,15 +268,24 @@ VCerr SignatureValidator::Impl::preStep(void)
 	Set storeIdSet = createCertificateIdentifier().find(m_data.getCertList().back());
 
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
-	if (m_data.isAuthorSignature() && !storeIdSet.contains(TIZEN_DEVELOPER)) {
-		LogError("author-signature.xml root certificate isn't in tizen developer domain.");
-		return E_SIG_INVALID_CHAIN;
-	} else if (!m_data.isAuthorSignature() && storeIdSet.contains(TIZEN_DEVELOPER)) {
-		LogError("distributor signautre root certificate shouldn't be in tizen developer domain.");
-		return E_SIG_INVALID_CHAIN;
-	} else if (!m_data.isAuthorSignature() && !storeIdSet.isContainsVis()) {
-		LogError("distributor signature 1 must have visibility information.");
-		return E_SIG_INVALID_CHAIN;
+	if (m_data.isAuthorSignature()) {
+		if (!storeIdSet.contains(TIZEN_DEVELOPER)) {
+			LogWarning("author-signature.xml has got unrecognized Root CA certificate. "
+				"Signature will be disregarded.");
+			m_disregarded = true;
+		}
+	} else {
+		if (storeIdSet.contains(TIZEN_DEVELOPER)) {
+			LogError("distributor should not have developer set: "
+				<< m_data.getSignatureFileName());
+			return E_SIG_INVALID_CHAIN;
+		}
+
+		if (m_data.getSignatureNumber() == 1 && !storeIdSet.isContainsVis()) {
+			LogWarning("signature1.xml has got unrecognized Root CA certificate. "
+				"Signature will be disregarded.");
+			m_disregarded = true;
+		}
 	}
 
 	m_data.setStorageType(storeIdSet);
@@ -366,6 +377,7 @@ VCerr SignatureValidator::Impl::baseCheck(
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
 		 *  Don't care ocsp exception here.
+		 *  just return signature disregard or verified
 		 *  because exception case will be handled by cert-checker after app installed
 		 */
 	} catch (const std::exception &e) {
@@ -376,7 +388,7 @@ VCerr SignatureValidator::Impl::baseCheck(
 		return E_SIG_UNKNOWN;
 	}
 
-	return E_SIG_NONE;
+	return m_disregarded ? E_SIG_DISREGARDED : E_SIG_NONE;
 }
 
 VCerr SignatureValidator::Impl::baseCheckList(
@@ -428,6 +440,7 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
 		/*
 		 *  Don't care ocsp exception here.
+		 *  just return signature disregard or verified
 		 *  because exception case will be handled by cert-checker after app installed
 		 */
 	} catch (...) {
@@ -435,7 +448,7 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		return E_SIG_UNKNOWN;
 	}
 
-	return E_SIG_NONE;
+	return m_disregarded ? E_SIG_DISREGARDED : E_SIG_NONE;
 }
 
 VCerr SignatureValidator::Impl::check(
@@ -493,6 +506,7 @@ std::string SignatureValidator::Impl::errorToString(VCerr code)
 	case E_SIG_INVALID_REF:    return "Invalid file reference. An unsinged file was found.";
 	case E_SIG_CERT_EXPIRED:   return "Certificate in signature was expired.";
 	case E_SIG_CERT_NOT_YET:   return "Certificate in signature is not valid yet.";
+	case E_SIG_DISREGARDED:    return "Signature validation can be disregarded in some cases.";
 	case E_SIG_REVOKED:        return "One of certificate was revoked in certificate chain.";
 	case E_SIG_PLUGIN:         return "Failed to load plugin for additional validation check.";
 	case E_SIG_OUT_OF_MEM:     return "Out of memory.";

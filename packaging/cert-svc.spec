@@ -1,4 +1,4 @@
-%define certsvc_test_build 0
+%define certsvc_test_build 0 
 
 Name:    cert-svc
 Summary: Certification service

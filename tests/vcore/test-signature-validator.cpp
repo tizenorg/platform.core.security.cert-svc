@@ -37,9 +37,9 @@ RUNNER_TEST(T00101_finder)
     RUNNER_ASSERT_MSG(signatureSet.size() == 2, "Some signature has not been found");
 
     for (auto &fileInfo : signatureSet)
-        RUNNER_ASSERT_MSG(
-            ((fileInfo.getFileName().find("author-signature.xml") != std::string::npos && fileInfo.getFileNumber() == -1)
-                || (fileInfo.getFileName().find("signature1.xml") != std::string::npos && fileInfo.getFileNumber() == 1)),
+        RUNNER_ASSERT_MSG((
+            (fileInfo.getFileName().find("author-signature.xml") != std::string::npos && fileInfo.getFileNumber() == -1) ||
+            (fileInfo.getFileName().find("signature1.xml") != std::string::npos && fileInfo.getFileNumber() == 1)),
             "invalid signature xml found: " << fileInfo.getFileName() << " with number: " << fileInfo.getFileNumber());
 }
 
@@ -205,6 +205,39 @@ RUNNER_TEST(T00107_positive_tpk_with_userdata)
         RUNNER_ASSERT_MSG(result == E_SIG_NONE,
             "sig validation should be success: "
             << validator.errorToString(result));
+    }
+}
+
+RUNNER_TEST(T00108_distributor_disregard_check)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_dist22_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_dist22_path,
+                true,
+                true,
+                data);
+
+        if (data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_CHAIN,
+                "author sig validation should be fail : "
+                << validator.errorToString(result));
+        else
+            if (data.getSignatureNumber() == 1)
+                RUNNER_ASSERT_MSG(result == E_SIG_INVALID_CHAIN,
+                    "dist1 sig validation should be fail: "
+                    << validator.errorToString(result));
+            else
+                RUNNER_ASSERT_MSG(result == E_SIG_DISREGARDED,
+                    "dist22 sig validation should be disregarded: "
+                    << validator.errorToString(result));
     }
 }
 

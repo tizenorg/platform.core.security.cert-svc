@@ -238,8 +238,13 @@ VCerr SignatureValidator::Impl::makeDataBySignature(bool completeWithSystemCert)
 		}
 
 		if (completeWithSystemCert && !collection.completeCertificateChain()) {
-			LogError("Failed to complete cert chain with system cert");
-			return E_SIG_INVALID_CHAIN;
+			if (m_data.isAuthorSignature() || m_data.getSignatureNumber() == 1) {
+				LogError("Failed to complete cert chain with system cert");
+				return E_SIG_INVALID_CHAIN;
+			} else {
+				LogError("distributor's signature has got unrecognized root CA certificate.");
+				m_disregarded = true;
+			}
 		}
 
 		m_data.setSortedCertificateList(collection.getChain());
@@ -280,6 +285,9 @@ VCerr SignatureValidator::Impl::preStep(void)
 		}
 		if (m_data.getSignatureNumber() == 1 && !storeIdSet.isContainsVis()) {
 			LogError("signature1.xml has got unrecognized root CA certificate.");
+			return E_SIG_INVALID_CHAIN;
+		} else if (!storeIdSet.isContainsVis()) {
+			LogError("signatureN.xml (not 1) has got unrecognized root CA certificate.");
 			m_disregarded = true;
 		}
 	}
@@ -327,6 +335,9 @@ VCerr SignatureValidator::Impl::baseCheck(
 			return result;
 
 		if (!m_data.isAuthorSignature()) {
+			if (!m_data.getSignatureNumber() != 1)
+				m_context.allowBrokenChain = true;
+
 			XmlSecSingleton::Instance().validate(m_context);
 
 			m_data.setReference(m_context.referenceSet);

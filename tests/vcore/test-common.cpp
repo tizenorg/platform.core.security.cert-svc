@@ -17,6 +17,7 @@
 #include "test-common.h"
 
 const std::string TestData::widget_path = std::string(TESTAPP_RES_DIR) + "apps/wgt";
+const std::string TestData::widget_dist22_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_dist22";
 const std::string TestData::widget_negative_hash_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_negative_hash";
 const std::string TestData::widget_negative_signature_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_negative_signature";
 const std::string TestData::widget_negative_certificate_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_negative_certificate";

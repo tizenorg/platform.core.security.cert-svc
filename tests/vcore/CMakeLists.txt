@@ -56,6 +56,7 @@ INSTALL(TARGETS ${TARGET_VCORE_TEST}
 INSTALL(
     DIRECTORY
         resource/wgt
+        resource/wgt_dist22
         resource/wgt_negative_hash
         resource/wgt_negative_signature
         resource/wgt_negative_certificate

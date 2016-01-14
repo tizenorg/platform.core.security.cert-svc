@@ -20,6 +20,7 @@
 namespace TestData {
 
 extern const std::string widget_path;
+extern const std::string widget_dist22_path;
 extern const std::string widget_negative_hash_path;
 extern const std::string widget_negative_signature_path;
 extern const std::string widget_negative_certificate_path;

@@ -61,7 +61,7 @@ INSTALL(
         resource/wgt_negative_signature
         resource/wgt_negative_certificate
         resource/wgt_partner
-        resource/wgt_partner_operator
+        resource/wgt_platform
         resource/tpk
         resource/attacked-tpk
         resource/tpk-with-userdata

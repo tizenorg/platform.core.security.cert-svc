@@ -40,10 +40,6 @@ const Type TIZEN_STORE = 1 << 3;
 const Type VIS_PUBLIC = 1 << 6;
 // RootCA's visibility level : partner
 const Type VIS_PARTNER = 1 << 7;
-// RootCA's visibility level : partner-operator
-const Type VIS_PARTNER_OPERATOR = 1 << 8;
-// RootCA's visibility level : partner-manufacturer
-const Type VIS_PARTNER_MANUFACTURER = 1 << 9;
 // RootCA's visibility level : platform
 const Type VIS_PLATFORM = 1 << 10;
 

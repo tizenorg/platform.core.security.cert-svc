@@ -40,8 +40,6 @@ const std::string TOKEN_VALUE_TIZEN_VERIFY = "tizen-verify";
 const std::string TOKEN_VALUE_TIZEN_STORE = "tizen-store";
 const std::string TOKEN_VALUE_VISIBILITY_PUBLIC = "tizen-public";
 const std::string TOKEN_VALUE_VISIBILITY_PARTNER = "tizen-partner";
-const std::string TOKEN_VALUE_VISIBILITY_PARTNER_OPERATOR = "tizen-partner-operator";
-const std::string TOKEN_VALUE_VISIBILITY_PARTNER_MANUFACTURER = "tizen-partner-manufacturer";
 const std::string TOKEN_VALUE_VISIBILITY_PLATFORM = "tizen-platform";
 
 int hexCharToInt(char c)
@@ -130,10 +128,6 @@ void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
         m_certificateDomain = CertStoreId::VIS_PUBLIC;
     } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER) {
         m_certificateDomain = CertStoreId::VIS_PARTNER;
-    } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER_OPERATOR) {
-        m_certificateDomain = CertStoreId::VIS_PARTNER_OPERATOR;
-    } else if (name == TOKEN_VALUE_VISIBILITY_PARTNER_MANUFACTURER) {
-        m_certificateDomain = CertStoreId::VIS_PARTNER_MANUFACTURER;
     } else if (name == TOKEN_VALUE_VISIBILITY_PLATFORM) {
         m_certificateDomain = CertStoreId::VIS_PLATFORM;
     } else {

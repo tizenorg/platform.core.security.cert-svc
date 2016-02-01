@@ -22,7 +22,7 @@ const std::string TestData::widget_negative_hash_path = std::string(TESTAPP_RES_
 const std::string TestData::widget_negative_signature_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_negative_signature";
 const std::string TestData::widget_negative_certificate_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_negative_certificate";
 const std::string TestData::widget_partner_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_partner";
-const std::string TestData::widget_partner_operator_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_partner_operator";
+const std::string TestData::widget_platform_path = std::string(TESTAPP_RES_DIR) + "apps/wgt_platform";
 
 const std::string TestData::tpk_path = std::string(TESTAPP_RES_DIR) + "apps/tpk";
 const std::string TestData::attacked_tpk_path = std::string(TESTAPP_RES_DIR) + "apps/attacked-tpk";

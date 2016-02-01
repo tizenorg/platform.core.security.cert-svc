@@ -108,12 +108,9 @@ typedef enum CertSvcCertificateField_t {
 
 typedef enum CertSvcVisibility_t {
 	CERTSVC_VISIBILITY_DEVELOPER            = 1,
-	CERTSVC_VISIBILITY_TEST                 = 1 << 1,
 	CERTSVC_VISIBILITY_PUBLIC               = 1 << 6,
 	CERTSVC_VISIBILITY_PARTNER              = 1 << 7,
-	CERTSVC_VISIBILITY_PARTNER_OPERATOR     = 1 << 8,
-	CERTSVC_VISIBILITY_PARTNER_MANUFACTURER = 1 << 9,
-	CERTSVC_VISIBILITY_PLATFORM             = 1 << 10
+	CERTSVC_VISIBILITY_PLATFORM             = 1 << 8
 } CertSvcVisibility;
 
 /**

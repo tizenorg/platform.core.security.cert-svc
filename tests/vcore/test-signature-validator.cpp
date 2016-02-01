@@ -241,6 +241,59 @@ RUNNER_TEST(T00108_distributor_disregard_check)
     }
 }
 
+RUNNER_TEST(T00109_positive_platform_check_ref)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_platform_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_platform_path,
+                true,
+                true,
+                data);
+
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "sig validation should be success: "
+            << validator.errorToString(result));
+
+        if (!data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PLATFORM,
+                "visibility check failed.");
+    }
+}
+
+RUNNER_TEST(T00110_positive_platform_uncheck_ref)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_platform_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_platform_path,
+                true,
+                false,
+                data);
+
+        RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+            "sig validation should be success: "
+            << validator.errorToString(result));
+
+        if (!data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(data.getVisibilityLevel() == CertStoreId::VIS_PLATFORM,
+                "visibility check failed.");
+    }
+}
 RUNNER_TEST(T00151_negative_hash_check_ref)
 {
     SignatureFileInfoSet signatureSet;

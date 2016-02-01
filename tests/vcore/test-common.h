@@ -25,7 +25,7 @@ extern const std::string widget_negative_hash_path;
 extern const std::string widget_negative_signature_path;
 extern const std::string widget_negative_certificate_path;
 extern const std::string widget_partner_path;
-extern const std::string widget_partner_operator_path;
+extern const std::string widget_platform_path;
 
 extern const std::string tpk_path;
 extern const std::string attacked_tpk_path;

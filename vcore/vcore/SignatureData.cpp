@@ -121,10 +121,6 @@ CertStoreId::Type SignatureData::getVisibilityLevel() const
 
     if (m_storeIdSet.contains(CertStoreId::VIS_PLATFORM))
         return CertStoreId::VIS_PLATFORM;
-    else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_MANUFACTURER))
-        return CertStoreId::VIS_PLATFORM;
-    else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER_OPERATOR))
-        return CertStoreId::VIS_PLATFORM;
     else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER))
         return CertStoreId::VIS_PARTNER;
     else

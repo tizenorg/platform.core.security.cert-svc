@@ -48,8 +48,6 @@ bool Set::isContainsVis() const
 {
     Type visType = VIS_PUBLIC;
     visType |= VIS_PARTNER;
-    visType |= VIS_PARTNER_OPERATOR;
-    visType |= VIS_PARTNER_MANUFACTURER;
     visType |= VIS_PLATFORM;
 
     visType &= m_certificateStorage;
@@ -81,10 +79,6 @@ std::string Set::typeToString() const
         ret += "VIS_PUBLIC ";
     if (m_certificateStorage & VIS_PARTNER)
         ret += "VIS_PARTNER ";
-    if (m_certificateStorage & VIS_PARTNER_OPERATOR)
-        ret += "VIS_PARTNER_OPERATOR ";
-    if (m_certificateStorage & VIS_PARTNER_MANUFACTURER)
-        ret += "VIS_PARTNER_MANUFACTURER ";
     if (m_certificateStorage & VIS_PLATFORM)
         ret += "VIS_PLATFORM ";
 

@@ -360,7 +360,7 @@ int verify_cert_details(X509 *cert, STACK_OF(X509) *certv)
                 goto free_memory;
             }
 
-            res = X509_STORE_load_locations(cert_store, NULL, "/opt/etc/ssl/certs/");
+            res = X509_STORE_load_locations(cert_store, NULL, TZ_SYS_CA_CERTS);
             if (res != 1) {
                 LogError("P12 load certificate store failed");
                 X509_STORE_free(cert_store);

@@ -129,72 +129,77 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
     const std::string &directory,
     bool isAuthorSignature)
 {
-    DIR *dp;
-    struct dirent *dirp;
+    int ret;
+    DIR *dirp;
+    struct dirent entry;
+    struct dirent *result;
+    
     std::string currentDir = m_dirpath;
     if (!directory.empty()) {
         currentDir += "/";
         currentDir += directory;
     }
 
-    if ((dp = opendir(currentDir.c_str())) == NULL) {
+    if ((dirp = opendir(currentDir.c_str())) == NULL) {
         LogError("Error opening directory : " << currentDir);
         return ERROR_OPENING_DIR;
     }
 
-    for (errno = 0; (dirp = readdir(dp)) != NULL; errno = 0) {
-        if (!strcmp(dirp->d_name, SPECIAL_SYMBOL_CURRENT_DIR)) {
+    for (ret = readdir_r(dirp, &entry, &result);
+            ret == 0 && result != NULL;
+            ret = readdir_r(dirp, &entry, &result)) {
+        if (!strcmp(result->d_name, SPECIAL_SYMBOL_CURRENT_DIR)) {
             continue;
         }
 
-        if (!strcmp(dirp->d_name, SPECIAL_SYMBOL_UPPER_DIR)) {
+        if (!strcmp(result->d_name, SPECIAL_SYMBOL_UPPER_DIR)) {
             continue;
         }
 
-        if (currentDir == m_dirpath && dirp->d_type == DT_REG &&
-            !strcmp(dirp->d_name, SPECIAL_SYMBOL_AUTHOR_SIGNATURE_FILE) &&
+        if (currentDir == m_dirpath && result->d_type == DT_REG &&
+            !strcmp(result->d_name, SPECIAL_SYMBOL_AUTHOR_SIGNATURE_FILE) &&
             isAuthorSignature)
         {
             continue;
         }
 
-        if (currentDir == m_dirpath && dirp->d_type == DT_REG &&
-            isDistributorSignature(dirp->d_name)) {
+        if (currentDir == m_dirpath && result->d_type == DT_REG &&
+            isDistributorSignature(result->d_name)) {
             continue;
         }
 
-        if (dirp->d_type == DT_DIR) {
-            LogDebug("Open directory : " << (directory + dirp->d_name));
-            std::string tmp_directory = directory + dirp->d_name + "/";
+        if (result->d_type == DT_DIR) {
+            LogDebug("Open directory : " << (directory + result->d_name));
+            std::string tmp_directory = directory + result->d_name + "/";
             Result result = dfsCheckDirectories(referenceSet,
                                                 tmp_directory,
                                                 isAuthorSignature);
             if (result != NO_ERROR) {
-                closedir(dp);
+                closedir(dirp);
                 return result;
             }
-        } else if (dirp->d_type == DT_REG) {
+        } else if (result->d_type == DT_REG) {
             if (referenceSet.end() ==
-                referenceSet.find(directory + dirp->d_name))
+                referenceSet.find(directory + result->d_name))
             {
-                LogDebug("Found file : " << (directory + dirp->d_name));
+                LogDebug("Found file : " << (directory + result->d_name));
                 LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
-                closedir(dp);
+                closedir(dirp);
                 return ERROR_REFERENCE_NOT_FOUND;
             }
         } else {
             LogError("Unknown file type.");
-            closedir(dp);
+            closedir(dirp);
             return ERROR_UNSUPPORTED_FILE_TYPE;
         }
     }
 
-    if (errno != 0) {
-        closedir(dp);
+    if (ret != 0) {
+        closedir(dirp);
         return ERROR_READING_DIR;
     }
 
-    closedir(dp);
+    closedir(dirp);
 
     return NO_ERROR;
 }

@@ -18,6 +18,11 @@
 # @brief       This package provides bacis check of internal OpenSSL's PKCS#12 routines.
 #
 
+PKG_CHECK_MODULES(PKCS12_TEST_DEP
+    REQUIRED
+    libtzplatform-config
+    )
+
 SET(PKCS12_TEST_SOURCES
     pkcs12_test.cpp
     new_test_cases.cpp
@@ -25,6 +30,7 @@ SET(PKCS12_TEST_SOURCES
     )
 
 INCLUDE_DIRECTORIES(
+    ${PKCS12_TEST_DEP_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/vcore/src
     .
     )
@@ -34,6 +40,7 @@ ADD_EXECUTABLE(${TARGET_PKCS12_TEST} ${PKCS12_TEST_SOURCES} ${DPL_TEST_SOURCES})
 TARGET_LINK_LIBRARIES(${TARGET_PKCS12_TEST}
     ${TARGET_VCORE_LIB}
     ${TEST_DEP_LIBRARIES}
+    ${PKCS12_TEST_DEP_LIBRARIES}
     )
 
 INSTALL(TARGETS ${TARGET_PKCS12_TEST}

@@ -2,7 +2,7 @@
 Description=Start cert server for cert-svc managing root ssl certs
 
 [Service]
-ExecStart=/usr/bin/cert-server
+ExecStart=@TZ_SYS_BIN@/cert-server
 User=system
 Group=system
 Sockets=cert-server.socket

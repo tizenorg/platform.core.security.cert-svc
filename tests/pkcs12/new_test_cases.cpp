@@ -997,7 +997,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store)
 		const char *output_template = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12/file_%d");
 #endif
 
-		sprintf(user_cert_path, output_template, count++);
+		snprintf(user_cert_path, sizeof(user_cert_path), output_template, count++);
 		FILE *fp = fopen(user_cert_path, "w");
 		RUNNER_ASSERT_MSG(fp != NULL, "Failed to open the file for writing");
 
@@ -1014,7 +1014,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store)
 		selected_certificate[0] = user_certificate;
 
 		char ca_cert_path[512];
-		sprintf(ca_cert_path, "%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_CA_CERT_PATH);
+		snprintf(ca_cert_path, sizeof(ca_cert_path), "%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_CA_CERT_PATH);
 		while (cert_index) {
 			CertSvcCertificate ca_certificate;
 			result = certsvc_certificate_list_get_one(cert_list, cert_index, &ca_certificate);
@@ -1044,7 +1044,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store)
 		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to duplicate the private key for a certificate from wifi store");
 
 		char privatekey_path[512];
-		sprintf(privatekey_path, "%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_PRIVATEKEY_PATH);
+		snprintf(privatekey_path, sizeof(privatekey_path), "%s%s_%s", EAP_TLS_PATH, certList->gname, EAP_TLS_PRIVATEKEY_PATH);
 		fp = fopen(privatekey_path, "w");
 		RUNNER_ASSERT_MSG(fp != NULL, "Failed to open the file for writing");
 

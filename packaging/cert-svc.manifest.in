@@ -1,0 +1,8 @@
+<manifest>
+	<request>
+		<domain name="_" />
+	</request>
+	<assign>
+		<filesystem path="@CERT_SVC_PATH@" label="System" type="transmutable" />
+	</assign>
+</manifest>

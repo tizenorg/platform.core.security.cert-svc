@@ -31,6 +31,8 @@
 #include <openssl/x509.h>
 #include <openssl/pem.h>
 
+#include <tzplatform_config.h>
+
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
 #include <cert-svc/cpkcs12.h>
@@ -669,7 +671,13 @@ RUNNER_TEST(CERTSVC_PKCS12_1017_load_cert_list_from_store)
 
 RUNNER_TEST(CERTSVC_PKCS12_1018_get_duplicate_private_key)
 {
-	const char *privatekey_path = "/usr/share/cert-svc/pkcs12/temp.txt";
+// FIXME : Delete macro when tizen 3.0 directory structure is fully updated
+#ifdef TZ_SYS_RO_SHARE
+	const char *privatekey_path = tzplatform_mkpath(TZ_SYS_RO_SHARE, "cert-svc/pkcs12/temp.txt");
+#else
+	const char *privatekey_path = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12/temp.txt");
+#endif
+
 	int result;
 
 	CREATE_INSTANCE
@@ -981,7 +989,15 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store)
 		result = certsvc_certificate_dup_x509(user_certificate, &x509);
 
 		char user_cert_path[512];
-		sprintf(user_cert_path, "/usr/share/cert-svc/pkcs12/file_%d", count++);
+
+// FIXME : Delete macro when tizen 3.0 directory structure is fully updated
+#ifdef TZ_SYS_RO_SHARE
+		const char *output_template = tzplatform_mkpath(TZ_SYS_RO_SHARE, "cert-svc/pkcs12/file_%d");
+#else
+		const char *output_template = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12/file_%d");
+#endif
+
+		sprintf(user_cert_path, output_template, count++);
 		FILE *fp = fopen(user_cert_path, "w");
 		RUNNER_ASSERT_MSG(fp != NULL, "Failed to open the file for writing");
 

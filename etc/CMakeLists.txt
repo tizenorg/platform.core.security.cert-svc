@@ -2,7 +2,7 @@ SET(ETC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 INSTALL(FILES
     ${ETC_DIR}/schema.xsd
-    DESTINATION ${TZ_SYS_SHARE}/cert-svc
+    DESTINATION ${CERT_SVC_PATH}
     )
 
 MESSAGE("Add ssl table to certs-meta.db")

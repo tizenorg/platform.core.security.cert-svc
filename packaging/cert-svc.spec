@@ -1,4 +1,4 @@
-%define certsvc_test_build 0
+%define certsvc_test_build 1
 
 Name:    cert-svc
 Summary: Certification service
@@ -7,7 +7,6 @@ Release: 0
 Group:   Security/Libraries
 License: Apache-2.0
 Source0: %{name}-%{version}.tar.gz
-Source1001: %{name}.manifest
 BuildRequires: cmake
 BuildRequires: findutils
 BuildRequires: openssl
@@ -27,6 +26,14 @@ BuildRequires: ca-certificates
 BuildRequires: ca-certificates-devel
 Requires: ca-certificates
 Requires: ca-certificates-tizen
+
+%global TZ_SYS_BIN      %{?TZ_SYS_BIN:%TZ_SYS_BIN}%{!?TZ_SYS_BIN:%_bindir}
+%global TZ_SYS_SHARE    %{?TZ_SYS_SHARE:%TZ_SYS_SHARE}%{!?TZ_SYS_SHARE:/opt/share}
+%global TZ_SYS_RO_SHARE %{?TZ_SYS_RO_SHARE:%TZ_SYS_RO_SHARE}%{!?TZ_SYS_RO_SHARE:%_datadir}
+%global TZ_SYS_RO_APP   %{?TZ_SYS_RO_APP:%TZ_SYS_RO_APP}%!?TZ_SYS_RO_APP:/usr/apps}
+%global TZ_SYS_CA_CERTS %{?TZ_SYS_CA_CERTS:%TZ_SYS_CA_CERTS}%{!?TZ_SYS_CA_CERTS:/etc/ssl/certs}
+%global TZ_SYS_CA_CERTS_ORIG %{?TZ_SYS_CA_CERTS_ORIG:%TZ_SYS_CA_CERTS_ORIG}%{!?TZ_SYS_CA_CERTS_ORGIN:%TZ_SYS_RO_SHARE/ca-certificates/certs}
+%global TZ_SYS_CA_BUNDLE_RW  %{?TZ_SYS_CA_BUNDLE_RW:%TZ_SYS_CA_BUNDLE_RW}%{!?TZ_SYS_CA_BUNDLE_RW:/var/lib/ca-certificates/ca-bundle.pem}
 
 %description
 Certification service
@@ -52,7 +59,6 @@ Certification service (tests)
 
 %prep
 %setup -q
-cp -a %SOURCE1001 .
 
 %build
 export CFLAGS="$CFLAGS -DTIZEN_DEBUG_ENABLE"
@@ -73,6 +79,7 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 %cmake . -DVERSION=%version \
         -DINCLUDEDIR=%_includedir \
         -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
+        -DTZ_SYS_RO_SHARE=%TZ_SYS_RO_SHARE \
         -DTZ_SYS_BIN=%TZ_SYS_BIN \
         -DTZ_SYS_CA_CERTS=%TZ_SYS_CA_CERTS \
         -DTZ_SYS_CA_CERTS_ORIG=%TZ_SYS_CA_CERTS_ORIG \
@@ -91,9 +98,9 @@ make %{?_smp_mflags}
 %install_service multi-user.target.wants cert-server.service
 %install_service sockets.target.wants cert-server.socket
 
-mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/pkcs12
-mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/dbspace
-ln -s %TZ_SYS_CA_BUNDLE_RW %buildroot%TZ_SYS_SHARE/cert-svc/ca-certificate.crt
+mkdir -p %buildroot%TZ_SYS_RO_SHARE/cert-svc/pkcs12
+mkdir -p %buildroot%TZ_SYS_RO_SHARE/cert-svc/dbspace
+ln -s %TZ_SYS_CA_BUNDLE_RW %buildroot%TZ_SYS_RO_SHARE/cert-svc/ca-certificate.crt
 
 %preun
 # erase
@@ -124,7 +131,7 @@ fi
 %_unitdir/sockets.target.wants/cert-server.socket
 %_libdir/libcert-svc-vcore.so.*
 %TZ_SYS_BIN/cert-server
-%attr(-, system, system) %TZ_SYS_SHARE/cert-svc
+%attr(-, system, system) %TZ_SYS_RO_SHARE/cert-svc
 
 %files devel
 %_includedir/*

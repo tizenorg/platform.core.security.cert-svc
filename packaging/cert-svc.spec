@@ -28,6 +28,13 @@ BuildRequires: ca-certificates-devel
 Requires: ca-certificates
 Requires: ca-certificates-tizen
 
+%global TZ_SYS_BIN      %{?TZ_SYS_BIN:%TZ_SYS_BIN}%{!?TZ_SYS_BIN:/usr/bin}
+%global TZ_SYS_RO_SHARE %{?TZ_SYS_RO_SHARE:%TZ_SYS_RO_SHARE}%{!?TZ_SYS_RO_SHARE:/usr/share}
+%global TZ_SYS_RO_APP   %{?TZ_SYS_RO_APP:%TZ_SYS_RO_APP}%!?TZ_SYS_RO_APP:/usr/apps}
+%global TZ_SYS_CA_CERTS %{?TZ_SYS_CA_CERTS:%TZ_SYS_CA_CERTS}%{!?TZ_SYS_CA_CERTS:/etc/ssl/certs}
+%global TZ_SYS_CA_CERTS_ORIG %{?TZ_SYS_CA_CERTS_ORIG:%TZ_SYS_CA_CERTS_ORIG}%{!?TZ_SYS_CA_CERTS_ORGIN:%TZ_SYS_RO_SHARE/ca-certificates/certs}
+%global TZ_SYS_CA_BUNDLE_RW  %{?TZ_SYS_CA_BUNDLE_RW:%TZ_SYS_CA_BUNDLE_RW}%{!?TZ_SYS_CA_BUNDLE_RW:/var/lib/ca-certificates/ca-bundle.pem}
+
 %description
 Certification service
 
@@ -72,7 +79,7 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 %{!?build_type:%define build_type "Release"}
 %cmake . -DVERSION=%version \
         -DINCLUDEDIR=%_includedir \
-        -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
+        -DTZ_SYS_RO_SHARE=%TZ_SYS_RO_SHARE \
         -DTZ_SYS_BIN=%TZ_SYS_BIN \
         -DTZ_SYS_CA_CERTS=%TZ_SYS_CA_CERTS \
         -DTZ_SYS_CA_CERTS_ORIG=%TZ_SYS_CA_CERTS_ORIG \
@@ -91,9 +98,9 @@ make %{?_smp_mflags}
 %install_service multi-user.target.wants cert-server.service
 %install_service sockets.target.wants cert-server.socket
 
-mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/pkcs12
-mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/dbspace
-ln -s %TZ_SYS_CA_BUNDLE_RW %buildroot%TZ_SYS_SHARE/cert-svc/ca-certificate.crt
+mkdir -p %buildroot%TZ_SYS_RO_SHARE/cert-svc/pkcs12
+mkdir -p %buildroot%TZ_SYS_RO_SHARE/cert-svc/dbspace
+ln -s %TZ_SYS_CA_BUNDLE_RW %buildroot%TZ_SYS_RO_SHARE/cert-svc/ca-certificate.crt
 
 %preun
 # erase
@@ -124,7 +131,7 @@ fi
 %_unitdir/sockets.target.wants/cert-server.socket
 %_libdir/libcert-svc-vcore.so.*
 %TZ_SYS_BIN/cert-server
-%attr(-, system, system) %TZ_SYS_SHARE/cert-svc
+%attr(-, system, system) %TZ_SYS_RO_SHARE/cert-svc
 
 %files devel
 %_includedir/*

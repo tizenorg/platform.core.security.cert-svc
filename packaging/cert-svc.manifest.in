@@ -1,0 +1,10 @@
+<manifest>
+	<request>
+		<domain name="_" />
+	</request>
+	<assign>
+		<filesystem path="/usr/share/cert-svc" label="System" type="transmutable" />
+		<filesystem path="/usr/share/cert-svc/ca-certificate.crt" label="_" />
+		<filesystem path="/usr/share/cert-svc/schema.xsd" label="_" />
+	</assign>
+</manifest>

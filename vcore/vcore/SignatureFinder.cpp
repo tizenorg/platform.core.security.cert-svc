@@ -70,18 +70,22 @@ std::string SignatureFinder::Impl::getFullPath(const std::string &file)
 
 SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
 {
-    DIR *dp;
-    struct dirent *dirp;
+    int ret;
+    DIR *dirp;
+    struct dirent entry;
+    struct dirent *result;
 
-    if ((dp = opendir(m_dir.c_str())) == NULL) {
+    if ((dirp = opendir(m_dir.c_str())) == NULL) {
         LogError("Error opening directory: " << m_dir);
         return ERROR_OPENING_DIR;
     }
 
-    for (errno = 0; (dirp = readdir(dp)) != NULL; errno = 0) {
+    for (ret = readdir_r(dirp, &entry, &result);
+            ret == 0 && result != NULL;
+            ret = readdir_r(dirp, &entry, &result)) {
         /* number for author signature is -1 */
-        if (!strcmp(dirp->d_name, SIGNATURE_AUTHOR)) {
-            std::string fullPath = getFullPath(std::string(dirp->d_name));
+        if (!strcmp(result->d_name, SIGNATURE_AUTHOR)) {
+            std::string fullPath = getFullPath(std::string(result->d_name));
             LogDebug("Found author signature file full path : " << fullPath);
             set.insert(SignatureFileInfo(fullPath, -1));
             continue;
@@ -90,29 +94,29 @@ SignatureFinder::Result SignatureFinder::Impl::find(SignatureFileInfoSet &set)
         std::string sig;
         std::string num;
         std::string xml; /* just for cutting out .xml */
-        if (m_signatureRegexp.FullMatch(dirp->d_name, &sig, &num, &xml)) {
+        if (m_signatureRegexp.FullMatch(result->d_name, &sig, &num, &xml)) {
             std::istringstream stream(num);
             int number;
             stream >> number;
 
             if (stream.fail()) {
-                closedir(dp);
+                closedir(dirp);
                 return ERROR_ISTREAM;
             }
 
-            std::string fullPath = getFullPath(std::string(dirp->d_name));
+            std::string fullPath = getFullPath(std::string(result->d_name));
             LogDebug("Found signature file full path : " << fullPath);
             set.insert(SignatureFileInfo(fullPath, number));
         }
     }
 
-    if (errno != 0) {
+    if (ret != 0) {
         LogError("Error in readdir");
-        closedir(dp);
+        closedir(dirp);
         return ERROR_READING_DIR;
     }
 
-    closedir(dp);
+    closedir(dirp);
     return NO_ERROR;
 }
 

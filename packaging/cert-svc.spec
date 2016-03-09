@@ -4,7 +4,7 @@ Name:    cert-svc
 Summary: Certification service
 Version: 2.0.5
 Release: 0
-Group:   Security/Libraries
+Group:   Security/Certificate Management
 License: Apache-2.0
 Source0: %{name}-%{version}.tar.gz
 BuildRequires: cmake

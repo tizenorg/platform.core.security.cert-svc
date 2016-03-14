@@ -2,7 +2,7 @@ SET(ETC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 INSTALL(FILES
     ${ETC_DIR}/schema.xsd
-    DESTINATION ${CERT_SVC_PATH}
+    DESTINATION ${CERT_SVC_RO_PATH}
     )
 
 MESSAGE("Add ssl table to certs-meta.db")
@@ -34,5 +34,5 @@ ENDIF (ERROR_CODE)
 INSTALL(FILES
     ${ETC_DIR}/certs-meta.db
     ${ETC_DIR}/certs-meta.db-journal
-    DESTINATION ${CERT_SVC_DB_PATH}
+    DESTINATION ${CERT_SVC_DB}
     )

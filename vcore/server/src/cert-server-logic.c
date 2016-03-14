@@ -203,8 +203,8 @@ int write_to_ca_cert_crt_file(const char *mode, const char *cert)
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	if (!(fp = fopen(TZ_SYS_CA_BUNDLE_RW, mode))) {
-		SLOGE("Failed to open the file for writing, [%s].", TZ_SYS_CA_BUNDLE_RW);
+	if (!(fp = fopen(TZ_SYS_CA_BUNDLE, mode))) {
+		SLOGE("Failed to open the file for writing, [%s].", TZ_SYS_CA_BUNDLE);
 		return CERTSVC_FAIL;
 	}
 
@@ -516,7 +516,7 @@ int enable_disable_cert_status(
 		stmt = NULL;
 
 		if (records == SQLITE_ROW) {
-			SLOGE("Selected certificate identifier is already disabled.", gname);
+			SLOGE("Selected certificate identifier is already disabled. [%s]", gname);
 			return CERTSVC_FAIL;
 		}
 

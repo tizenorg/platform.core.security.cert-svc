@@ -98,7 +98,7 @@ make %{?_smp_mflags}
 %install_service multi-user.target.wants cert-server.service
 %install_service sockets.target.wants cert-server.socket
 
-mkdir -p %buildroot%TZ_SYS_RO_SHARE/cert-svc/pkcs12
+mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/pkcs12
 mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/dbspace
 ln -s %TZ_SYS_CA_BUNDLE_RW %buildroot%TZ_SYS_RO_SHARE/cert-svc/ca-certificate.crt
 
@@ -132,6 +132,7 @@ fi
 %_libdir/libcert-svc-vcore.so.*
 %TZ_SYS_BIN/cert-server
 %attr(-, system, system) %TZ_SYS_RO_SHARE/cert-svc
+%dir %attr(-, system, system) %TZ_SYS_SHARE/cert-svc
 %attr(-, system, system) %TZ_SYS_SHARE/cert-svc/dbspace/*
 
 %files devel

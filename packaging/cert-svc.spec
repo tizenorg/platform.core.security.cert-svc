@@ -133,7 +133,8 @@ fi
 %TZ_SYS_BIN/cert-server
 %attr(-, system, system) %TZ_SYS_RO_SHARE/cert-svc
 %dir %attr(-, system, system) %TZ_SYS_SHARE/cert-svc
-%attr(-, system, system) %TZ_SYS_SHARE/cert-svc/dbspace/*
+%attr(-, system, system) %TZ_SYS_SHARE/cert-svc/pkcs12
+%attr(-, system, system) %TZ_SYS_SHARE/cert-svc/dbspace
 
 %files devel
 %_includedir/*

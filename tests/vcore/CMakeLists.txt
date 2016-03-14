@@ -68,5 +68,5 @@ INSTALL(
         resource/attacked-tpk-with-userdata
 
     DESTINATION
-        ${TZ_SYS_RO_APP}/cert-svc-tests/apps
+        ${CERT_SVC_TESTS}/apps
     )

@@ -671,12 +671,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1017_load_cert_list_from_store)
 
 RUNNER_TEST(CERTSVC_PKCS12_1018_get_duplicate_private_key)
 {
-// FIXME : Delete macro when tizen 3.0 directory structure is fully updated
-#ifdef TZ_SYS_RO_SHARE
-	const char *privatekey_path = tzplatform_mkpath(TZ_SYS_RO_SHARE, "cert-svc/pkcs12/temp.txt");
-#else
 	const char *privatekey_path = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12/temp.txt");
-#endif
 
 	int result;
 
@@ -990,12 +985,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store)
 
 		char user_cert_path[512];
 
-// FIXME : Delete macro when tizen 3.0 directory structure is fully updated
-#ifdef TZ_SYS_RO_SHARE
-		const char *output_template = tzplatform_mkpath(TZ_SYS_RO_SHARE, "cert-svc/pkcs12/file_%d");
-#else
 		const char *output_template = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12/file_%d");
-#endif
 
 		snprintf(user_cert_path, sizeof(user_cert_path), output_template, count++);
 		FILE *fp = fopen(user_cert_path, "w");

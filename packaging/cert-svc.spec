@@ -27,13 +27,22 @@ BuildRequires: ca-certificates-devel
 Requires: ca-certificates
 Requires: ca-certificates-tizen
 
-%global TZ_SYS_BIN      %{?TZ_SYS_BIN:%TZ_SYS_BIN}%{!?TZ_SYS_BIN:%_bindir}
-%global TZ_SYS_SHARE    %{?TZ_SYS_SHARE:%TZ_SYS_SHARE}%{!?TZ_SYS_SHARE:/opt/share}
-%global TZ_SYS_RO_SHARE %{?TZ_SYS_RO_SHARE:%TZ_SYS_RO_SHARE}%{!?TZ_SYS_RO_SHARE:%_datadir}
-%global TZ_SYS_RO_APP   %{?TZ_SYS_RO_APP:%TZ_SYS_RO_APP}%!?TZ_SYS_RO_APP:/usr/apps}
-%global TZ_SYS_CA_CERTS %{?TZ_SYS_CA_CERTS:%TZ_SYS_CA_CERTS}%{!?TZ_SYS_CA_CERTS:/etc/ssl/certs}
-%global TZ_SYS_CA_CERTS_ORIG %{?TZ_SYS_CA_CERTS_ORIG:%TZ_SYS_CA_CERTS_ORIG}%{!?TZ_SYS_CA_CERTS_ORGIN:%TZ_SYS_RO_SHARE/ca-certificates/certs}
-%global TZ_SYS_CA_BUNDLE_RW  %{?TZ_SYS_CA_BUNDLE_RW:%TZ_SYS_CA_BUNDLE_RW}%{!?TZ_SYS_CA_BUNDLE_RW:/var/lib/ca-certificates/ca-bundle.pem}
+%global TZ_SYS_BIN              %{?TZ_SYS_BIN:%TZ_SYS_BIN}%{!?TZ_SYS_BIN:%_bindir}
+%global TZ_SYS_ETC              %{?TZ_SYS_ETC:%TZ_SYS_ETC}%{!?TZ_SYS_ETC:/opt/etc}
+%global TZ_SYS_SHARE            %{?TZ_SYS_SHARE:%TZ_SYS_SHARE}%{!?TZ_SYS_SHARE:/opt/share}
+%global TZ_SYS_RO_SHARE         %{?TZ_SYS_RO_SHARE:%TZ_SYS_RO_SHARE}%{!?TZ_SYS_RO_SHARE:%_datadir}
+%global TZ_SYS_RW_APP           %{?TZ_SYS_RW_APP:%TZ_SYS_RW_APP}%!?TZ_SYS_RW_APP:/opt/usr/apps}
+
+%global TZ_SYS_CA_CERTS         %{?TZ_SYS_CA_CERTS:%TZ_SYS_CA_CERTS}%{!?TZ_SYS_CA_CERTS:%TZ_SYS_ETC/ssl/certs}
+%global TZ_SYS_RO_CA_CERTS_ORIG %{?TZ_SYS_RO_CA_CERTS_ORIG:%TZ_SYS_RO_CA_CERTS_ORIG}%{!?TZ_SYS_CA_RO_CERTS_ORGIN:%TZ_SYS_RO_SHARE/ca-certificates/certs}
+%global TZ_SYS_CA_BUNDLE        %{?TZ_SYS_CA_BUNDLE:%TZ_SYS_CA_BUNDLE}%{!?TZ_SYS_CA_BUNDLE:/var/lib/ca-certificates/ca-bundle.pem}
+
+%global CERT_SVC_PATH           %TZ_SYS_SHARE/cert-svc
+%global CERT_SVC_RO_PATH        %TZ_SYS_RO_SHARE/cert-svc
+%global CERT_SVC_DB             %CERT_SVC_PATH/dbspace
+%global CERT_SVC_PKCS12         %CERT_SVC_PATH/pkcs12
+%global CERT_SVC_CA_BUNDLE      %CERT_SVC_PATH/ca-certificate.crt
+%global CERT_SVC_TESTS          %TZ_SYS_RW_APP/cert-svc-tests
 
 %description
 Certification service
@@ -83,10 +92,14 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
         -DTZ_SYS_BIN=%TZ_SYS_BIN \
         -DTZ_SYS_CA_CERTS=%TZ_SYS_CA_CERTS \
         -DTZ_SYS_CA_CERTS_ORIG=%TZ_SYS_CA_CERTS_ORIG \
-        -DTZ_SYS_CA_BUNDLE_RW=%TZ_SYS_CA_BUNDLE_RW \
+        -DTZ_SYS_CA_BUNDLE=%TZ_SYS_CA_BUNDLE \
+        -DCERT_SVC_PATH=%CERT_SVC_PATH \
+        -DCERT_SVC_RO_PATH=%CERT_SVC_RO_PATH \
+        -DCERT_SVC_DB=%CERT_SVC_DB \
+        -DCERT_SVC_PKCS12=%CERT_SVC_PKCS12 \
 %if 0%{?certsvc_test_build}
         -DCERTSVC_TEST_BUILD=1 \
-        -DTZ_SYS_RO_APP=%TZ_SYS_RO_APP \
+        -DCERT_SVC_TESTS=%CERT_SVC_TESTS \
 %endif
         -DCMAKE_BUILD_TYPE=%build_type \
         -DSYSTEMD_UNIT_DIR=%_unitdir
@@ -98,9 +111,9 @@ make %{?_smp_mflags}
 %install_service multi-user.target.wants cert-server.service
 %install_service sockets.target.wants cert-server.socket
 
-mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/pkcs12
-mkdir -p %buildroot%TZ_SYS_SHARE/cert-svc/dbspace
-ln -s %TZ_SYS_CA_BUNDLE_RW %buildroot%TZ_SYS_RO_SHARE/cert-svc/ca-certificate.crt
+mkdir -p %buildroot%CERT_SVC_PKCS12
+mkdir -p %buildroot%CERT_SVC_DB
+ln -sf %TZ_SYS_CA_BUNDLE %buildroot%CERT_SVC_CA_BUNDLE
 
 %preun
 # erase
@@ -131,10 +144,8 @@ fi
 %_unitdir/sockets.target.wants/cert-server.socket
 %_libdir/libcert-svc-vcore.so.*
 %TZ_SYS_BIN/cert-server
-%attr(-, system, system) %TZ_SYS_RO_SHARE/cert-svc
-%dir %attr(-, system, system) %TZ_SYS_SHARE/cert-svc
-%attr(-, system, system) %TZ_SYS_SHARE/cert-svc/pkcs12
-%attr(-, system, system) %TZ_SYS_SHARE/cert-svc/dbspace
+%attr(-, system, system) %CERT_SVC_PATH
+%attr(-, system, system) %CERT_SVC_RO_PATH
 
 %files devel
 %_includedir/*
@@ -144,6 +155,6 @@ fi
 %if 0%{?certsvc_test_build}
 %files test
 %TZ_SYS_BIN/cert-svc-test*
-%TZ_SYS_RO_APP/cert-svc-tests
+%CERT_SVC_TESTS
 %_libdir/libcert-svc-validator-plugin.so
 %endif

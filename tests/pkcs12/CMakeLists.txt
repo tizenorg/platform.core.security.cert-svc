@@ -63,5 +63,5 @@ INSTALL(
         wifi-server.pem
         wifiserver.pfx
         wifiuser.p12
-    DESTINATION ${TZ_SYS_RO_APP}/cert-svc-tests/p12
+    DESTINATION ${CERT_SVC_TESTS}/p12
 )

@@ -40,78 +40,77 @@ namespace Log {
  * To switch logs into old style, export
  * DPL_USE_OLD_STYLE_LOGS before application start
  */
-class LogSystem : private Noncopyable
-{
+class LogSystem : private Noncopyable {
 public:
-    LogSystem();
-    virtual ~LogSystem();
+	LogSystem();
+	virtual ~LogSystem();
 
-    AbstractLogProvider::LogLevel GetLogLevel() const { return m_level; }
+	AbstractLogProvider::LogLevel GetLogLevel() const {
+		return m_level;
+	}
 
-    void Log(AbstractLogProvider::LogLevel level,
-             const char *message,
-             const char *filename,
-             int line,
-             const char *function) const;
+	void Log(AbstractLogProvider::LogLevel level,
+			 const char *message,
+			 const char *filename,
+			 int line,
+			 const char *function) const;
 
 
-    /**
-     * Set default's DLOG provider Tag
-     */
-    void SetTag(const char *tag);
+	/**
+	 * Set default's DLOG provider Tag
+	 */
+	void SetTag(const char *tag);
 
-    /**
-     * Add abstract provider to providers list
-     *
-     * @notice Ownership is transfered to LogSystem and deleted upon exit
-     */
-    void AddProvider(AbstractLogProvider *provider);
+	/**
+	 * Add abstract provider to providers list
+	 *
+	 * @notice Ownership is transfered to LogSystem and deleted upon exit
+	 */
+	void AddProvider(AbstractLogProvider *provider);
 
-    /**
-     * Remove abstract provider from providers list
-     */
-    void RemoveProvider(AbstractLogProvider *provider);
+	/**
+	 * Remove abstract provider from providers list
+	 */
+	void RemoveProvider(AbstractLogProvider *provider);
 
-    /**
-     * Selects given provider by name (overwrites environment setting)
-     *
-     * Throws std::out_of_range exception if not found.
-     */
-    void SelectProvider(const std::string& name);
+	/**
+	 * Selects given provider by name (overwrites environment setting)
+	 *
+	 * Throws std::out_of_range exception if not found.
+	 */
+	void SelectProvider(const std::string &name);
 
-    /**
-     * Sets log level (overwrites environment settings)
-     */
-    void SetLogLevel(const char* level);
+	/**
+	 * Sets log level (overwrites environment settings)
+	 */
+	void SetLogLevel(const char *level);
 
 private:
-    void RemoveProviders();
+	void RemoveProviders();
 
-    typedef std::list<AbstractLogProvider *> AbstractLogProviderPtrList;
-    AbstractLogProviderPtrList m_providers;
-    AbstractLogProvider::LogLevel m_level;
+	typedef std::list<AbstractLogProvider *> AbstractLogProviderPtrList;
+	AbstractLogProviderPtrList m_providers;
+	AbstractLogProvider::LogLevel m_level;
 
-    typedef AbstractLogProvider *(*ProviderFn)();
-    /*
-     * It cannot be global as it is used in library constructor and we can't be sure which
-     * constructor is called first: library's or new_provider's.
-     */
-    std::unordered_map<std::string, ProviderFn> m_providerCtor;
+	typedef AbstractLogProvider *(*ProviderFn)();
+	/*
+	 * It cannot be global as it is used in library constructor and we can't be sure which
+	 * constructor is called first: library's or new_provider's.
+	 */
+	std::unordered_map<std::string, ProviderFn> m_providerCtor;
 };
 
 /*
  * Replacement low overhead null logging class
  */
-class NullStream
-{
-  public:
-    NullStream() {}
+class NullStream {
+public:
+	NullStream() {}
 
-    template <typename T>
-    NullStream& operator<<(const T&)
-    {
-        return *this;
-    }
+	template <typename T>
+	NullStream &operator<<(const T &) {
+		return *this;
+	}
 };
 
 /**
@@ -147,11 +146,11 @@ do                                                                              
 
 
 #ifdef TIZEN_ENGINEER_MODE
-    #define LogDebug(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
-    #define LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
+#define LogDebug(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
+#define LogPedantic(message) DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
 #else
-    #define LogDebug(message)    DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
-    #define LogPedantic(message) DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
+#define LogDebug(message)    DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Debug)
+#define LogPedantic(message) DPL_MACRO_DUMMY_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Pedantic)
 #endif // TIZEN_ENGINEER_MODE
 
 #define LogInfo(message)    DPL_MACRO_FOR_LOGGING(message, VcoreDPL::Log::AbstractLogProvider::LogLevel::Info)

@@ -35,35 +35,30 @@ class CertificateIdentifier : public VcoreDPL::Noncopyable {
 public:
 	typedef std::map<Certificate::Fingerprint, CertStoreId::Set> FingerPrintMap;
 
-    CertificateIdentifier()
-    {
-    }
-    ~CertificateIdentifier()
-    {
-    }
+	CertificateIdentifier() {
+	}
+	~CertificateIdentifier() {
+	}
 
-    void add(const Certificate::Fingerprint &fingerprint,
-            CertStoreId::Type domain)
-    {
-        fingerPrintMap[fingerprint].add(domain);
-    }
+	void add(const Certificate::Fingerprint &fingerprint,
+			 CertStoreId::Type domain) {
+		fingerPrintMap[fingerprint].add(domain);
+	}
 
-    CertStoreId::Set find(const Certificate::Fingerprint &fingerprint) const
-    {
-        FingerPrintMap::const_iterator iter = fingerPrintMap.find(fingerprint);
-        if (iter == fingerPrintMap.end()) {
-            return CertStoreId::Set();
-        }
-        return iter->second;
-    }
+	CertStoreId::Set find(const Certificate::Fingerprint &fingerprint) const {
+		FingerPrintMap::const_iterator iter = fingerPrintMap.find(fingerprint);
+		if (iter == fingerPrintMap.end()) {
+			return CertStoreId::Set();
+		}
+		return iter->second;
+	}
 
-    CertStoreId::Set find(const CertificatePtr &certificate) const
-    {
-        return find(certificate->getFingerprint(Certificate::FINGERPRINT_SHA1));
-    }
+	CertStoreId::Set find(const CertificatePtr &certificate) const {
+		return find(certificate->getFingerprint(Certificate::FINGERPRINT_SHA1));
+	}
 
 private:
-    FingerPrintMap fingerPrintMap;
+	FingerPrintMap fingerPrintMap;
 };
 } // namespace ValidationCore
 

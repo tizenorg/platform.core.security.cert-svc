@@ -34,22 +34,22 @@
 
 namespace VcoreDPL {
 template<typename Class>
-Singleton<Class>& Singleton<Class>::InternalInstance()
+Singleton<Class> &Singleton<Class>::InternalInstance()
 {
-    static Singleton<Class> instance;
-    return instance;
+	static Singleton<Class> instance;
+	return instance;
 }
 
 template<typename Class>
 Class &Singleton<Class>::Instance()
 {
-    Singleton<Class>& instance = Singleton<Class>::InternalInstance();
-    return instance;
+	Singleton<Class> &instance = Singleton<Class>::InternalInstance();
+	return instance;
 }
 } // namespace VcoreDPL
 
 #define IMPLEMENT_SINGLETON(Type)                                                     \
     template VcoreDPL::Singleton<Type>&VcoreDPL::Singleton<Type>::InternalInstance(); \
     template Type & VcoreDPL::Singleton<Type>::Instance();                            \
-
+ 
 #endif // DPL_SINGLETON_IMPL_H

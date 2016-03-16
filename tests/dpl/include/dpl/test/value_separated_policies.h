@@ -28,18 +28,16 @@
 
 namespace VcoreDPL {
 
-struct CSVTokenizerPolicy
-{
-    static std::string GetSeperators();      //cells in line are separated by given characters
-    static bool SkipEmpty();                 //if cell is empty, shoudl I skip?
-    static void PrepareValue(std::string &); //transform each value
-    static bool TryAgainAtEnd(int);          //read is nonblocking so dat may not be yet available, should I retry?
+struct CSVTokenizerPolicy {
+	static std::string GetSeperators();      //cells in line are separated by given characters
+	static bool SkipEmpty();                 //if cell is empty, shoudl I skip?
+	static void PrepareValue(std::string &); //transform each value
+	static bool TryAgainAtEnd(int);          //read is nonblocking so dat may not be yet available, should I retry?
 };
 
-struct CSVParserPolicy
-{
-    static bool SkipLine(const std::vector<std::string> & );                                  //should I skip whole readline?
-    static bool Validate(std::shared_ptr<std::vector<std::vector<std::string> > > & result);  //validate and adjust output data
+struct CSVParserPolicy {
+	static bool SkipLine(const std::vector<std::string> &);                                   //should I skip whole readline?
+	static bool Validate(std::shared_ptr<std::vector<std::vector<std::string> > > &result);   //validate and adjust output data
 };
 
 }

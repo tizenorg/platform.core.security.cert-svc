@@ -41,9 +41,9 @@ static void UnitWrapper(const char *str, int type, int expected)
 	time_t t = 0;
 	int ret = ValidationCore::asn1TimeToTimeT(&asn1Time, &t);
 	RUNNER_ASSERT_MSG(ret == expected,
-		"ret: " << ret
-		<< " expected: " << expected
-		<< " time t: " << t);
+					  "ret: " << ret
+					  << " expected: " << expected
+					  << " time t: " << t);
 }
 
 RUNNER_TEST_GROUP_INIT(T0040_TIME_CONVERSION)

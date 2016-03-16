@@ -29,36 +29,32 @@
 #include <dpl/scoped_resource.h>
 
 namespace VcoreDPL {
-struct ScopedFClosePolicy
-{
-    typedef FILE* Type;
-    static Type NullValue()
-    {
-        return NULL;
-    }
-    static void Destroy(Type file)
-    {
-        if (file != NULL) {
-            // Try to flush first
-            if (TEMP_FAILURE_RETRY(fflush(file)) != 0)
-                return;
+struct ScopedFClosePolicy {
+	typedef FILE *Type;
+	static Type NullValue() {
+		return NULL;
+	}
+	static void Destroy(Type file) {
+		if (file != NULL) {
+			// Try to flush first
+			if (TEMP_FAILURE_RETRY(fflush(file)) != 0)
+				return;
 
-            // fclose cannot be retried, try to close once
-            if (fclose(file) != 0)
-                return;
-        }
-    }
+			// fclose cannot be retried, try to close once
+			if (fclose(file) != 0)
+				return;
+		}
+	}
 };
 
-class ScopedFClose : public ScopedResource<ScopedFClosePolicy>
-{
-    typedef ScopedFClosePolicy Policy;
-    typedef ScopedResource<Policy> BaseType;
+class ScopedFClose : public ScopedResource<ScopedFClosePolicy> {
+	typedef ScopedFClosePolicy Policy;
+	typedef ScopedResource<Policy> BaseType;
 
-  public:
-    explicit ScopedFClose(FILE* argFileStream = Policy::NullValue()) :
-        BaseType(argFileStream)
-    {}
+public:
+	explicit ScopedFClose(FILE *argFileStream = Policy::NullValue()) :
+		BaseType(argFileStream) {
+	}
 };
 } // namespace VcoreDPL
 

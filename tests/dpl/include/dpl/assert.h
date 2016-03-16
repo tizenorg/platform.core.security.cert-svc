@@ -27,9 +27,9 @@ namespace VcoreDPL {
 // Do not call directly
 // Always use Assert macro
 void AssertProc(const char *condition,
-                const char *file,
-                int line,
-                const char *function) __attribute__ ((__noreturn__));
+				const char *file,
+				int line,
+				const char *function) __attribute__((__noreturn__));
 } // namespace VcoreDPL
 
 #define Assert(Condition)                                               \

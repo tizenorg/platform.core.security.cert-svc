@@ -28,15 +28,15 @@ namespace VcoreDPL {
 template<typename TargetType, typename SourceType>
 TargetType lexical_cast(const SourceType &data)
 {
-    TargetType result;
+	TargetType result;
 
-    std::ostringstream out;
-    out << data;
+	std::ostringstream out;
+	out << data;
 
-    std::istringstream in(out.str());
-    in >> result;
+	std::istringstream in(out.str());
+	in >> result;
 
-    return result;
+	return result;
 }
 } // namespace VcoreDPL
 

@@ -24,23 +24,23 @@
 #include <iostream>
 
 namespace VcoreDPL {
-Exception* Exception::m_lastException = NULL;
+Exception *Exception::m_lastException = NULL;
 unsigned int Exception::m_exceptionCount = 0;
 void (*Exception::m_terminateHandler)() = NULL;
 
 void LogUnhandledException(const std::string &str)
 {
-    std::cerr << str << std::endl;
+	std::cerr << str << std::endl;
 }
 
 void LogUnhandledException(const std::string &str,
-                           const char *filename,
-                           int line,
-                           const char *function)
+						   const char *filename,
+						   int line,
+						   const char *function)
 {
-    std::cerr << "Exception occured on file[" << filename
-        << "] line[" << line
-        << "] function[" << function
-        << "] msg[" << str << "]" << std::endl;
+	std::cerr << "Exception occured on file[" << filename
+			  << "] line[" << line
+			  << "] function[" << function
+			  << "] msg[" << str << "]" << std::endl;
 }
 } // namespace VcoreDPL

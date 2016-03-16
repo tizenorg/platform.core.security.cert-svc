@@ -53,14 +53,14 @@ void initialize_res_data(VcoreResponseData *pData)
 
 void initialize_req_data(VcoreRequestData *pData)
 {
-	memset(pData->gname, 0, VCORE_MAX_FILENAME_SIZE+1);
-	memset(pData->common_name, 0, VCORE_MAX_FILENAME_SIZE+1);
-	memset(pData->private_key_gname, 0, VCORE_MAX_FILENAME_SIZE+1);
-	memset(pData->associated_gname, 0, VCORE_MAX_FILENAME_SIZE+1);
+	memset(pData->gname, 0, VCORE_MAX_FILENAME_SIZE + 1);
+	memset(pData->common_name, 0, VCORE_MAX_FILENAME_SIZE + 1);
+	memset(pData->private_key_gname, 0, VCORE_MAX_FILENAME_SIZE + 1);
+	memset(pData->associated_gname, 0, VCORE_MAX_FILENAME_SIZE + 1);
 	memset(pData->dataBlock, 0, VCORE_MAX_SEND_DATA_SIZE);
 	pData->certStatus = DISABLED;
 	pData->storeType = NONE_STORE;
-	pData->reqType = (VcoreRequestType)-1;
+	pData->reqType = (VcoreRequestType) - 1;
 	pData->dataBlockLen = 0;
 	pData->is_root_app = -1;
 	pData->certType = INVALID_DATA;
@@ -108,9 +108,9 @@ int _recv_fixed_lenghth(int sockfd, char *buff, int length)
 	int offset = 0;
 	int remaining = length;
 	int read_len = 0;
-	while(remaining > 0) {
+	while (remaining > 0) {
 		read_len = recv(sockfd, buff + offset, remaining, 0);
-		if(read_len <= 0)
+		if (read_len <= 0)
 			return offset;
 		remaining -= read_len;
 		offset += read_len;
@@ -118,7 +118,7 @@ int _recv_fixed_lenghth(int sockfd, char *buff, int length)
 	return offset;
 }
 
-VcoreRequestData* set_request_data(
+VcoreRequestData *set_request_data(
 	VcoreRequestType reqType,
 	CertStoreType storeType,
 	int is_root_app,
@@ -131,7 +131,7 @@ VcoreRequestData* set_request_data(
 	CertType certType,
 	CertStatus certStatus)
 {
-	VcoreRequestData* pReqData = (VcoreRequestData*)malloc(sizeof(VcoreRequestData));
+	VcoreRequestData *pReqData = (VcoreRequestData *)malloc(sizeof(VcoreRequestData));
 	if (!pReqData) {
 		LogError("Failed to malloc VcoreRequestData");
 		return NULL;
@@ -196,7 +196,8 @@ VcoreRequestData* set_request_data(
 	return pReqData;
 }
 
-VcoreResponseData cert_svc_client_comm(VcoreRequestData *pClientData) {
+VcoreResponseData cert_svc_client_comm(VcoreRequestData *pClientData)
+{
 	int sockfd = 0;
 	int clientLen = 0;
 	int tempSockLen = 0;
@@ -223,38 +224,38 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData *pClientData) {
 	timeout.tv_sec = 10;
 	timeout.tv_usec = 0;
 
-	if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
 		LogError("Error in Set SO_RCVTIMEO Socket Option");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
-	if (setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+	if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
 		LogError("Error in Set SO_SNDTIMEO Socket Option");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
-	if (connect(sockfd, (struct sockaddr*)&clientaddr, clientLen) < 0) {
+	if (connect(sockfd, (struct sockaddr *)&clientaddr, clientLen) < 0) {
 		LogError("Error in function connect()..");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
-	if (write(sockfd, (char*)pClientData, sizeof(VcoreRequestData)) < 0) {
+	if (write(sockfd, (char *)pClientData, sizeof(VcoreRequestData)) < 0) {
 		LogError("Error in function write()..");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
-	read_len = _recv_fixed_lenghth(sockfd, (char*)&recvData, sizeof(recvData));
+	read_len = _recv_fixed_lenghth(sockfd, (char *)&recvData, sizeof(recvData));
 	if (read_len < 0) {
 		LogError("Error in function read()..");
 		recvData.result = VCORE_SOCKET_ERROR;
 		goto Error_close_exit;
 	}
 
-	if(recvData.certCount > 0) {
+	if (recvData.certCount > 0) {
 		recvData.certList = (VcoreCertResponseData *) malloc(recvData.certCount * sizeof(VcoreCertResponseData));
 		if (!recvData.certList) {
 			LogError("Failed to allocate memory");
@@ -262,8 +263,8 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData *pClientData) {
 			goto Error_close_exit;
 		}
 		memset(recvData.certList, 0x00, recvData.certCount * sizeof(VcoreCertResponseData));
-		for(i=0; i<recvData.certCount; i++) {
-			read_len = _recv_fixed_lenghth(sockfd, (char*)(recvData.certList + i), sizeof(VcoreCertResponseData));
+		for (i = 0; i < recvData.certCount; i++) {
+			read_len = _recv_fixed_lenghth(sockfd, (char *)(recvData.certList + i), sizeof(VcoreCertResponseData));
 			if (read_len < 0) {
 				LogError("Error in function read()..");
 				recvData.result = VCORE_SOCKET_ERROR;
@@ -272,7 +273,7 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData *pClientData) {
 		}
 	}
 
-	if(recvData.certBlockCount > 0) {
+	if (recvData.certBlockCount > 0) {
 		recvData.certBlockList = (ResponseCertBlock *) malloc(recvData.certBlockCount * sizeof(ResponseCertBlock));
 		if (!recvData.certBlockList) {
 			LogError("Failed to allocate memory");
@@ -280,8 +281,8 @@ VcoreResponseData cert_svc_client_comm(VcoreRequestData *pClientData) {
 			goto Error_close_exit;
 		}
 		memset(recvData.certBlockList, 0x00, recvData.certBlockCount * sizeof(ResponseCertBlock));
-		for(i=0; i<recvData.certBlockCount; i++) {
-			read_len = _recv_fixed_lenghth(sockfd, (char*)(recvData.certBlockList + i), sizeof(ResponseCertBlock));
+		for (i = 0; i < recvData.certBlockCount; i++) {
+			read_len = _recv_fixed_lenghth(sockfd, (char *)(recvData.certBlockList + i), sizeof(ResponseCertBlock));
 			if (read_len < 0) {
 				LogError("Error in function read()..");
 				recvData.result = VCORE_SOCKET_ERROR;
@@ -319,7 +320,7 @@ int vcore_client_install_certificate_to_store(
 	size_t certSize,
 	CertType certType)
 {
-	VcoreRequestData* pSendData = NULL;
+	VcoreRequestData *pSendData = NULL;
 	VcoreResponseData recvData;
 	initialize_res_data(&recvData);
 
@@ -329,17 +330,17 @@ int vcore_client_install_certificate_to_store(
 	}
 
 	pSendData = set_request_data(
-			CERTSVC_INSTALL_CERTIFICATE,
-			storeType,
-			DISABLED,
-			gname,
-			common_name,
-			private_key_gname,
-			associated_gname,
-			certData,
-			certSize,
-			certType,
-			DISABLED);
+					CERTSVC_INSTALL_CERTIFICATE,
+					storeType,
+					DISABLED,
+					gname,
+					common_name,
+					private_key_gname,
+					associated_gname,
+					certData,
+					certSize,
+					certType,
+					DISABLED);
 	if (pSendData == NULL) {
 		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
@@ -350,9 +351,10 @@ int vcore_client_install_certificate_to_store(
 	return recvData.result;
 }
 
-int vcore_client_set_certificate_status_to_store(CertStoreType storeType, int is_root_app, const char* gname, CertStatus status) {
+int vcore_client_set_certificate_status_to_store(CertStoreType storeType, int is_root_app, const char *gname, CertStatus status)
+{
 
-	VcoreRequestData* pSendData = NULL;
+	VcoreRequestData *pSendData = NULL;
 	VcoreResponseData recvData;
 	initialize_res_data(&recvData);
 
@@ -373,9 +375,10 @@ int vcore_client_set_certificate_status_to_store(CertStoreType storeType, int is
 	return recvData.result;
 }
 
-int vcore_client_get_certificate_status_from_store(CertStoreType storeType, const char* gname, CertStatus *status) {
+int vcore_client_get_certificate_status_from_store(CertStoreType storeType, const char *gname, CertStatus *status)
+{
 
-	VcoreRequestData* pSendData = NULL;
+	VcoreRequestData *pSendData = NULL;
 	VcoreResponseData recvData;
 	initialize_res_data(&recvData);
 
@@ -396,9 +399,10 @@ int vcore_client_get_certificate_status_from_store(CertStoreType storeType, cons
 	return recvData.result;
 }
 
-int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char* alias, int *isUnique) {
+int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char *alias, int *isUnique)
+{
 
-	VcoreRequestData* pSendData = NULL;
+	VcoreRequestData *pSendData = NULL;
 	VcoreResponseData recvData;
 	initialize_res_data(&recvData);
 
@@ -407,7 +411,7 @@ int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char*
 		return CERTSVC_WRONG_ARGUMENT;
 	}
 
-	pSendData = set_request_data(CERTSVC_CHECK_ALIAS_EXISTS, storeType, DISABLED,alias, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
+	pSendData = set_request_data(CERTSVC_CHECK_ALIAS_EXISTS, storeType, DISABLED, alias, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED);
 	if (pSendData == NULL) {
 		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
@@ -419,10 +423,11 @@ int vcore_client_check_alias_exist_in_store(CertStoreType storeType, const char*
 	return recvData.result;
 }
 
-int vcore_client_get_certificate_from_store(CertStoreType storeType, const char* gname, char** certData, size_t* certSize, CertType certType) {
+int vcore_client_get_certificate_from_store(CertStoreType storeType, const char *gname, char **certData, size_t *certSize, CertType certType)
+{
 
-	char* outData = NULL;
-	VcoreRequestData* pSendData = NULL;
+	char *outData = NULL;
+	VcoreRequestData *pSendData = NULL;
 	VcoreResponseData recvData;
 
 	if (!gname || !certData || !certSize) {
@@ -451,13 +456,12 @@ int vcore_client_get_certificate_from_store(CertStoreType storeType, const char*
 	free(pSendData);
 
 	if (recvData.dataBlockLen > 0 && recvData.dataBlockLen <= VCORE_MAX_RECV_DATA_SIZE) {
-		outData = (char*)malloc(recvData.dataBlockLen + 1);
-		memset(outData, 0x00, recvData.dataBlockLen +1);
+		outData = (char *)malloc(recvData.dataBlockLen + 1);
+		memset(outData, 0x00, recvData.dataBlockLen + 1);
 		memcpy(outData, recvData.dataBlock, recvData.dataBlockLen);
 		*certData = outData;
 		*certSize = recvData.dataBlockLen;
-	}
-	else {
+	} else {
 		LogError("revcData length is wrong : " << recvData.dataBlockLen);
 		return CERTSVC_WRONG_ARGUMENT;
 	}
@@ -465,9 +469,10 @@ int vcore_client_get_certificate_from_store(CertStoreType storeType, const char*
 	return recvData.result;
 }
 
-int vcore_client_delete_certificate_from_store(CertStoreType storeType, const char* gname) {
+int vcore_client_delete_certificate_from_store(CertStoreType storeType, const char *gname)
+{
 
-	VcoreRequestData* pSendData = NULL;
+	VcoreRequestData *pSendData = NULL;
 	VcoreResponseData recvData;
 	initialize_res_data(&recvData);
 
@@ -488,11 +493,11 @@ int vcore_client_delete_certificate_from_store(CertStoreType storeType, const ch
 }
 
 int _vcore_client_get_certificate_list_from_store(VcoreRequestType reqType, CertStoreType storeType, int is_root_app,
-									   CertSvcStoreCertList **certList, size_t *length)
+		CertSvcStoreCertList **certList, size_t *length)
 {
-	std::unique_ptr<VcoreRequestData, void(*)(void *)> pSendData(set_request_data(
-			reqType, storeType, is_root_app,
-			NULL, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED), free);
+	std::unique_ptr<VcoreRequestData, void( *)(void *)> pSendData(set_request_data(
+				reqType, storeType, is_root_app,
+				NULL, NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED), free);
 	if (!pSendData) {
 		LogError("Failed to set request data");
 		return CERTSVC_WRONG_ARGUMENT;
@@ -531,30 +536,30 @@ int _vcore_client_get_certificate_list_from_store(VcoreRequestType reqType, Cert
 	return recvData.result;
 }
 
-int vcore_client_get_certificate_list_from_store(CertStoreType storeType, int is_root_app, 
-									   CertSvcStoreCertList** certList, size_t *length)
+int vcore_client_get_certificate_list_from_store(CertStoreType storeType, int is_root_app,
+		CertSvcStoreCertList **certList, size_t *length)
 {
 	return _vcore_client_get_certificate_list_from_store(CERTSVC_GET_CERTIFICATE_LIST, storeType, is_root_app,
-									   certList, length);
+			certList, length);
 }
 
-int vcore_client_get_root_certificate_list_from_store(CertStoreType storeType,  
-									   CertSvcStoreCertList **certList, size_t *length)
+int vcore_client_get_root_certificate_list_from_store(CertStoreType storeType,
+		CertSvcStoreCertList **certList, size_t *length)
 {
 	return _vcore_client_get_certificate_list_from_store(CERTSVC_GET_ROOT_CERTIFICATE_LIST, storeType, 0,
-									   certList, length);
+			certList, length);
 }
 
-int vcore_client_get_end_user_certificate_list_from_store(CertStoreType storeType,  
-									   CertSvcStoreCertList **certList, size_t *length)
+int vcore_client_get_end_user_certificate_list_from_store(CertStoreType storeType,
+		CertSvcStoreCertList **certList, size_t *length)
 {
 	return _vcore_client_get_certificate_list_from_store(CERTSVC_GET_USER_CERTIFICATE_LIST, storeType, 0,
-									   certList, length);
+			certList, length);
 }
 
 int vcore_client_get_certificate_alias_from_store(CertStoreType storeType, const char *gname, char **alias)
 {
-	VcoreRequestData* pSendData = NULL;
+	VcoreRequestData *pSendData = NULL;
 	VcoreResponseData recvData;
 	initialize_res_data(&recvData);
 
@@ -579,16 +584,16 @@ int vcore_client_get_certificate_alias_from_store(CertStoreType storeType, const
 int vcore_client_load_certificates_from_store(CertStoreType storeType, const char *gname, char ***certs, size_t *ncerts)
 {
 	VcoreResponseData recvData;
-	ResponseCertBlock* cert = NULL;
+	ResponseCertBlock *cert = NULL;
 	size_t i = 0;
 	size_t ncerts_out = 0;
 	char **certs_out = NULL;
 
 	initialize_res_data(&recvData);
 
-	std::unique_ptr<VcoreRequestData, void(*)(void *)> pSendData(set_request_data(
-			CERTSVC_LOAD_CERTIFICATES, storeType, DISABLED, gname,
-			NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED), free);
+	std::unique_ptr<VcoreRequestData, void( *)(void *)> pSendData(set_request_data(
+				CERTSVC_LOAD_CERTIFICATES, storeType, DISABLED, gname,
+				NULL, NULL, NULL, NULL, 0, INVALID_DATA, DISABLED), free);
 
 	if (!pSendData) {
 		LogError("Failed to set request data");

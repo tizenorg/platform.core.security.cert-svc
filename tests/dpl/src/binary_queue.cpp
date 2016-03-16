@@ -30,239 +30,239 @@
 
 namespace VcoreDPL {
 BinaryQueue::BinaryQueue() :
-    m_size(0)
+	m_size(0)
 {}
 
 BinaryQueue::BinaryQueue(const BinaryQueue &other) :
-    m_size(0)
+	m_size(0)
 {
-    AppendCopyFrom(other);
+	AppendCopyFrom(other);
 }
 
 BinaryQueue::~BinaryQueue()
 {
-    // Remove all remainig buckets
-    Clear();
+	// Remove all remainig buckets
+	Clear();
 }
 
 BinaryQueue &BinaryQueue::operator=(const BinaryQueue &other)
 {
-    if (this != &other) {
-        Clear();
-        AppendCopyFrom(other);
-    }
+	if (this != &other) {
+		Clear();
+		AppendCopyFrom(other);
+	}
 
-    return *this;
+	return *this;
 }
 
 void BinaryQueue::AppendCopyFrom(const BinaryQueue &other)
 {
-    // To speed things up, always copy as one bucket
-    void *bufferCopy = malloc(other.m_size);
+	// To speed things up, always copy as one bucket
+	void *bufferCopy = malloc(other.m_size);
 
-    if (bufferCopy == NULL) {
-        throw std::bad_alloc();
-    }
+	if (bufferCopy == NULL) {
+		throw std::bad_alloc();
+	}
 
-    try {
-        other.Flatten(bufferCopy, other.m_size);
-        AppendUnmanaged(bufferCopy, other.m_size, &BufferDeleterFree, NULL);
-    } catch (const std::bad_alloc &) {
-        // Free allocated memory
-        free(bufferCopy);
-        throw;
-    }
+	try {
+		other.Flatten(bufferCopy, other.m_size);
+		AppendUnmanaged(bufferCopy, other.m_size, &BufferDeleterFree, NULL);
+	} catch (const std::bad_alloc &) {
+		// Free allocated memory
+		free(bufferCopy);
+		throw;
+	}
 }
 
 void BinaryQueue::AppendMoveFrom(BinaryQueue &other)
 {
-    // Copy all buckets
-    std::copy(other.m_buckets.begin(),
-              other.m_buckets.end(), std::back_inserter(m_buckets));
-    m_size += other.m_size;
+	// Copy all buckets
+	std::copy(other.m_buckets.begin(),
+			  other.m_buckets.end(), std::back_inserter(m_buckets));
+	m_size += other.m_size;
 
-    // Clear other, but do not free memory
-    other.m_buckets.clear();
-    other.m_size = 0;
+	// Clear other, but do not free memory
+	other.m_buckets.clear();
+	other.m_size = 0;
 }
 
 void BinaryQueue::AppendCopyTo(BinaryQueue &other) const
 {
-    other.AppendCopyFrom(*this);
+	other.AppendCopyFrom(*this);
 }
 
 void BinaryQueue::AppendMoveTo(BinaryQueue &other)
 {
-    other.AppendMoveFrom(*this);
+	other.AppendMoveFrom(*this);
 }
 
 void BinaryQueue::Clear()
 {
-    std::for_each(m_buckets.begin(), m_buckets.end(), &DeleteBucket);
-    m_buckets.clear();
-    m_size = 0;
+	std::for_each(m_buckets.begin(), m_buckets.end(), &DeleteBucket);
+	m_buckets.clear();
+	m_size = 0;
 }
 
-void BinaryQueue::AppendCopy(const void* buffer, size_t bufferSize)
+void BinaryQueue::AppendCopy(const void *buffer, size_t bufferSize)
 {
-    // Create data copy with malloc/free
-    void *bufferCopy = malloc(bufferSize);
+	// Create data copy with malloc/free
+	void *bufferCopy = malloc(bufferSize);
 
-    // Check if allocation succeded
-    if (bufferCopy == NULL) {
-        throw std::bad_alloc();
-    }
+	// Check if allocation succeded
+	if (bufferCopy == NULL) {
+		throw std::bad_alloc();
+	}
 
-    // Copy user data
-    memcpy(bufferCopy, buffer, bufferSize);
+	// Copy user data
+	memcpy(bufferCopy, buffer, bufferSize);
 
-    try {
-        // Try to append new bucket
-        AppendUnmanaged(bufferCopy, bufferSize, &BufferDeleterFree, NULL);
-    } catch (const std::bad_alloc &) {
-        // Free allocated memory
-        free(bufferCopy);
-        throw;
-    }
+	try {
+		// Try to append new bucket
+		AppendUnmanaged(bufferCopy, bufferSize, &BufferDeleterFree, NULL);
+	} catch (const std::bad_alloc &) {
+		// Free allocated memory
+		free(bufferCopy);
+		throw;
+	}
 }
 
-void BinaryQueue::AppendUnmanaged(const void* buffer,
-                                  size_t bufferSize,
-                                  BufferDeleter deleter,
-                                  void* userParam)
+void BinaryQueue::AppendUnmanaged(const void *buffer,
+								  size_t bufferSize,
+								  BufferDeleter deleter,
+								  void *userParam)
 {
-    // Do not attach empty buckets
-    if (bufferSize == 0) {
-        deleter(buffer, bufferSize, userParam);
-        return;
-    }
+	// Do not attach empty buckets
+	if (bufferSize == 0) {
+		deleter(buffer, bufferSize, userParam);
+		return;
+	}
 
-    // Just add new bucket with selected deleter
-    m_buckets.push_back(new Bucket(buffer, bufferSize, deleter, userParam));
+	// Just add new bucket with selected deleter
+	m_buckets.push_back(new Bucket(buffer, bufferSize, deleter, userParam));
 
-    // Increase total queue size
-    m_size += bufferSize;
+	// Increase total queue size
+	m_size += bufferSize;
 }
 
 size_t BinaryQueue::Size() const
 {
-    return m_size;
+	return m_size;
 }
 
 bool BinaryQueue::Empty() const
 {
-    return m_size == 0;
+	return m_size == 0;
 }
 
 void BinaryQueue::Consume(size_t size)
 {
-    // Check parameters
-    if (size > m_size) {
-        Throw(Exception::OutOfData);
-    }
+	// Check parameters
+	if (size > m_size) {
+		Throw(Exception::OutOfData);
+	}
 
-    size_t bytesLeft = size;
+	size_t bytesLeft = size;
 
-    // Consume data and/or remove buckets
-    while (bytesLeft > 0) {
-        // Get consume size
-        size_t count = std::min(bytesLeft, m_buckets.front()->left);
+	// Consume data and/or remove buckets
+	while (bytesLeft > 0) {
+		// Get consume size
+		size_t count = std::min(bytesLeft, m_buckets.front()->left);
 
-        m_buckets.front()->ptr =
-            static_cast<const char *>(m_buckets.front()->ptr) + count;
-        m_buckets.front()->left -= count;
-        bytesLeft -= count;
-        m_size -= count;
+		m_buckets.front()->ptr =
+			static_cast<const char *>(m_buckets.front()->ptr) + count;
+		m_buckets.front()->left -= count;
+		bytesLeft -= count;
+		m_size -= count;
 
-        if (m_buckets.front()->left == 0) {
-            DeleteBucket(m_buckets.front());
-            m_buckets.pop_front();
-        }
-    }
+		if (m_buckets.front()->left == 0) {
+			DeleteBucket(m_buckets.front());
+			m_buckets.pop_front();
+		}
+	}
 }
 
 void BinaryQueue::Flatten(void *buffer, size_t bufferSize) const
 {
-    // Check parameters
-    if (bufferSize == 0) {
-        return;
-    }
+	// Check parameters
+	if (bufferSize == 0) {
+		return;
+	}
 
-    if (bufferSize > m_size) {
-        Throw(Exception::OutOfData);
-    }
+	if (bufferSize > m_size) {
+		Throw(Exception::OutOfData);
+	}
 
-    size_t bytesLeft = bufferSize;
-    void *ptr = buffer;
-    BucketList::const_iterator bucketIterator = m_buckets.begin();
-    Assert(m_buckets.end() != bucketIterator);
+	size_t bytesLeft = bufferSize;
+	void *ptr = buffer;
+	BucketList::const_iterator bucketIterator = m_buckets.begin();
+	Assert(m_buckets.end() != bucketIterator);
 
-    // Flatten data
-    while (bytesLeft > 0) {
-        // Get consume size
-        size_t count = std::min(bytesLeft, (*bucketIterator)->left);
+	// Flatten data
+	while (bytesLeft > 0) {
+		// Get consume size
+		size_t count = std::min(bytesLeft, (*bucketIterator)->left);
 
-        // Copy data to user pointer
-        memcpy(ptr, (*bucketIterator)->ptr, count);
+		// Copy data to user pointer
+		memcpy(ptr, (*bucketIterator)->ptr, count);
 
-        // Update flattened bytes count
-        bytesLeft -= count;
-        ptr = static_cast<char *>(ptr) + count;
+		// Update flattened bytes count
+		bytesLeft -= count;
+		ptr = static_cast<char *>(ptr) + count;
 
-        // Take next bucket
-        ++bucketIterator;
-    }
+		// Take next bucket
+		++bucketIterator;
+	}
 }
 
 void BinaryQueue::FlattenConsume(void *buffer, size_t bufferSize)
 {
-    // FIXME: Optimize
-    Flatten(buffer, bufferSize);
-    Consume(bufferSize);
+	// FIXME: Optimize
+	Flatten(buffer, bufferSize);
+	Consume(bufferSize);
 }
 
 void BinaryQueue::DeleteBucket(BinaryQueue::Bucket *bucket)
 {
-    delete bucket;
+	delete bucket;
 }
 
-void BinaryQueue::BufferDeleterFree(const void* data,
-                                    size_t dataSize,
-                                    void* userParam)
+void BinaryQueue::BufferDeleterFree(const void *data,
+									size_t dataSize,
+									void *userParam)
 {
-    (void)dataSize;
-    (void)userParam;
+	(void)dataSize;
+	(void)userParam;
 
-    // Default free deleter
-    free(const_cast<void *>(data));
+	// Default free deleter
+	free(const_cast<void *>(data));
 }
 
-BinaryQueue::Bucket::Bucket(const void* data,
-                            size_t dataSize,
-                            BufferDeleter dataDeleter,
-                            void* userParam) :
-    buffer(data),
-    ptr(data),
-    size(dataSize),
-    left(dataSize),
-    deleter(dataDeleter),
-    param(userParam)
+BinaryQueue::Bucket::Bucket(const void *data,
+							size_t dataSize,
+							BufferDeleter dataDeleter,
+							void *userParam) :
+	buffer(data),
+	ptr(data),
+	size(dataSize),
+	left(dataSize),
+	deleter(dataDeleter),
+	param(userParam)
 {
-    Assert(data != NULL);
-    Assert(deleter != NULL);
+	Assert(data != NULL);
+	Assert(deleter != NULL);
 }
 
 BinaryQueue::Bucket::~Bucket()
 {
-    // Invoke deleter on bucket data
-    deleter(buffer, size, param);
+	// Invoke deleter on bucket data
+	deleter(buffer, size, param);
 }
 
 BinaryQueue::BucketVisitor::~BucketVisitor()
 {}
 
 BinaryQueue::BucketVisitorCall::BucketVisitorCall(BucketVisitor *visitor) :
-    m_visitor(visitor)
+	m_visitor(visitor)
 {}
 
 BinaryQueue::BucketVisitorCall::~BucketVisitorCall()
@@ -270,43 +270,43 @@ BinaryQueue::BucketVisitorCall::~BucketVisitorCall()
 
 void BinaryQueue::BucketVisitorCall::operator()(Bucket *bucket) const
 {
-    m_visitor->OnVisitBucket(bucket->ptr, bucket->left);
+	m_visitor->OnVisitBucket(bucket->ptr, bucket->left);
 }
 
 void BinaryQueue::VisitBuckets(BucketVisitor *visitor) const
 {
-    Assert(visitor != NULL);
+	Assert(visitor != NULL);
 
-    // Visit all buckets
-    std::for_each(m_buckets.begin(), m_buckets.end(), BucketVisitorCall(visitor));
+	// Visit all buckets
+	std::for_each(m_buckets.begin(), m_buckets.end(), BucketVisitorCall(visitor));
 }
 
 BinaryQueueAutoPtr BinaryQueue::Read(size_t size)
 {
-    // Simulate input stream
-    size_t available = std::min(size, m_size);
+	// Simulate input stream
+	size_t available = std::min(size, m_size);
 
-    ScopedFree<void> bufferCopy(malloc(available));
+	ScopedFree<void> bufferCopy(malloc(available));
 
-    if (!bufferCopy) {
-        throw std::bad_alloc();
-    }
+	if (!bufferCopy) {
+		throw std::bad_alloc();
+	}
 
-    BinaryQueueAutoPtr result(new BinaryQueue());
+	BinaryQueueAutoPtr result(new BinaryQueue());
 
-    Flatten(bufferCopy.Get(), available);
-    result->AppendUnmanaged(
-        bufferCopy.Get(), available, &BufferDeleterFree, NULL);
-    bufferCopy.Release();
-    Consume(available);
+	Flatten(bufferCopy.Get(), available);
+	result->AppendUnmanaged(
+		bufferCopy.Get(), available, &BufferDeleterFree, NULL);
+	bufferCopy.Release();
+	Consume(available);
 
-    return result;
+	return result;
 }
 
 size_t BinaryQueue::Write(const BinaryQueue &buffer, size_t bufferSize)
 {
-    // Simulate output stream
-    AppendCopyFrom(buffer);
-    return bufferSize;
+	// Simulate output stream
+	AppendCopyFrom(buffer);
+	return bufferSize;
 }
 } // namespace VcoreDPL

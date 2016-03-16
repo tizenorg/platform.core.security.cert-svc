@@ -27,53 +27,46 @@
 namespace VcoreDPL {
 template<typename ClassPolicy>
 class ScopedResource :
-    private Noncopyable
-{
-  public:
-    typedef typename ClassPolicy::Type ValueType;
-    typedef ScopedResource<ClassPolicy> ThisType;
+	private Noncopyable {
+public:
+	typedef typename ClassPolicy::Type ValueType;
+	typedef ScopedResource<ClassPolicy> ThisType;
 
-  protected:
-    ValueType m_value;
+protected:
+	ValueType m_value;
 
-  public:
-    explicit ScopedResource(ValueType value) : m_value(value) { }
+public:
+	explicit ScopedResource(ValueType value) : m_value(value) { }
 
-    ~ScopedResource()
-    {
-        ClassPolicy::Destroy(m_value);
-    }
+	~ScopedResource() {
+		ClassPolicy::Destroy(m_value);
+	}
 
-    ValueType Get() const
-    {
-        return m_value;
-    }
+	ValueType Get() const {
+		return m_value;
+	}
 
-    void Reset(ValueType value = ClassPolicy::NullValue())
-    {
-        ClassPolicy::Destroy(m_value);
-        m_value = value;
-    }
+	void Reset(ValueType value = ClassPolicy::NullValue()) {
+		ClassPolicy::Destroy(m_value);
+		m_value = value;
+	}
 
-    ValueType Release()
-    {
-        ValueType value = m_value;
-        m_value = ClassPolicy::NullValue();
-        return value;
-    }
-    typedef ValueType ThisType::*UnknownBoolType;
+	ValueType Release() {
+		ValueType value = m_value;
+		m_value = ClassPolicy::NullValue();
+		return value;
+	}
+	typedef ValueType ThisType::*UnknownBoolType;
 
-    operator UnknownBoolType() const
-    {
-        return m_value == ClassPolicy::NullValue() ?
-               0 : //0 is valid here because it converts to false
-               &ThisType::m_value; //it converts to true
-    }
+	operator UnknownBoolType() const {
+		return m_value == ClassPolicy::NullValue() ?
+			   0 : //0 is valid here because it converts to false
+			   &ThisType::m_value; //it converts to true
+	}
 
-    bool operator !() const
-    {
-        return m_value == ClassPolicy::NullValue();
-    }
+	bool operator !() const {
+		return m_value == ClassPolicy::NullValue();
+	}
 };
 } // namespace VcoreDPL
 

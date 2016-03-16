@@ -41,58 +41,59 @@ extern "C" {
 #define VCORE_PKEY_TEMP_PATH        "/tmp/tmpData"
 
 typedef enum {
-    CERTSVC_EXTRACT_CERT,
-    CERTSVC_EXTRACT_SYSTEM_CERT,
-    CERTSVC_DELETE_CERT,
-    CERTSVC_INSTALL_CERTIFICATE,
-    CERTSVC_GET_CERTIFICATE_STATUS,
-    CERTSVC_SET_CERTIFICATE_STATUS,
-    CERTSVC_CHECK_ALIAS_EXISTS,
-    CERTSVC_GET_CERTIFICATE_LIST,
-    CERTSVC_GET_CERTIFICATE_ALIAS,
-    CERTSVC_GET_USER_CERTIFICATE_LIST,
-    CERTSVC_GET_ROOT_CERTIFICATE_LIST,
-    CERTSVC_LOAD_CERTIFICATES,
-} VcoreRequestType;
+	CERTSVC_EXTRACT_CERT,
+	CERTSVC_EXTRACT_SYSTEM_CERT,
+	CERTSVC_DELETE_CERT,
+	CERTSVC_INSTALL_CERTIFICATE,
+	CERTSVC_GET_CERTIFICATE_STATUS,
+	CERTSVC_SET_CERTIFICATE_STATUS,
+	CERTSVC_CHECK_ALIAS_EXISTS,
+	CERTSVC_GET_CERTIFICATE_LIST,
+	CERTSVC_GET_CERTIFICATE_ALIAS,
+	CERTSVC_GET_USER_CERTIFICATE_LIST,
+	CERTSVC_GET_ROOT_CERTIFICATE_LIST,
+	CERTSVC_LOAD_CERTIFICATES,
+}
+VcoreRequestType;
 
 typedef struct {
-    VcoreRequestType reqType;
-    CertStoreType    storeType;
-    char             gname[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for gname */
-    char             common_name[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for common_name */
-    char             private_key_gname[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for private_key_gname */
-    char             associated_gname[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for associated_gname */
-    char             dataBlock[VCORE_MAX_SEND_DATA_SIZE];    /* for cert & key buffer */
-    size_t           dataBlockLen;
-    CertStatus       certStatus;
-    int              is_root_app;
-    CertType         certType;
+	VcoreRequestType reqType;
+	CertStoreType    storeType;
+	char             gname[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for gname */
+	char             common_name[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for common_name */
+	char             private_key_gname[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for private_key_gname */
+	char             associated_gname[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /* for associated_gname */
+	char             dataBlock[VCORE_MAX_SEND_DATA_SIZE];    /* for cert & key buffer */
+	size_t           dataBlockLen;
+	CertStatus       certStatus;
+	int              is_root_app;
+	CertType         certType;
 } VcoreRequestData;
 
 typedef struct {
-    char             gname[VCORE_MAX_FILENAME_SIZE * 2 + 1];
-    char             title[VCORE_MAX_FILENAME_SIZE * 2 + 1];
-    CertStatus       status;
-    CertStoreType    storeType;
+	char             gname[VCORE_MAX_FILENAME_SIZE * 2 + 1];
+	char             title[VCORE_MAX_FILENAME_SIZE * 2 + 1];
+	CertStatus       status;
+	CertStoreType    storeType;
 } VcoreCertResponseData;
 
 
 typedef struct {
-    char             dataBlock[VCORE_MAX_RECV_DATA_SIZE];
-    size_t           dataBlockLen;
+	char             dataBlock[VCORE_MAX_RECV_DATA_SIZE];
+	size_t           dataBlockLen;
 } ResponseCertBlock;
 
 typedef struct {
-    char                   dataBlock[VCORE_MAX_RECV_DATA_SIZE];
-    size_t                 dataBlockLen;
-    CertStatus             certStatus;
-    char                   common_name[VCORE_MAX_FILENAME_SIZE* 2 + 1]; /*for common_name*/
-    int                    result;
-    int                    isAliasUnique;
-    size_t                 certCount;
-    VcoreCertResponseData* certList;
-    size_t                 certBlockCount;
-    ResponseCertBlock*     certBlockList; // array
+	char                   dataBlock[VCORE_MAX_RECV_DATA_SIZE];
+	size_t                 dataBlockLen;
+	CertStatus             certStatus;
+	char                   common_name[VCORE_MAX_FILENAME_SIZE * 2 + 1]; /*for common_name*/
+	int                    result;
+	int                    isAliasUnique;
+	size_t                 certCount;
+	VcoreCertResponseData *certList;
+	size_t                 certBlockCount;
+	ResponseCertBlock     *certBlockList; // array
 } VcoreResponseData;
 
 

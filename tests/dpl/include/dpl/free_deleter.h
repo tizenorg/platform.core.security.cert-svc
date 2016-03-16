@@ -23,11 +23,11 @@
 #define FREE_DELETER_H
 
 #include <cstdlib>
-namespace VcoreDPL
-{
-struct free_deleter
-{
-    void operator()(void *p) { std::free(p); }
+namespace VcoreDPL {
+struct free_deleter {
+	void operator()(void *p) {
+		std::free(p);
+	}
 };
 }// DPL
 #endif // FREE_DELETER_H

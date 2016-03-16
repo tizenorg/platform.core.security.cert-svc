@@ -34,8 +34,8 @@
 #define PLUGIN_API __attribute__((visibility("default")))
 
 extern "C" {
-ValidationCore::ValidatorPlugin *create(void);
-void destroy(ValidationCore::ValidatorPlugin *obj);
+	ValidationCore::ValidatorPlugin *create(void);
+	void destroy(ValidationCore::ValidatorPlugin *obj);
 }
 
 namespace ValidationCore {

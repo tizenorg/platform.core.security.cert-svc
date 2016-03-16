@@ -42,106 +42,85 @@ namespace VcoreDPL {
  * };
  */
 template<class TokenizerPolicy>
-class VSTokenizer : public AbstractInputTokenizer<VSToken>
-{
+class VSTokenizer : public AbstractInputTokenizer<VSToken> {
 public:
-    VSTokenizer() {}
+	VSTokenizer() {}
 
-    void Reset(std::shared_ptr<AbstractInput> ia)
-    {
-        AbstractInputTokenizer<VSToken>::Reset(ia);
-        m_queue.Clear();
-        m_finished = false;
-        m_newline = false;
-    }
+	void Reset(std::shared_ptr<AbstractInput> ia) {
+		AbstractInputTokenizer<VSToken>::Reset(ia);
+		m_queue.Clear();
+		m_finished = false;
+		m_newline = false;
+	}
 
-    std::unique_ptr<VSToken> GetNextToken()
-    {
-        std::unique_ptr<VSToken> token;
-        std::string data;
-        char byte;
-        int tryNumber = 0;
+	std::unique_ptr<VSToken> GetNextToken() {
+		std::unique_ptr<VSToken> token;
+		std::string data;
+		char byte;
+		int tryNumber = 0;
 
-        while(true)
-        {
-            //check if newline was approched
-            if(m_newline)
-            {
-                token.reset(new VSToken());
-                m_newline = false;
-                return token;
-            }
+		while (true) {
+			//check if newline was approched
+			if (m_newline) {
+				token.reset(new VSToken());
+				m_newline = false;
+				return token;
+			}
 
-            //read next data
-            if(m_queue.Empty())
-            {
-                if(m_finished)
-                {
-                    return token;
-                }
-                else
-                {
-                    auto baptr = m_input->Read(4096);
-                    if(baptr.get() == 0)
-                    {
-                        ThrowMsg(Exception::TokenizerError, "Input read failed");
-                    }
-                    if(baptr->Empty())
-                    {
-                        if(TokenizerPolicy::TryAgainAtEnd(tryNumber))
-                        {
-                            ++tryNumber;
-                            continue;
-                        }
-                        m_finished = true;
-                        return token;
-                    }
-                    m_queue.AppendMoveFrom(*baptr);
-                }
-            }
+			//read next data
+			if (m_queue.Empty()) {
+				if (m_finished) {
+					return token;
+				} else {
+					auto baptr = m_input->Read(4096);
+					if (baptr.get() == 0) {
+						ThrowMsg(Exception::TokenizerError, "Input read failed");
+					}
+					if (baptr->Empty()) {
+						if (TokenizerPolicy::TryAgainAtEnd(tryNumber)) {
+							++tryNumber;
+							continue;
+						}
+						m_finished = true;
+						return token;
+					}
+					m_queue.AppendMoveFrom(*baptr);
+				}
+			}
 
-            //process
-            m_queue.FlattenConsume(&byte, 1); //queue uses pointer to consume bytes, this do not causes reallocations
-            if(byte == '\n')
-            {
-                m_newline = true;
-                if(!data.empty() || !TokenizerPolicy::SkipEmpty())
-                {
-                    ProduceString(token, data);
-                    return token;
-                }
-            }
-            else if(TokenizerPolicy::GetSeperators().find(byte) != std::string::npos)
-            {
-                if(!data.empty() || !TokenizerPolicy::SkipEmpty())
-                {
-                    ProduceString(token, data);
-                    return token;
-                }
-            }
-            else
-            {
-                data += byte;
-            }
-        }
-    }
+			//process
+			m_queue.FlattenConsume(&byte, 1); //queue uses pointer to consume bytes, this do not causes reallocations
+			if (byte == '\n') {
+				m_newline = true;
+				if (!data.empty() || !TokenizerPolicy::SkipEmpty()) {
+					ProduceString(token, data);
+					return token;
+				}
+			} else if (TokenizerPolicy::GetSeperators().find(byte) != std::string::npos) {
+				if (!data.empty() || !TokenizerPolicy::SkipEmpty()) {
+					ProduceString(token, data);
+					return token;
+				}
+			} else {
+				data += byte;
+			}
+		}
+	}
 
-    bool IsStateValid()
-    {
-        if(!m_queue.Empty() && m_finished) return false;
-        return true;
-    }
+	bool IsStateValid() {
+		if (!m_queue.Empty() && m_finished) return false;
+		return true;
+	}
 
 protected:
-    void ProduceString(std::unique_ptr<VSToken> & token, std::string & data)
-    {
-        TokenizerPolicy::PrepareValue(data);
-        token.reset(new VSToken(data));
-    }
+	void ProduceString(std::unique_ptr<VSToken> &token, std::string &data) {
+		TokenizerPolicy::PrepareValue(data);
+		token.reset(new VSToken(data));
+	}
 
-    BinaryQueue m_queue;
-    bool m_finished;
-    bool m_newline;
+	BinaryQueue m_queue;
+	bool m_finished;
+	bool m_newline;
 };
 
 }

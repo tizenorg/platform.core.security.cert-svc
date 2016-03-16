@@ -36,58 +36,58 @@ typedef std::list<std::string> ObjectList;
 
 class SignatureData {
 public:
-    SignatureData();
-    SignatureData(const std::string &fileName, int fileNumber);
+	SignatureData();
+	SignatureData(const std::string &fileName, int fileNumber);
 
-    virtual ~SignatureData();
+	virtual ~SignatureData();
 
-    typedef std::list<std::string> IMEIList;
-    typedef std::list<std::string> MEIDList;
+	typedef std::list<std::string> IMEIList;
+	typedef std::list<std::string> MEIDList;
 
-    void setReference(const ReferenceSet &referenceSet);
-    void setSortedCertificateList(const CertificateList &list);
-    void setStorageType(const CertStoreId::Set &storeIdSet);
-    bool isCertListSorted() const;
+	void setReference(const ReferenceSet &referenceSet);
+	void setSortedCertificateList(const CertificateList &list);
+	void setStorageType(const CertStoreId::Set &storeIdSet);
+	bool isCertListSorted() const;
 
-    const ReferenceSet& getReferenceSet() const;
-    CertificateList getCertList() const;
-    ObjectList getObjectList() const;
-    bool containObjectReference(const std::string &ref) const;
-    bool isAuthorSignature() const;
-    int getSignatureNumber() const;
-    std::string getSignatureFileName() const;
-    std::string getRoleURI() const;
-    std::string getProfileURI() const;
-    const CertStoreId::Set& getStorageType() const;
-    CertStoreId::Type getVisibilityLevel() const;
-    const IMEIList& getIMEIList() const;
-    const MEIDList& getMEIDList() const;
-    CertificatePtr getEndEntityCertificatePtr() const;
-    CertificatePtr getRootCaCertificatePtr() const;
+	const ReferenceSet &getReferenceSet() const;
+	CertificateList getCertList() const;
+	ObjectList getObjectList() const;
+	bool containObjectReference(const std::string &ref) const;
+	bool isAuthorSignature() const;
+	int getSignatureNumber() const;
+	std::string getSignatureFileName() const;
+	std::string getRoleURI() const;
+	std::string getProfileURI() const;
+	const CertStoreId::Set &getStorageType() const;
+	CertStoreId::Type getVisibilityLevel() const;
+	const IMEIList &getIMEIList() const;
+	const MEIDList &getMEIDList() const;
+	CertificatePtr getEndEntityCertificatePtr() const;
+	CertificatePtr getRootCaCertificatePtr() const;
 
-    friend class SignatureReader;
+	friend class SignatureReader;
 
 private:
-    ReferenceSet m_referenceSet;
-    CertificateList m_certList;
+	ReferenceSet m_referenceSet;
+	CertificateList m_certList;
 
-    //TargetRestriction
-    IMEIList m_imeiList;
-    MEIDList m_meidList;
+	//TargetRestriction
+	IMEIList m_imeiList;
+	MEIDList m_meidList;
 
-    /*
-     * This number is taken from distributor signature file name.
-     * Author signature do not contain any number on the file name.
-     * Author signature should have signature number equal to -1.
-     */
-    int m_signatureNumber;
-    std::string m_fileName;
-    std::string m_roleURI;
-    std::string m_profileURI;
-    std::string m_identifier;
-    ObjectList m_objectList;
-    CertStoreId::Set m_storeIdSet;
-    bool m_certificateSorted;
+	/*
+	 * This number is taken from distributor signature file name.
+	 * Author signature do not contain any number on the file name.
+	 * Author signature should have signature number equal to -1.
+	 */
+	int m_signatureNumber;
+	std::string m_fileName;
+	std::string m_roleURI;
+	std::string m_profileURI;
+	std::string m_identifier;
+	ObjectList m_objectList;
+	CertStoreId::Set m_storeIdSet;
+	bool m_certificateSorted;
 };
 
 typedef std::set<SignatureData> SignatureDataSet;

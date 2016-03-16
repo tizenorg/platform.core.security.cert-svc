@@ -32,24 +32,24 @@
 namespace ValidationCore {
 class CertificateConfigReader {
 public:
-    class Exception {
-    public:
-        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, InvalidFile);
-    };
+	class Exception {
+	public:
+		VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, InvalidFile);
+	};
 
-    CertificateConfigReader();
+	CertificateConfigReader();
 
-    void initialize(const std::string &file, const std::string &scheme);
-    void read(CertificateIdentifier &identificator);
+	void initialize(const std::string &file, const std::string &scheme);
+	void read(CertificateIdentifier &identificator);
 
 private:
-    void blankFunction(CertificateIdentifier &);
-    void tokenCertificateDomain(CertificateIdentifier &identificator);
-    void tokenEndFingerprintSHA1(CertificateIdentifier &identificator);
+	void blankFunction(CertificateIdentifier &);
+	void tokenCertificateDomain(CertificateIdentifier &identificator);
+	void tokenEndFingerprintSHA1(CertificateIdentifier &identificator);
 
-    CertStoreId::Type m_certificateDomain;
-    ParserSchema<CertificateConfigReader, CertificateIdentifier> m_parserSchema;
+	CertStoreId::Type m_certificateDomain;
+	ParserSchema<CertificateConfigReader, CertificateIdentifier> m_parserSchema;
 };
 } // namespace ValidationCore
 

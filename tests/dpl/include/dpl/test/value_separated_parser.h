@@ -48,45 +48,36 @@ typedef std::shared_ptr<VSResult> VSResultPtr;
  * };
  */
 template<class ParserPolicy>
-class VSParser : public AbstractInputParser<VSResultPtr, VSToken>
-{
+class VSParser : public AbstractInputParser<VSResultPtr, VSToken> {
 public:
-    VSParser() : m_switchLine(true), m_result(new VSResult()) {}
+	VSParser() : m_switchLine(true), m_result(new VSResult()) {}
 
-    void ConsumeToken(std::unique_ptr<VSToken> && token)
-    {
-        if(m_switchLine)
-        {
-            m_result->push_back(VSLine());
-            m_switchLine = false;
-        }
-        if(token->isNewLine())
-        {
-            if(ParserPolicy::SkipLine(*m_result->rbegin()))
-            {
-                m_result->pop_back();
-            }
-            m_switchLine = true;
-        }
-        else
-        {
-            m_result->rbegin()->push_back(token->cell());
-        }
-    }
+	void ConsumeToken(std::unique_ptr<VSToken>  &&token) {
+		if (m_switchLine) {
+			m_result->push_back(VSLine());
+			m_switchLine = false;
+		}
+		if (token->isNewLine()) {
+			if (ParserPolicy::SkipLine(*m_result->rbegin())) {
+				m_result->pop_back();
+			}
+			m_switchLine = true;
+		} else {
+			m_result->rbegin()->push_back(token->cell());
+		}
+	}
 
-    bool IsStateValid()
-    {
-        return ParserPolicy::Validate(m_result);
-    }
+	bool IsStateValid() {
+		return ParserPolicy::Validate(m_result);
+	}
 
-    VSResultPtr GetResult() const
-    {
-        return m_result;
-    }
+	VSResultPtr GetResult() const {
+		return m_result;
+	}
 
 private:
-    bool m_switchLine;
-    VSResultPtr m_result;
+	bool m_switchLine;
+	VSResultPtr m_result;
 };
 
 }

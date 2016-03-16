@@ -71,7 +71,7 @@ inline CertTimeStatus _timeValidation(time_t lower, time_t upper, time_t current
 inline bool _isTimeStrict(const Set &stores)
 {
 	return (stores.contains(TIZEN_TEST) || stores.contains(TIZEN_VERIFY))
-		? true : false;
+		   ? true : false;
 }
 
 } // namespace anonymous
@@ -145,13 +145,13 @@ bool SignatureValidator::Impl::checkRoleURI(void)
 
 	if (roleURI != TOKEN_ROLE_AUTHOR_URI && m_data.isAuthorSignature()) {
 		LogWarning("URI attribute in Role tag does not "
-			"match with signature filename.");
+				   "match with signature filename.");
 		return false;
 	}
 
 	if (roleURI != TOKEN_ROLE_DIST_URI && !m_data.isAuthorSignature()) {
 		LogWarning("URI attribute in Role tag does not "
-			"match with signature filename.");
+				   "match with signature filename.");
 		return false;
 	}
 	return true;
@@ -162,7 +162,7 @@ bool SignatureValidator::Impl::checkProfileURI(void)
 {
 	if (TOKEN_PROFILE_URI != m_data.getProfileURI()) {
 		LogWarning("Profile tag contains unsupported value "
-			"in URI attribute " << m_data.getProfileURI());
+				   "in URI attribute " << m_data.getProfileURI());
 		return false;
 	}
 	return true;
@@ -170,7 +170,7 @@ bool SignatureValidator::Impl::checkProfileURI(void)
 
 bool SignatureValidator::Impl::checkObjectReferences(void)
 {
-	for (const auto &object : m_data.getObjectList()) {
+	for (const auto & object : m_data.getObjectList()) {
 		if (!m_data.containObjectReference(object)) {
 			LogWarning("Signature does not contain reference for object " << object);
 			return false;
@@ -310,7 +310,7 @@ VCerr SignatureValidator::Impl::preStep(void)
 	if (status != CertTimeStatus::VALID) {
 		if (_isTimeStrict(storeIdSet))
 			return status == CertTimeStatus::EXPIRED
-					? E_SIG_CERT_EXPIRED : E_SIG_CERT_NOT_YET;
+				   ? E_SIG_CERT_EXPIRED : E_SIG_CERT_NOT_YET;
 
 		time_t mid = _getMidTime(lower, upper);
 		LogInfo("Use middle notBeforeTime and notAfterTime."
@@ -503,20 +503,34 @@ VCerr SignatureValidator::Impl::makeChainBySignature(
 std::string SignatureValidator::Impl::errorToString(VCerr code)
 {
 	switch (code) {
-	case E_SIG_NONE:           return "Success.";
-	case E_SIG_INVALID_FORMAT: return "Invalid format of signature file.";
-	case E_SIG_INVALID_CERT:   return "Invalid format of certificate in signature.";
-	case E_SIG_INVALID_CHAIN:  return "Invalid certificate chain with certificate in signature.";
-	case E_SIG_INVALID_SIG:    return "Invalid signature. Signed with wrong key, changed signature file or changed package file.";
-	case E_SIG_INVALID_REF:    return "Invalid file reference. An unsinged file was found.";
-	case E_SIG_CERT_EXPIRED:   return "Certificate in signature was expired.";
-	case E_SIG_CERT_NOT_YET:   return "Certificate in signature is not valid yet.";
-	case E_SIG_DISREGARDED:    return "Signature validation can be disregarded in some cases.";
-	case E_SIG_REVOKED:        return "One of certificate was revoked in certificate chain.";
-	case E_SIG_PLUGIN:         return "Failed to load plugin for additional validation check.";
-	case E_SIG_OUT_OF_MEM:     return "Out of memory.";
-	case E_SIG_UNKNOWN:        return "Unknown error.";
-	default:                   return m_pluginHandler.errorToString(code);
+	case E_SIG_NONE:
+		return "Success.";
+	case E_SIG_INVALID_FORMAT:
+		return "Invalid format of signature file.";
+	case E_SIG_INVALID_CERT:
+		return "Invalid format of certificate in signature.";
+	case E_SIG_INVALID_CHAIN:
+		return "Invalid certificate chain with certificate in signature.";
+	case E_SIG_INVALID_SIG:
+		return "Invalid signature. Signed with wrong key, changed signature file or changed package file.";
+	case E_SIG_INVALID_REF:
+		return "Invalid file reference. An unsinged file was found.";
+	case E_SIG_CERT_EXPIRED:
+		return "Certificate in signature was expired.";
+	case E_SIG_CERT_NOT_YET:
+		return "Certificate in signature is not valid yet.";
+	case E_SIG_DISREGARDED:
+		return "Signature validation can be disregarded in some cases.";
+	case E_SIG_REVOKED:
+		return "One of certificate was revoked in certificate chain.";
+	case E_SIG_PLUGIN:
+		return "Failed to load plugin for additional validation check.";
+	case E_SIG_OUT_OF_MEM:
+		return "Out of memory.";
+	case E_SIG_UNKNOWN:
+		return "Unknown error.";
+	default:
+		return m_pluginHandler.errorToString(code);
 	}
 }
 
@@ -546,10 +560,10 @@ VCerr SignatureValidator::check(
 		return E_SIG_OUT_OF_MEM;
 
 	return m_pImpl->check(
-			contentPath,
-			checkOcsp,
-			checkReferences,
-			outData);
+			   contentPath,
+			   checkOcsp,
+			   checkReferences,
+			   outData);
 }
 
 VCerr SignatureValidator::checkList(
@@ -561,9 +575,9 @@ VCerr SignatureValidator::checkList(
 		return E_SIG_OUT_OF_MEM;
 
 	return m_pImpl->checkList(
-			checkOcsp,
-			uriList,
-			outData);
+			   checkOcsp,
+			   uriList,
+			   outData);
 }
 
 VCerr SignatureValidator::makeChainBySignature(

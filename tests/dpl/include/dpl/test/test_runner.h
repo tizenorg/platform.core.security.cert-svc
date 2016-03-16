@@ -37,145 +37,137 @@
 
 namespace VcoreDPL {
 namespace Test {
-class TestRunner
-{
-    typedef std::map<std::string, TestResultsCollectorBasePtr>
-    TestResultsCollectors;
-    TestResultsCollectors m_collectors;
+class TestRunner {
+	typedef std::map<std::string, TestResultsCollectorBasePtr>
+	TestResultsCollectors;
+	TestResultsCollectors m_collectors;
 
-    std::string m_startTestId;
-    bool m_runIgnored;
+	std::string m_startTestId;
+	bool m_runIgnored;
 
-  public:
-    TestRunner()
-        : m_runIgnored(false)
-        , m_allowChildLogs(false)
-        , m_terminate(false)
-        , m_totalAssertions(0)
-    {}
+public:
+	TestRunner()
+		: m_runIgnored(false)
+		, m_allowChildLogs(false)
+		, m_terminate(false)
+		, m_totalAssertions(0) {
+	}
 
-    typedef void (*TestCase)();
+	typedef void (*TestCase)();
 
-  private:
-    struct TestCaseStruct
-    {
-        std::string name;
-        TestCase proc;
+private:
+	struct TestCaseStruct {
+		std::string name;
+		TestCase proc;
 
-        bool operator <(const TestCaseStruct &other) const
-        {
-            return name < other.name;
-        }
+		bool operator <(const TestCaseStruct &other) const {
+			return name < other.name;
+		}
 
-        bool operator ==(const TestCaseStruct &other) const
-        {
-            return name == other.name;
-        }
+		bool operator ==(const TestCaseStruct &other) const {
+			return name == other.name;
+		}
 
-        TestCaseStruct(const std::string &n, TestCase p) :
-            name(n),
-            proc(p)
-        {}
-    };
+		TestCaseStruct(const std::string &n, TestCase p) :
+			name(n),
+			proc(p) {
+		}
+	};
 
-    typedef std::list<TestCaseStruct> TestCaseStructList;
-    typedef std::map<std::string, TestCaseStructList> TestCaseGroupMap;
-    TestCaseGroupMap m_testGroups;
+	typedef std::list<TestCaseStruct> TestCaseStructList;
+	typedef std::map<std::string, TestCaseStructList> TestCaseGroupMap;
+	TestCaseGroupMap m_testGroups;
 
-    typedef std::set<std::string> SelectedTestNameSet;
-    SelectedTestNameSet m_selectedTestNamesSet;
-    typedef std::set<std::string> SelectedTestGroupSet;
-    SelectedTestGroupSet m_selectedTestGroupSet;
-    std::string m_currentGroup;
+	typedef std::set<std::string> SelectedTestNameSet;
+	SelectedTestNameSet m_selectedTestNamesSet;
+	typedef std::set<std::string> SelectedTestGroupSet;
+	SelectedTestGroupSet m_selectedTestGroupSet;
+	std::string m_currentGroup;
 
-    // Terminate without any logs.
-    // Some test requires to call fork function.
-    // Child process must not produce any logs and should die quietly.
-    bool m_allowChildLogs;
-    bool m_terminate;
+	// Terminate without any logs.
+	// Some test requires to call fork function.
+	// Child process must not produce any logs and should die quietly.
+	bool m_allowChildLogs;
+	bool m_terminate;
 
-    std::atomic<int> m_totalAssertions;
+	std::atomic<int> m_totalAssertions;
 
-    void Banner();
-    void InvalidArgs(const std::string& message = "Invalid arguments!");
-    void Usage();
+	void Banner();
+	void InvalidArgs(const std::string &message = "Invalid arguments!");
+	void Usage();
 
-    bool filterGroupsByXmls(const std::vector<std::string> & files);
-    bool filterByXML(std::map<std::string, bool> & casesMap);
-    void normalizeXMLTag(std::string& str, const std::string& testcase);
+	bool filterGroupsByXmls(const std::vector<std::string> &files);
+	bool filterByXML(std::map<std::string, bool> &casesMap);
+	void normalizeXMLTag(std::string &str, const std::string &testcase);
 
-    enum Status { FAILED, IGNORED, PASS };
+	enum Status { FAILED, IGNORED, PASS };
 
-    Status RunTestCase(const TestCaseStruct& testCase);
+	Status RunTestCase(const TestCaseStruct &testCase);
 
-    void RunTests();
+	void RunTests();
 
-    void CollectResult(const std::string& id,
-                       const std::string& description,
-                       const TestResultsCollectorBase::FailStatus::Type status
-                           = TestResultsCollectorBase::FailStatus::NONE,
-                       const std::string& reason = std::string());
+	void CollectResult(const std::string &id,
+					   const std::string &description,
+					   const TestResultsCollectorBase::FailStatus::Type status
+					   = TestResultsCollectorBase::FailStatus::NONE,
+					   const std::string &reason = std::string());
 
-  public:
-    class TestFailed
-    {
-      private:
-        std::string m_message;
+public:
+	class TestFailed {
+	private:
+		std::string m_message;
 
-      public:
-        TestFailed()
-        {}
+	public:
+		TestFailed() {
+		}
 
-        //! \brief Failed test message creator
-        //!
-        //! \param[in] aTest string for tested expression
-        //! \param[in] aFile source file name
-        //! \param[in] aLine source file line
-        //! \param[in] aMessage error message
-        TestFailed(const char* aTest,
-                   const char* aFile,
-                   int aLine,
-                   const std::string &aMessage);
+		//! \brief Failed test message creator
+		//!
+		//! \param[in] aTest string for tested expression
+		//! \param[in] aFile source file name
+		//! \param[in] aLine source file line
+		//! \param[in] aMessage error message
+		TestFailed(const char *aTest,
+				   const char *aFile,
+				   int aLine,
+				   const std::string &aMessage);
 
-        TestFailed(const std::string &message);
+		TestFailed(const std::string &message);
 
-        std::string GetMessage() const
-        {
-            return m_message;
-        }
-    };
+		std::string GetMessage() const {
+			return m_message;
+		}
+	};
 
-    class Ignored
-    {
-      private:
-        std::string m_message;
+	class Ignored {
+	private:
+		std::string m_message;
 
-      public:
-        Ignored()
-        {}
+	public:
+		Ignored() {
+		}
 
-        Ignored(const std::string &message) :
-            m_message(message)
-        {}
+		Ignored(const std::string &message) :
+			m_message(message) {
+		}
 
-        std::string GetMessage() const
-        {
-            return m_message;
-        }
-    };
+		std::string GetMessage() const {
+			return m_message;
+		}
+	};
 
-    void MarkAssertion();
+	void MarkAssertion();
 
-    void RegisterTest(const char *testName, TestCase proc);
-    void InitGroup(const char* name);
+	void RegisterTest(const char *testName, TestCase proc);
+	void InitGroup(const char *name);
 
-    int ExecTestRunner(int argc, char *argv[]);
-    typedef std::vector<std::string> ArgsList;
-    int ExecTestRunner(const ArgsList& args);
-    bool getRunIgnored() const;
-    // The runner will terminate as soon as possible (after current test).
-    void Terminate();
-    bool GetAllowChildLogs();
+	int ExecTestRunner(int argc, char *argv[]);
+	typedef std::vector<std::string> ArgsList;
+	int ExecTestRunner(const ArgsList &args);
+	bool getRunIgnored() const;
+	// The runner will terminate as soon as possible (after current test).
+	void Terminate();
+	bool GetAllowChildLogs();
 };
 
 typedef VcoreDPL::Singleton<TestRunner> TestRunnerSingleton;

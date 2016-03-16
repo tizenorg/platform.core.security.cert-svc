@@ -36,8 +36,7 @@ class ValidatorPlugin {
 public:
 	virtual ~ValidatorPlugin() {}
 	virtual VCerr step(VCerr result, SignatureData &data) = 0;
-	virtual std::string errorToString(VCerr)
-	{
+	virtual std::string errorToString(VCerr) {
 		return std::string("Plugin developer should implement if error code added");
 	}
 };

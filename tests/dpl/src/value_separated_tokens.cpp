@@ -23,7 +23,7 @@
 
 namespace VcoreDPL {
 
-VSToken::VSToken(const std::string & c) :  m_newline(false), m_cell(c)
+VSToken::VSToken(const std::string &c) :  m_newline(false), m_cell(c)
 {
 }
 
@@ -31,14 +31,14 @@ VSToken::VSToken() : m_newline(true)
 {
 }
 
-const std::string & VSToken::cell() const
+const std::string &VSToken::cell() const
 {
-    return m_cell;
+	return m_cell;
 }
 
 bool VSToken::isNewLine()
 {
-    return m_newline;
+	return m_newline;
 }
 
 }

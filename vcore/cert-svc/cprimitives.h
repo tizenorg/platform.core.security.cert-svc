@@ -44,7 +44,7 @@ extern "C" {
  *
  * @see certsvc_certificate_free_x509()
  */
-int certsvc_certificate_dup_x509(CertSvcCertificate certificate, X509** x509);
+int certsvc_certificate_dup_x509(CertSvcCertificate certificate, X509 **x509);
 
 /**
  * Free openssl x509 structure duplicated by certsvc_certificate_dup_x509().
@@ -84,9 +84,9 @@ int certsvc_certificate_dup_pubkey_der(CertSvcCertificate certificate, unsigned 
  * @see certsvc_pkcs12_free_evp_pkey()
  */
 int certsvc_pkcs12_dup_evp_pkey_from_store(CertSvcInstance instance,
-                                           CertStoreType storeType,
-                                           CertSvcString gname,
-                                           EVP_PKEY** pkey);
+		CertStoreType storeType,
+		CertSvcString gname,
+		EVP_PKEY **pkey);
 
 /**
  * Free openssl EVP_PKEY structure duplicated by certsvc_pkcs12_dup_ev_pkey()
@@ -97,7 +97,7 @@ int certsvc_pkcs12_dup_evp_pkey_from_store(CertSvcInstance instance,
  * @see certsvc_pkcs12_dup_evp_pkey()
  * @see certsvc_pkcs12_dup_evp_pkey_from_store()
  */
-void certsvc_pkcs12_free_evp_pkey(EVP_PKEY* pkey);
+void certsvc_pkcs12_free_evp_pkey(EVP_PKEY *pkey);
 
 #ifdef __cplusplus
 }

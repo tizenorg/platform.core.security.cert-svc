@@ -32,24 +32,22 @@ namespace VcoreDPL {
  * Abstract class of parser that produces some higher level abstraction
  * basing on incoming tokens
  */
-template<class Result, class Token> class AbstractInputParser
-{
+template<class Result, class Token> class AbstractInputParser {
 public:
-    class Exception
-    {
-    public:
-        DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, ParserError)
-    };
+	class Exception {
+	public:
+		DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
+		DECLARE_EXCEPTION_TYPE(Base, ParserError)
+	};
 
-    typedef Result ResultType;
-    typedef Token TokenType;
+	typedef Result ResultType;
+	typedef Token TokenType;
 
-    virtual ~AbstractInputParser() {}
+	virtual ~AbstractInputParser() {}
 
-    virtual void ConsumeToken(std::unique_ptr<Token> && token) = 0;
-    virtual bool IsStateValid() = 0;
-    virtual Result GetResult() const = 0;
+	virtual void ConsumeToken(std::unique_ptr<Token>  &&token) = 0;
+	virtual bool IsStateValid() = 0;
+	virtual Result GetResult() const = 0;
 };
 
 }

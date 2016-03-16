@@ -48,25 +48,26 @@ const int CHILD_TEST_FAIL    = 0;
 const int CHILD_TEST_PASS    = 1;
 const int CHILD_TEST_IGNORED = 2;
 
-int closeOutput() {
-    int devnull;
-    int retcode = -1;
-    if (-1 == (devnull = TEMP_FAILURE_RETRY(open("/dev/null", O_WRONLY))))
-        return -1;
+int closeOutput()
+{
+	int devnull;
+	int retcode = -1;
+	if (-1 == (devnull = TEMP_FAILURE_RETRY(open("/dev/null", O_WRONLY))))
+		return -1;
 
-    // replace stdout with /dev/null
-    if (-1 == TEMP_FAILURE_RETRY(dup2(devnull, STDOUT_FILENO)))
-        goto end;
+	// replace stdout with /dev/null
+	if (-1 == TEMP_FAILURE_RETRY(dup2(devnull, STDOUT_FILENO)))
+		goto end;
 
-    // replace stderr with /dev/null
-    if (-1 == TEMP_FAILURE_RETRY(dup2(devnull, STDERR_FILENO)))
-        goto end;
+	// replace stderr with /dev/null
+	if (-1 == TEMP_FAILURE_RETRY(dup2(devnull, STDERR_FILENO)))
+		goto end;
 
-    retcode = 0;
+	retcode = 0;
 
 end:
-    close(devnull);
-    return retcode;
+	close(devnull);
+	return retcode;
 }
 
 } // namespace anonymous
@@ -76,250 +77,249 @@ namespace Test {
 
 PipeWrapper::PipeWrapper()
 {
-    if (-1 == pipe(m_pipefd)) {
-        m_pipefd[0] = PIPE_CLOSED;
-        m_pipefd[1] = PIPE_CLOSED;
-    }
+	if (-1 == pipe(m_pipefd)) {
+		m_pipefd[0] = PIPE_CLOSED;
+		m_pipefd[1] = PIPE_CLOSED;
+	}
 }
 
 PipeWrapper::~PipeWrapper()
 {
-    closeHelp(0);
-    closeHelp(1);
+	closeHelp(0);
+	closeHelp(1);
 }
 
 bool PipeWrapper::isReady()
 {
-    return m_pipefd[0] != PIPE_CLOSED || m_pipefd[1] != PIPE_CLOSED;
+	return m_pipefd[0] != PIPE_CLOSED || m_pipefd[1] != PIPE_CLOSED;
 }
 
 void PipeWrapper::setUsage(Usage usage)
 {
-    if (usage == READONLY) {
-        closeHelp(1);
-    }
-    if (usage == WRITEONLY) {
-        closeHelp(0);
-    }
+	if (usage == READONLY) {
+		closeHelp(1);
+	}
+	if (usage == WRITEONLY) {
+		closeHelp(0);
+	}
 }
 
 PipeWrapper::Status PipeWrapper::send(int code, std::string &message)
 {
-    if (m_pipefd[1] == PIPE_CLOSED) {
-        return ERROR;
-    }
+	if (m_pipefd[1] == PIPE_CLOSED) {
+		return ERROR;
+	}
 
-    std::ostringstream output;
-    output << toBinaryString(code);
-    output << toBinaryString(static_cast<int>(message.size()));
-    output << message;
+	std::ostringstream output;
+	output << toBinaryString(code);
+	output << toBinaryString(static_cast<int>(message.size()));
+	output << message;
 
-    std::string binary = output.str();
-    int size = binary.size();
+	std::string binary = output.str();
+	int size = binary.size();
 
-    if ((writeHelp(&size,
-                   sizeof(int)) == ERROR) ||
-        (writeHelp(binary.c_str(), size) == ERROR))
-    {
-        return ERROR;
-    }
-    return SUCCESS;
+	if ((writeHelp(&size,
+				   sizeof(int)) == ERROR) ||
+			(writeHelp(binary.c_str(), size) == ERROR)) {
+		return ERROR;
+	}
+	return SUCCESS;
 }
 
 PipeWrapper::Status PipeWrapper::receive(int &code, std::string &data, time_t deadline)
 {
-    if (m_pipefd[0] == PIPE_CLOSED) {
-        return ERROR;
-    }
+	if (m_pipefd[0] == PIPE_CLOSED) {
+		return ERROR;
+	}
 
-    int size;
-    Status ret;
+	int size;
+	Status ret;
 
-    if ((ret = readHelp(&size, sizeof(int), deadline)) != SUCCESS) {
-        return ret;
-    }
+	if ((ret = readHelp(&size, sizeof(int), deadline)) != SUCCESS) {
+		return ret;
+	}
 
-    std::vector<char> buffer;
-    buffer.resize(size);
+	std::vector<char> buffer;
+	buffer.resize(size);
 
-    if ((ret = readHelp(&buffer[0], size, deadline)) != SUCCESS) {
-        return ret;
-    }
+	if ((ret = readHelp(&buffer[0], size, deadline)) != SUCCESS) {
+		return ret;
+	}
 
-    try {
-        VcoreDPL::BinaryQueue queue;
-        queue.AppendCopy(&buffer[0], size);
+	try {
+		VcoreDPL::BinaryQueue queue;
+		queue.AppendCopy(&buffer[0], size);
 
-        queue.FlattenConsume(&code, sizeof(int));
-        queue.FlattenConsume(&size, sizeof(int));
+		queue.FlattenConsume(&code, sizeof(int));
+		queue.FlattenConsume(&size, sizeof(int));
 
-        buffer.resize(size);
+		buffer.resize(size);
 
-        queue.FlattenConsume(&buffer[0], size);
-        data.assign(buffer.begin(), buffer.end());
-    } catch (VcoreDPL::BinaryQueue::Exception::Base &e) {
-        return ERROR;
-    }
-    return SUCCESS;
+		queue.FlattenConsume(&buffer[0], size);
+		data.assign(buffer.begin(), buffer.end());
+	} catch (VcoreDPL::BinaryQueue::Exception::Base &e) {
+		return ERROR;
+	}
+	return SUCCESS;
 }
 
 void PipeWrapper::closeAll()
 {
-    closeHelp(0);
-    closeHelp(1);
+	closeHelp(0);
+	closeHelp(1);
 }
 
 std::string PipeWrapper::toBinaryString(int data)
 {
-    char buffer[sizeof(int)];
-    memcpy(buffer, &data, sizeof(int));
-    return std::string(buffer, buffer + sizeof(int));
+	char buffer[sizeof(int)];
+	memcpy(buffer, &data, sizeof(int));
+	return std::string(buffer, buffer + sizeof(int));
 }
 
 void PipeWrapper::closeHelp(int desc)
 {
-    if (m_pipefd[desc] != PIPE_CLOSED) {
-        TEMP_FAILURE_RETRY(close(m_pipefd[desc]));
-        m_pipefd[desc] = PIPE_CLOSED;
-    }
+	if (m_pipefd[desc] != PIPE_CLOSED) {
+		TEMP_FAILURE_RETRY(close(m_pipefd[desc]));
+		m_pipefd[desc] = PIPE_CLOSED;
+	}
 }
 
 PipeWrapper::Status PipeWrapper::writeHelp(const void *buffer, int size)
 {
-    int ready = 0;
-    const char *p = static_cast<const char *>(buffer);
-    while (ready != size) {
-        int ret = write(m_pipefd[1], &p[ready], size - ready);
+	int ready = 0;
+	const char *p = static_cast<const char *>(buffer);
+	while (ready != size) {
+		int ret = write(m_pipefd[1], &p[ready], size - ready);
 
-        if (ret == -1 && (errno == EAGAIN || errno == EINTR)) {
-            continue;
-        }
+		if (ret == -1 && (errno == EAGAIN || errno == EINTR)) {
+			continue;
+		}
 
-        if (ret == -1) {
-            closeHelp(1);
-            return ERROR;
-        }
+		if (ret == -1) {
+			closeHelp(1);
+			return ERROR;
+		}
 
-        ready += ret;
-    }
-    return SUCCESS;
+		ready += ret;
+	}
+	return SUCCESS;
 }
 
 PipeWrapper::Status PipeWrapper::readHelp(void *buf, int size, time_t deadline)
 {
-    int ready = 0;
-    char *buffer = static_cast<char*>(buf);
-    while (ready != size) {
-        time_t wait = deadline - time(0);
-        wait = wait < 1 ? 1 : wait;
-        pollfd fds = { m_pipefd[0], POLLIN, 0 };
+	int ready = 0;
+	char *buffer = static_cast<char *>(buf);
+	while (ready != size) {
+		time_t wait = deadline - time(0);
+		wait = wait < 1 ? 1 : wait;
+		pollfd fds = { m_pipefd[0], POLLIN, 0 };
 
-        int pollReturn = poll(&fds, 1, wait * 1000);
+		int pollReturn = poll(&fds, 1, wait * 1000);
 
-        if (pollReturn == 0) {
-            return TIMEOUT; // Timeout
-        }
+		if (pollReturn == 0) {
+			return TIMEOUT; // Timeout
+		}
 
-        if (pollReturn < -1) {
-            return ERROR;
-        }
+		if (pollReturn < -1) {
+			return ERROR;
+		}
 
-        int ret = read(m_pipefd[0], &buffer[ready], size - ready);
+		int ret = read(m_pipefd[0], &buffer[ready], size - ready);
 
-        if (ret == -1 && (errno == EAGAIN || errno == EINTR)) {
-            continue;
-        }
+		if (ret == -1 && (errno == EAGAIN || errno == EINTR)) {
+			continue;
+		}
 
-        if (ret == -1 || ret == 0) {
-            closeHelp(0);
-            return ERROR;
-        }
+		if (ret == -1 || ret == 0) {
+			closeHelp(0);
+			return ERROR;
+		}
 
-        ready += ret;
-    }
-    return SUCCESS;
+		ready += ret;
+	}
+	return SUCCESS;
 }
 
 void RunChildProc(TestRunner::TestCase procChild)
 {
-    PipeWrapper pipe;
-    if (!pipe.isReady()) {
-        throw TestRunner::TestFailed("Pipe creation failed");
-    }
+	PipeWrapper pipe;
+	if (!pipe.isReady()) {
+		throw TestRunner::TestFailed("Pipe creation failed");
+	}
 
-    pid_t pid = fork();
+	pid_t pid = fork();
 
-    if (pid == -1) {
-        throw TestRunner::TestFailed("Child creation failed");
-    }
+	if (pid == -1) {
+		throw TestRunner::TestFailed("Child creation failed");
+	}
 
-    if (pid != 0) {
-        // parent code
-        pipe.setUsage(PipeWrapper::READONLY);
+	if (pid != 0) {
+		// parent code
+		pipe.setUsage(PipeWrapper::READONLY);
 
-        int code;
-        std::string message;
+		int code;
+		std::string message;
 
-        int pipeReturn = pipe.receive(code, message, time(0) + 10);
+		int pipeReturn = pipe.receive(code, message, time(0) + 10);
 
-        if (pipeReturn != PipeWrapper::SUCCESS) { // Timeout or reading error
-            pipe.closeAll();
-            kill(pid, SIGKILL);
-        }
+		if (pipeReturn != PipeWrapper::SUCCESS) { // Timeout or reading error
+			pipe.closeAll();
+			kill(pid, SIGKILL);
+		}
 
-        int status;
-        waitpid(pid, &status, 0);
+		int status;
+		waitpid(pid, &status, 0);
 
-        if (pipeReturn == PipeWrapper::TIMEOUT) {
-            throw TestRunner::TestFailed("Timeout");
-        }
+		if (pipeReturn == PipeWrapper::TIMEOUT) {
+			throw TestRunner::TestFailed("Timeout");
+		}
 
-        if (pipeReturn == PipeWrapper::ERROR) {
-            throw TestRunner::TestFailed("Reading pipe error");
-        }
+		if (pipeReturn == PipeWrapper::ERROR) {
+			throw TestRunner::TestFailed("Reading pipe error");
+		}
 
-        if (code == CHILD_TEST_FAIL) {
-            throw TestRunner::TestFailed(message);
-        } else if (code == CHILD_TEST_IGNORED) {
-            throw TestRunner::Ignored(message);
-        }
-    } else {
-        // child code
+		if (code == CHILD_TEST_FAIL) {
+			throw TestRunner::TestFailed(message);
+		} else if (code == CHILD_TEST_IGNORED) {
+			throw TestRunner::Ignored(message);
+		}
+	} else {
+		// child code
 
-        // End Runner after current test
-        TestRunnerSingleton::Instance().Terminate();
+		// End Runner after current test
+		TestRunnerSingleton::Instance().Terminate();
 
-        int code = CHILD_TEST_PASS;
-        std::string msg;
+		int code = CHILD_TEST_PASS;
+		std::string msg;
 
-        bool allowLogs = TestRunnerSingleton::Instance().GetAllowChildLogs();
+		bool allowLogs = TestRunnerSingleton::Instance().GetAllowChildLogs();
 
-        close(STDIN_FILENO);
-        if (!allowLogs) {
-            closeOutput(); // if fails nothing we can do
-        }
+		close(STDIN_FILENO);
+		if (!allowLogs) {
+			closeOutput(); // if fails nothing we can do
+		}
 
-        pipe.setUsage(PipeWrapper::WRITEONLY);
+		pipe.setUsage(PipeWrapper::WRITEONLY);
 
-        try {
-            procChild();
-        } catch (const VcoreDPL::Test::TestRunner::TestFailed &e) {
-            msg = e.GetMessage();
-            code = CHILD_TEST_FAIL;
-        } catch (const VcoreDPL::Test::TestRunner::Ignored &e) {
-            msg = e.GetMessage();
-            code = CHILD_TEST_IGNORED;
-        } catch (...) { // catch all exception generated by "user" code
-            msg = "unhandled exeception";
-            code = CHILD_TEST_FAIL;
-        }
+		try {
+			procChild();
+		} catch (const VcoreDPL::Test::TestRunner::TestFailed &e) {
+			msg = e.GetMessage();
+			code = CHILD_TEST_FAIL;
+		} catch (const VcoreDPL::Test::TestRunner::Ignored &e) {
+			msg = e.GetMessage();
+			code = CHILD_TEST_IGNORED;
+		} catch (...) { // catch all exception generated by "user" code
+			msg = "unhandled exeception";
+			code = CHILD_TEST_FAIL;
+		}
 
-        if (allowLogs) {
-            closeOutput();
-        }
+		if (allowLogs) {
+			closeOutput();
+		}
 
-        pipe.send(code, msg);
-    }
+		pipe.send(code, msg);
+	}
 }
 } // namespace Test
 } // namespace VcoreDPL

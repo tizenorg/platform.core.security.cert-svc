@@ -29,29 +29,27 @@ namespace VcoreDPL {
 class BinaryQueue;
 typedef std::auto_ptr<BinaryQueue> BinaryQueueAutoPtr;
 
-class AbstractInput
-{
-  public:
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, ReadFailed)
-    };
+class AbstractInput {
+public:
+	class Exception {
+	public:
+		DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
+		DECLARE_EXCEPTION_TYPE(Base, ReadFailed)
+	};
 
-  public:
-    virtual ~AbstractInput() {}
+public:
+	virtual ~AbstractInput() {}
 
-    /**
-     * Read binary data from input
-     * If no data is available method returns NULL buffer.
-     * In case connection was successfuly close, method returns empty buffer
-     *
-     * @param[in] size Maximum number of bytes to read from input
-     * @return Buffer containing read bytes
-     * @throw  ReadFailed
-     */
-    virtual BinaryQueueAutoPtr Read(size_t size) = 0;
+	/**
+	 * Read binary data from input
+	 * If no data is available method returns NULL buffer.
+	 * In case connection was successfuly close, method returns empty buffer
+	 *
+	 * @param[in] size Maximum number of bytes to read from input
+	 * @return Buffer containing read bytes
+	 * @throw  ReadFailed
+	 */
+	virtual BinaryQueueAutoPtr Read(size_t size) = 0;
 };
 } // namespace VcoreDPL
 

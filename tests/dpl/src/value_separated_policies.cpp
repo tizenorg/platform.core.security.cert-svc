@@ -26,12 +26,12 @@ namespace VcoreDPL {
 
 std::string CSVTokenizerPolicy::GetSeperators()
 {
-    return ",";
+	return ",";
 }
 
 bool CSVTokenizerPolicy::SkipEmpty()
 {
-    return false;
+	return false;
 }
 
 void CSVTokenizerPolicy::PrepareValue(std::string &)
@@ -40,26 +40,25 @@ void CSVTokenizerPolicy::PrepareValue(std::string &)
 
 bool CSVTokenizerPolicy::TryAgainAtEnd(int)
 {
-    return false;
+	return false;
 }
 
-bool CSVParserPolicy::SkipLine(const std::vector<std::string> & )
+bool CSVParserPolicy::SkipLine(const std::vector<std::string> &)
 {
-    return false;
+	return false;
 }
 
-bool CSVParserPolicy::Validate(std::shared_ptr<std::vector<std::vector<std::string> > > & result)
+bool CSVParserPolicy::Validate(std::shared_ptr<std::vector<std::vector<std::string> > > &result)
 {
-    int num = -1;
-    FOREACH(r, *result)
-    {
-        int size = r->size();
-        if(num != -1 && num != size)
-            return false;
+	int num = -1;
+	FOREACH(r, *result) {
+		int size = r->size();
+		if (num != -1 && num != size)
+			return false;
 
-        num = size;
-    }
-    return true;
+		num = size;
+	}
+	return true;
 }
 
 }

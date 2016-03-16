@@ -27,47 +27,46 @@
 namespace VcoreDPL {
 namespace Test {
 
-class PipeWrapper : VcoreDPL::Noncopyable
-{
-  public:
-    enum Usage {
-        READONLY,
-        WRITEONLY
-    };
+class PipeWrapper : VcoreDPL::Noncopyable {
+public:
+	enum Usage {
+		READONLY,
+		WRITEONLY
+	};
 
-    enum Status {
-        SUCCESS,
-        TIMEOUT,
-        ERROR
-    };
+	enum Status {
+		SUCCESS,
+		TIMEOUT,
+		ERROR
+	};
 
-    PipeWrapper();
+	PipeWrapper();
 
-    bool isReady();
+	bool isReady();
 
-    void setUsage(Usage usage);
+	void setUsage(Usage usage);
 
-    virtual ~PipeWrapper();
+	virtual ~PipeWrapper();
 
-    Status send(int code, std::string &message);
+	Status send(int code, std::string &message);
 
-    Status receive(int &code, std::string &data, time_t deadline);
+	Status receive(int &code, std::string &data, time_t deadline);
 
-    void closeAll();
+	void closeAll();
 
-  protected:
+protected:
 
-    std::string toBinaryString(int data);
+	std::string toBinaryString(int data);
 
-    void closeHelp(int desc);
+	void closeHelp(int desc);
 
-    Status writeHelp(const void *buffer, int size);
+	Status writeHelp(const void *buffer, int size);
 
-    Status readHelp(void *buf, int size, time_t deadline);
+	Status readHelp(void *buf, int size, time_t deadline);
 
-    static const int PIPE_CLOSED = -1;
+	static const int PIPE_CLOSED = -1;
 
-    int m_pipefd[2];
+	int m_pipefd[2];
 };
 
 void RunChildProc(TestRunner::TestCase procChild);

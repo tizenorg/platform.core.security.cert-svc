@@ -33,8 +33,7 @@
 
 namespace VcoreDPL {
 namespace Log {
-namespace // anonymous
-{
+namespace { // anonymous
 using namespace VcoreDPL::Colors::Text;
 const char *DEBUG_BEGIN = GREEN_BEGIN;
 const char *DEBUG_END = GREEN_END;
@@ -49,34 +48,34 @@ const char *PEDANTIC_END = PURPLE_END;
 
 std::string GetFormattedTime()
 {
-    timeval tv;
-    tm localNowTime;
+	timeval tv;
+	tm localNowTime;
 
-    gettimeofday(&tv, NULL);
-    localtime_r(&tv.tv_sec, &localNowTime);
+	gettimeofday(&tv, NULL);
+	localtime_r(&tv.tv_sec, &localNowTime);
 
-    char format[64];
-    snprintf(format,
-             sizeof(format),
-             "%02i:%02i:%02i.%03i",
-             localNowTime.tm_hour,
-             localNowTime.tm_min,
-             localNowTime.tm_sec,
-             static_cast<int>(tv.tv_usec / 1000));
-    return format;
+	char format[64];
+	snprintf(format,
+			 sizeof(format),
+			 "%02i:%02i:%02i.%03i",
+			 localNowTime.tm_hour,
+			 localNowTime.tm_min,
+			 localNowTime.tm_sec,
+			 static_cast<int>(tv.tv_usec / 1000));
+	return format;
 }
 
 struct ColorMark {
-    const char *const begin;
-    const char *const end;
+	const char *const begin;
+	const char *const end;
 };
 
 std::map<AbstractLogProvider::LogLevel, ColorMark> consoleLevel = {
-        { AbstractLogProvider::LogLevel::Error,     {ERROR_BEGIN,       ERROR_END} },
-        { AbstractLogProvider::LogLevel::Warning,   {WARNING_BEGIN,     WARNING_END} },
-        { AbstractLogProvider::LogLevel::Info,      {INFO_BEGIN,        INFO_END} },
-        { AbstractLogProvider::LogLevel::Debug,     {DEBUG_BEGIN,       DEBUG_END} },
-        { AbstractLogProvider::LogLevel::Pedantic,  {PEDANTIC_BEGIN,    PEDANTIC_END} }
+	{ AbstractLogProvider::LogLevel::Error,     {ERROR_BEGIN,       ERROR_END} },
+	{ AbstractLogProvider::LogLevel::Warning,   {WARNING_BEGIN,     WARNING_END} },
+	{ AbstractLogProvider::LogLevel::Info,      {INFO_BEGIN,        INFO_END} },
+	{ AbstractLogProvider::LogLevel::Debug,     {DEBUG_BEGIN,       DEBUG_END} },
+	{ AbstractLogProvider::LogLevel::Pedantic,  {PEDANTIC_BEGIN,    PEDANTIC_END} }
 };
 
 } // namespace anonymous
@@ -84,23 +83,23 @@ std::map<AbstractLogProvider::LogLevel, ColorMark> consoleLevel = {
 OldStyleLogProvider::OldStyleLogProvider() {}
 
 void OldStyleLogProvider::Log(AbstractLogProvider::LogLevel level,
-                              const char *message,
-                              const char *filename,
-                              int line,
-                              const char *function) const
+							  const char *message,
+							  const char *filename,
+							  int line,
+							  const char *function) const
 {
-    try {
-        const struct ColorMark& mark = consoleLevel.at(level);
+	try {
+		const struct ColorMark &mark = consoleLevel.at(level);
 
-        std::ostringstream val;
-        val << mark.begin << std::string("[") << GetFormattedTime() << std::string("] [") <<
-               static_cast<unsigned long>(pthread_self()) << "/" << static_cast<int>(getpid()) <<
-               std::string("] [") << LocateSourceFileName(filename) << std::string(":") << line <<
-               std::string("] ") << function << std::string("(): ") << message << mark.end;
-        fprintf(stdout, "%s\n", val.str().c_str());
-    } catch (const std::out_of_range&) {
-        fprintf(stdout, "Unsupported log level: %d\n", level);
-    }
+		std::ostringstream val;
+		val << mark.begin << std::string("[") << GetFormattedTime() << std::string("] [") <<
+			static_cast<unsigned long>(pthread_self()) << "/" << static_cast<int>(getpid()) <<
+			std::string("] [") << LocateSourceFileName(filename) << std::string(":") << line <<
+			std::string("] ") << function << std::string("(): ") << message << mark.end;
+		fprintf(stdout, "%s\n", val.str().c_str());
+	} catch (const std::out_of_range &) {
+		fprintf(stdout, "Unsupported log level: %d\n", level);
+	}
 }
 
 }

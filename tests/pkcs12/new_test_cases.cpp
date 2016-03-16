@@ -56,7 +56,7 @@ static CertSvcString wrapper_certsvc_string_new(const char *cStr)
 		retval = certsvc_string_new(instance, cStr, strlen(cStr), &certsvcStr);
 
 	RUNNER_ASSERT_MSG(retval == CERTSVC_SUCCESS,
-		"Failed to certsvc_string_new with retval: " << retval);
+					  "Failed to certsvc_string_new with retval: " << retval);
 
 	return certsvcStr;
 }
@@ -72,7 +72,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1001_certsvc_get_root_cert_list)
 {
 	CREATE_INSTANCE
 
-	CertSvcStoreCertList* certList = NULL;
+	CertSvcStoreCertList *certList = NULL;
 	size_t length = 0;
 	int result = certsvc_pkcs12_get_certificate_list_from_store(instance, SYSTEM_STORE, DISABLED, &certList, &length);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Getting certificate list from system store failed");
@@ -237,13 +237,13 @@ RUNNER_TEST(CERTSVC_PKCS12_1005_add_crt_file_in_individual_store)
 	CertSvcCertificate certificate;
 	while (certList) {
 		result = certsvc_pkcs12_get_certificate_from_store(instance, certList->storeType, certList->gname, &certificate);
-		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get certificate from store.");
+		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get certificate from store.");
 
 		result = certsvc_certificate_get_string_field(certificate, CERTSVC_SUBJECT, &strSubject);
-		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get string field.");
+		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get string field.");
 
 		result = certsvc_certificate_get_string_field(certificate, CERTSVC_ISSUER_COMMON_NAME, &strIssuer);
-		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get string field.");
+		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get string field.");
 
 		certsvc_string_free(strSubject);
 		certsvc_string_free(strIssuer);
@@ -303,7 +303,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1007_install_p12_file_to_individual_store)
 	result = certsvc_pkcs12_import_from_file_to_store(instance, EMAIL_STORE, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing p12 file to EMAIL store failed.");
 
-	CertSvcStoreCertList* certList = NULL;
+	CertSvcStoreCertList *certList = NULL;
 	size_t length = 0;
 	result = certsvc_pkcs12_get_certificate_list_from_store(instance, allStoreType, DISABLED, &certList, &length);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Getting certificate list from system store failed");
@@ -331,7 +331,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1008_install_p12_file_to_all_store)
 	result = certsvc_pkcs12_import_from_file_to_store(instance, allStoreType, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing p12 file to WIFI store failed.");
 
-	CertSvcStoreCertList* certList = NULL;
+	CertSvcStoreCertList *certList = NULL;
 	size_t length = 0;
 	result = certsvc_pkcs12_get_certificate_list_from_store(instance, allStoreType, DISABLED, &certList, &length);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Getting certificate list from system store failed");
@@ -365,7 +365,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1009_install_pfx_file_to_individual_store)
 	result = certsvc_pkcs12_import_from_file_to_store(instance, EMAIL_STORE, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing PFX file to EMAIL store failed.");
 
-	CertSvcStoreCertList* certList = NULL;
+	CertSvcStoreCertList *certList = NULL;
 	size_t length = 0;
 	result = certsvc_pkcs12_get_certificate_list_from_store(instance, allStoreType, DISABLED, &certList, &length);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Getting certificate list from system store failed");
@@ -393,7 +393,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1010_install_pfx_file_to_all_store)
 	result = certsvc_pkcs12_import_from_file_to_store(instance, allStoreType, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing PFX file to WIFI store failed.");
 
-	CertSvcStoreCertList* certList = NULL;
+	CertSvcStoreCertList *certList = NULL;
 	size_t length = 0;
 	result = certsvc_pkcs12_get_certificate_list_from_store(instance, allStoreType, DISABLED, &certList, &length);
 	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Getting certificate list from system store failed");
@@ -531,7 +531,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1014_installing_pfx_without_password_to_individual_st
 	}
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, allStoreType, Path, Pass, Alias);
-	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing PFX file to all store failed. result : " << result );
+	RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Importing PFX file to all store failed. result : " << result);
 
 	certsvc_string_free(Alias);
 	certsvc_string_free(Path);
@@ -539,7 +539,8 @@ RUNNER_TEST(CERTSVC_PKCS12_1014_installing_pfx_without_password_to_individual_st
 	FREE_INSTANCE
 }
 
-RUNNER_TEST(CERTSVC_PKCS12_1015_get_certificate_from_store) {
+RUNNER_TEST(CERTSVC_PKCS12_1015_get_certificate_from_store)
+{
 
 	int result;
 
@@ -566,7 +567,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1015_get_certificate_from_store) {
 		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get string field.");
 
 		result = certsvc_certificate_get_string_field(certificate, CERTSVC_ISSUER_COMMON_NAME, &strIssuer);
-		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get string field.");
+		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get string field.");
 
 		certsvc_string_free(strSubject);
 		certsvc_string_free(strIssuer);
@@ -600,13 +601,13 @@ RUNNER_TEST(CERTSVC_PKCS12_1016_get_certificate_from_system_store)
 	CertSvcCertificate certificate;
 	while (certList) {
 		result = certsvc_pkcs12_get_certificate_from_store(instance, certList->storeType, certList->gname, &certificate);
-		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get certificate from store.");
+		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get certificate from store.");
 
 		result = certsvc_certificate_get_string_field(certificate, CERTSVC_SUBJECT, &strSubject);
-		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get string field.");
+		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get string field.");
 
 		result = certsvc_certificate_get_string_field(certificate, CERTSVC_ISSUER_COMMON_NAME, &strIssuer);
-		RUNNER_ASSERT_MSG(result==CERTSVC_SUCCESS, "Failed to get string field.");
+		RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to get string field.");
 
 		certsvc_string_free(strSubject);
 		certsvc_string_free(strIssuer);
@@ -782,14 +783,14 @@ RUNNER_TEST(CERTSVC_PKCS12_1021_add_pem_file_to_invalid_store)
 	CertSvcString Path = wrapper_certsvc_string_new(TestData::ServerCertPemPath.c_str());
 	CertSvcString Pass = wrapper_certsvc_string_new(NULL);
 
-	result = certsvc_pkcs12_import_from_file_to_store(instance, (CertStoreType)-1, Path, Pass, Alias);
+	result = certsvc_pkcs12_import_from_file_to_store(instance, (CertStoreType) - 1, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result == CERTSVC_INVALID_STORE_TYPE, "Importing certifcate should be failed with invalid store type");
 
 	result = certsvc_pkcs12_import_from_file_to_store(instance, SYSTEM_STORE, Path, Pass, Alias);
 	RUNNER_ASSERT_MSG(result != CERTSVC_SUCCESS, "Importing PEM file to SYSTEM_STORE should be failed");
 
 	result = certsvc_pkcs12_delete_certificate_from_store(instance, SYSTEM_STORE, Alias);
-	RUNNER_ASSERT_MSG(result!=CERTSVC_SUCCESS, "Deleting certificate from SYSTEM_STORE should be failed");
+	RUNNER_ASSERT_MSG(result != CERTSVC_SUCCESS, "Deleting certificate from SYSTEM_STORE should be failed");
 
 	certsvc_string_free(Alias);
 	certsvc_string_free(Path);
@@ -1010,7 +1011,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store)
 			result = certsvc_certificate_list_get_one(cert_list, cert_index, &ca_certificate);
 			RUNNER_ASSERT_MSG(result == CERTSVC_SUCCESS, "Failed to certsvc_certificate_list_get_one");
 
-			selected_certificate[cert_counts-cert_index] = ca_certificate;
+			selected_certificate[cert_counts - cert_index] = ca_certificate;
 			cert_index--;
 
 			result = certsvc_certificate_dup_x509(ca_certificate, &x509);

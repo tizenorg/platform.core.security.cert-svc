@@ -25,17 +25,17 @@
 
 namespace ValidationCore {
 static const std::string XML_NAMESPACE =
-    "http://www.w3.org/2000/09/xmldsig#";
+	"http://www.w3.org/2000/09/xmldsig#";
 static const std::string XML_NAMESPACE_DIGITALSIG =
-    "http://wacapps.net/ns/digsig";
+	"http://wacapps.net/ns/digsig";
 static const std::string XML_OBJ_NS =
-    "http://www.w3.org/2009/xmldsig-properties";
+	"http://www.w3.org/2009/xmldsig-properties";
 
 // TAG TOKENS
 static const std::string TOKEN_SIGNATURE = "Signature";
 static const std::string TOKEN_SIGNED_INFO = "SignedInfo";
 static const std::string TOKEN_CANONICALIZATION_METHOD =
-    "CanonicalizationMethod";
+	"CanonicalizationMethod";
 static const std::string TOKEN_SIGNATURE_METHOD = "SignatureMethod";
 static const std::string TOKEN_REFERENCE = "Reference";
 static const std::string TOKEN_TRANSFORMS = "Transforms";
@@ -104,238 +104,238 @@ static const std::string TOKEN_ATTR_IDENTIFIER = "identifier";
 //            "http://www.w3.org/2001/04/xmlenc#sha512";
 
 SignatureReader::SignatureReader() :
-    m_signaturePropertiesCounter(0),
-    m_targetRestrictionObjectFound(false),
-    m_parserSchema(this)
+	m_signaturePropertiesCounter(0),
+	m_targetRestrictionObjectFound(false),
+	m_parserSchema(this)
 {
-    /**
-     * member func pointers map
-     */
-    m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_SIGNED_INFO,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_CANONICALIZATION_METHOD,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_METHOD,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_REFERENCE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_TRANSFORMS,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_TRANSFORM,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DIGEST_METHOD,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DIGEST_VALUE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_VALUE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_KEY_INFO,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::tokenKeyInfo);
-    m_parserSchema.addBeginTagCallback(TOKEN_X509DATA,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::tokenX509Data);
-    m_parserSchema.addBeginTagCallback(TOKEN_X509CERTIFICATE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::tokenX509Certificate);
-    m_parserSchema.addBeginTagCallback(TOKEN_ECKEY_VALUE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_NAMED_CURVE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::tokenNamedCurve);
-    m_parserSchema.addBeginTagCallback(TOKEN_PUBLIC_KEY,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::tokenPublicKey);
-    m_parserSchema.addBeginTagCallback(TOKEN_OBJECT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::tokenObject);
-    m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_PROPERTIES,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::tokenSignatureProperties);
-    m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_PROPERTY,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_PROFILE,
-                                       XML_OBJ_NS,
-                                       &SignatureReader::tokenProfile);
-    m_parserSchema.addBeginTagCallback(TOKEN_ROLE,
-                                       XML_OBJ_NS,
-                                       &SignatureReader::tokenRole);
-    m_parserSchema.addBeginTagCallback(TOKEN_IDENTIFIER,
-                                       XML_OBJ_NS,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_KEY_VALUE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSAKEYVALUE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSA_P_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSA_Q_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSA_G_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSA_Y_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSA_J_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSA_SEED_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_DSA_PGENCOUNTER_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_RSA_KEY_VALUE,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_MODULUS_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_EXPONENT_COMPONENT,
-                                       XML_NAMESPACE,
-                                       &SignatureReader::blankFunction);
-    m_parserSchema.addBeginTagCallback(TOKEN_TARGET_RESTRICTION,
-                                       XML_NAMESPACE_DIGITALSIG,
-                                       &SignatureReader::tokenTargetRestriction);
+	/**
+	 * member func pointers map
+	 */
+	m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_SIGNED_INFO,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_CANONICALIZATION_METHOD,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_METHOD,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_REFERENCE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_TRANSFORMS,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_TRANSFORM,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DIGEST_METHOD,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DIGEST_VALUE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_VALUE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_KEY_INFO,
+									   XML_NAMESPACE,
+									   &SignatureReader::tokenKeyInfo);
+	m_parserSchema.addBeginTagCallback(TOKEN_X509DATA,
+									   XML_NAMESPACE,
+									   &SignatureReader::tokenX509Data);
+	m_parserSchema.addBeginTagCallback(TOKEN_X509CERTIFICATE,
+									   XML_NAMESPACE,
+									   &SignatureReader::tokenX509Certificate);
+	m_parserSchema.addBeginTagCallback(TOKEN_ECKEY_VALUE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_NAMED_CURVE,
+									   XML_NAMESPACE,
+									   &SignatureReader::tokenNamedCurve);
+	m_parserSchema.addBeginTagCallback(TOKEN_PUBLIC_KEY,
+									   XML_NAMESPACE,
+									   &SignatureReader::tokenPublicKey);
+	m_parserSchema.addBeginTagCallback(TOKEN_OBJECT,
+									   XML_NAMESPACE,
+									   &SignatureReader::tokenObject);
+	m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_PROPERTIES,
+									   XML_NAMESPACE,
+									   &SignatureReader::tokenSignatureProperties);
+	m_parserSchema.addBeginTagCallback(TOKEN_SIGNATURE_PROPERTY,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_PROFILE,
+									   XML_OBJ_NS,
+									   &SignatureReader::tokenProfile);
+	m_parserSchema.addBeginTagCallback(TOKEN_ROLE,
+									   XML_OBJ_NS,
+									   &SignatureReader::tokenRole);
+	m_parserSchema.addBeginTagCallback(TOKEN_IDENTIFIER,
+									   XML_OBJ_NS,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_KEY_VALUE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSAKEYVALUE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSA_P_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSA_Q_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSA_G_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSA_Y_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSA_J_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSA_SEED_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_DSA_PGENCOUNTER_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_RSA_KEY_VALUE,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_MODULUS_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_EXPONENT_COMPONENT,
+									   XML_NAMESPACE,
+									   &SignatureReader::blankFunction);
+	m_parserSchema.addBeginTagCallback(TOKEN_TARGET_RESTRICTION,
+									   XML_NAMESPACE_DIGITALSIG,
+									   &SignatureReader::tokenTargetRestriction);
 
-    m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_SIGNED_INFO,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_CANONICALIZATION_METHOD,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_METHOD,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_REFERENCE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_TRANSFORMS,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_TRANSFORM,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_DIGEST_METHOD,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_DIGEST_VALUE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_VALUE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_KEY_INFO,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndKeyInfo);
-    m_parserSchema.addEndTagCallback(TOKEN_X509DATA,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndX509Data);
-    m_parserSchema.addEndTagCallback(TOKEN_X509CERTIFICATE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndX509Certificate);
-    m_parserSchema.addEndTagCallback(TOKEN_ECKEY_VALUE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndECKeyValue);
-    m_parserSchema.addEndTagCallback(TOKEN_PUBLIC_KEY,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndPublicKey);
-    m_parserSchema.addEndTagCallback(TOKEN_OBJECT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndObject);
-    m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_PROPERTIES,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_PROPERTY,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_PROFILE,
-                                     XML_OBJ_NS,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_ROLE,
-                                     XML_OBJ_NS,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_IDENTIFIER,
-                                     XML_OBJ_NS,
-                                     &SignatureReader::tokenEndIdentifier);
-    m_parserSchema.addEndTagCallback(TOKEN_KEY_VALUE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
-    m_parserSchema.addEndTagCallback(TOKEN_DSAKEYVALUE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSAKeyValue);
-    m_parserSchema.addEndTagCallback(TOKEN_DSA_P_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSAPComponent);
-    m_parserSchema.addEndTagCallback(TOKEN_DSA_Q_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSAQComponent);
-    m_parserSchema.addEndTagCallback(TOKEN_DSA_G_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSAGComponent);
-    m_parserSchema.addEndTagCallback(TOKEN_DSA_Y_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSAYComponent);
-    m_parserSchema.addEndTagCallback(TOKEN_DSA_J_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSAJComponent);
-    m_parserSchema.addEndTagCallback(TOKEN_DSA_SEED_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSASeedComponent);
-    m_parserSchema.addEndTagCallback(TOKEN_DSA_PGENCOUNTER_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndDSAPGenCounterComponent);
-    m_parserSchema.addEndTagCallback(TOKEN_RSA_KEY_VALUE,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndRSAKeyValue);
-    m_parserSchema.addEndTagCallback(TOKEN_MODULUS_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndKeyModulus);
-    m_parserSchema.addEndTagCallback(TOKEN_EXPONENT_COMPONENT,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::tokenEndKeyExponent);
-    m_parserSchema.addEndTagCallback(TOKEN_TARGET_RESTRICTION,
-                                     XML_NAMESPACE,
-                                     &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_SIGNED_INFO,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_CANONICALIZATION_METHOD,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_METHOD,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_REFERENCE,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_TRANSFORMS,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_TRANSFORM,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_DIGEST_METHOD,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_DIGEST_VALUE,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_VALUE,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_KEY_INFO,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndKeyInfo);
+	m_parserSchema.addEndTagCallback(TOKEN_X509DATA,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndX509Data);
+	m_parserSchema.addEndTagCallback(TOKEN_X509CERTIFICATE,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndX509Certificate);
+	m_parserSchema.addEndTagCallback(TOKEN_ECKEY_VALUE,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndECKeyValue);
+	m_parserSchema.addEndTagCallback(TOKEN_PUBLIC_KEY,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndPublicKey);
+	m_parserSchema.addEndTagCallback(TOKEN_OBJECT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndObject);
+	m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_PROPERTIES,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_SIGNATURE_PROPERTY,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_PROFILE,
+									 XML_OBJ_NS,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_ROLE,
+									 XML_OBJ_NS,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_IDENTIFIER,
+									 XML_OBJ_NS,
+									 &SignatureReader::tokenEndIdentifier);
+	m_parserSchema.addEndTagCallback(TOKEN_KEY_VALUE,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
+	m_parserSchema.addEndTagCallback(TOKEN_DSAKEYVALUE,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSAKeyValue);
+	m_parserSchema.addEndTagCallback(TOKEN_DSA_P_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSAPComponent);
+	m_parserSchema.addEndTagCallback(TOKEN_DSA_Q_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSAQComponent);
+	m_parserSchema.addEndTagCallback(TOKEN_DSA_G_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSAGComponent);
+	m_parserSchema.addEndTagCallback(TOKEN_DSA_Y_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSAYComponent);
+	m_parserSchema.addEndTagCallback(TOKEN_DSA_J_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSAJComponent);
+	m_parserSchema.addEndTagCallback(TOKEN_DSA_SEED_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSASeedComponent);
+	m_parserSchema.addEndTagCallback(TOKEN_DSA_PGENCOUNTER_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndDSAPGenCounterComponent);
+	m_parserSchema.addEndTagCallback(TOKEN_RSA_KEY_VALUE,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndRSAKeyValue);
+	m_parserSchema.addEndTagCallback(TOKEN_MODULUS_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndKeyModulus);
+	m_parserSchema.addEndTagCallback(TOKEN_EXPONENT_COMPONENT,
+									 XML_NAMESPACE,
+									 &SignatureReader::tokenEndKeyExponent);
+	m_parserSchema.addEndTagCallback(TOKEN_TARGET_RESTRICTION,
+									 XML_NAMESPACE,
+									 &SignatureReader::blankFunction);
 }
 
 
 void SignatureReader::initialize(
-    SignatureData &signatureData,
-    const std::string &xmlscheme)
+	SignatureData &signatureData,
+	const std::string &xmlscheme)
 {
-    m_parserSchema.initialize(
-            signatureData.getSignatureFileName(),
-            true,
-            SaxReader::VALIDATION_XMLSCHEME,
-            xmlscheme);
+	m_parserSchema.initialize(
+		signatureData.getSignatureFileName(),
+		true,
+		SaxReader::VALIDATION_XMLSCHEME,
+		xmlscheme);
 }
 
 void SignatureReader::read(SignatureData &signatureData)
 {
-    m_parserSchema.read(signatureData);
+	m_parserSchema.read(signatureData);
 }
 
 void SignatureReader::blankFunction(SignatureData &)
@@ -360,27 +360,27 @@ void SignatureReader::tokenPublicKey(SignatureData &)
 
 void SignatureReader::tokenNamedCurve(SignatureData &)
 {
-    m_nameCurveURI = m_parserSchema.getReader().attribute(TOKEN_URI);
+	m_nameCurveURI = m_parserSchema.getReader().attribute(TOKEN_URI);
 }
 
 void SignatureReader::tokenTargetRestriction(SignatureData &signatureData)
 {
-    std::string IMEI = m_parserSchema.getReader().attribute(TOKEN_IMEI);
-    std::string MEID = m_parserSchema.getReader().attribute(TOKEN_MEID);
+	std::string IMEI = m_parserSchema.getReader().attribute(TOKEN_IMEI);
+	std::string MEID = m_parserSchema.getReader().attribute(TOKEN_MEID);
 
-    //less verbose way to say (IMEI && MEID) || (!IMEI && !MEID)
-    if (IMEI.empty() == MEID.empty()) {
-        //WAC 2.0 WR-4650 point 4
-        VcoreThrowMsg(SignatureReader::Exception::TargetRestriction,
-                      "TargetRestriction should contain exactly one attribute.");
-    }
+	//less verbose way to say (IMEI && MEID) || (!IMEI && !MEID)
+	if (IMEI.empty() == MEID.empty()) {
+		//WAC 2.0 WR-4650 point 4
+		VcoreThrowMsg(SignatureReader::Exception::TargetRestriction,
+					  "TargetRestriction should contain exactly one attribute.");
+	}
 
-    if (!IMEI.empty()) {
-        signatureData.m_imeiList.push_back(IMEI);
-    }
-    if (!MEID.empty()) {
-        signatureData.m_meidList.push_back(MEID);
-    }
+	if (!IMEI.empty()) {
+		signatureData.m_imeiList.push_back(IMEI);
+	}
+	if (!MEID.empty()) {
+		signatureData.m_meidList.push_back(MEID);
+	}
 }
 
 void SignatureReader::tokenEndKeyInfo(SignatureData &)
@@ -393,178 +393,178 @@ void SignatureReader::tokenEndX509Data(SignatureData &)
 
 void SignatureReader::tokenEndX509Certificate(SignatureData &signatureData)
 {
-    CertificateLoader loader;
-    if (CertificateLoader::NO_ERROR !=
-        loader.loadCertificateFromRawData(m_parserSchema.getText())) {
-        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
-        VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
-                      "Certificate could not be loaded");
-    }
-    signatureData.m_certList.push_back(loader.getCertificatePtr());
+	CertificateLoader loader;
+	if (CertificateLoader::NO_ERROR !=
+			loader.loadCertificateFromRawData(m_parserSchema.getText())) {
+		fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
+		VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
+					  "Certificate could not be loaded");
+	}
+	signatureData.m_certList.push_back(loader.getCertificatePtr());
 }
 
 void SignatureReader::tokenEndRSAKeyValue(SignatureData &signatureData)
 {
-    CertificateLoader loader;
-    if (CertificateLoader::NO_ERROR !=
-        loader.loadCertificateBasedOnExponentAndModulus(m_modulus,
-                                                        m_exponent)) {
-        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
-        VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
-                      "Certificate could not be loaded");
-    }
-    signatureData.m_certList.push_back(loader.getCertificatePtr());
+	CertificateLoader loader;
+	if (CertificateLoader::NO_ERROR !=
+			loader.loadCertificateBasedOnExponentAndModulus(m_modulus,
+					m_exponent)) {
+		fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
+		VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
+					  "Certificate could not be loaded");
+	}
+	signatureData.m_certList.push_back(loader.getCertificatePtr());
 }
 
 void SignatureReader::tokenEndKeyModulus(SignatureData &)
 {
-    m_modulus = m_parserSchema.getText();
+	m_modulus = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndKeyExponent(SignatureData &)
 {
-    m_exponent = m_parserSchema.getText();
+	m_exponent = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndPublicKey(SignatureData &)
 {
-    m_publicKey = m_parserSchema.getText();
+	m_publicKey = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndECKeyValue(SignatureData &signatureData)
 {
-    CertificateLoader loader;
-    if (CertificateLoader::NO_ERROR !=
-        loader.loadCertificateWithECKEY(m_nameCurveURI, m_publicKey)) {
-        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
-        VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
-                      "Certificate could not be loaded");
-    }
-    signatureData.m_certList.push_back(loader.getCertificatePtr());
+	CertificateLoader loader;
+	if (CertificateLoader::NO_ERROR !=
+			loader.loadCertificateWithECKEY(m_nameCurveURI, m_publicKey)) {
+		fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
+		VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
+					  "Certificate could not be loaded");
+	}
+	signatureData.m_certList.push_back(loader.getCertificatePtr());
 }
 
 void SignatureReader::tokenEndObject(SignatureData &signatureData)
 {
-    m_signaturePropertiesCounter = 0;
+	m_signaturePropertiesCounter = 0;
 
-    if (((!signatureData.m_imeiList.empty()) ||
-         (!signatureData.m_meidList.empty())) &&
-        m_targetRestrictionObjectFound) {
-        //WAC 2.0 WR-4650 point 1
-        VcoreThrowMsg(SignatureReader::Exception::TargetRestriction,
-                      "TargetRestriction should contain exactly one ds:Object "
-                      "containing zero or more wac:TargetRestriction children.");
-    }
+	if (((!signatureData.m_imeiList.empty()) ||
+			(!signatureData.m_meidList.empty())) &&
+			m_targetRestrictionObjectFound) {
+		//WAC 2.0 WR-4650 point 1
+		VcoreThrowMsg(SignatureReader::Exception::TargetRestriction,
+					  "TargetRestriction should contain exactly one ds:Object "
+					  "containing zero or more wac:TargetRestriction children.");
+	}
 
-    if ((!signatureData.m_imeiList.empty()) ||
-        (!signatureData.m_meidList.empty())) {
-        m_targetRestrictionObjectFound = true;
-    }
+	if ((!signatureData.m_imeiList.empty()) ||
+			(!signatureData.m_meidList.empty())) {
+		m_targetRestrictionObjectFound = true;
+	}
 
 }
 void SignatureReader::tokenEndDSAPComponent(SignatureData &)
 {
-    m_dsaKeyPComponent = m_parserSchema.getText();
+	m_dsaKeyPComponent = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndDSAQComponent(SignatureData &)
 {
-    m_dsaKeyQComponent = m_parserSchema.getText();
+	m_dsaKeyQComponent = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndDSAGComponent(SignatureData &)
 {
-    m_dsaKeyGComponent = m_parserSchema.getText();
+	m_dsaKeyGComponent = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndDSAYComponent(SignatureData &)
 {
-    m_dsaKeyYComponent = m_parserSchema.getText();
+	m_dsaKeyYComponent = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndDSAJComponent(SignatureData &)
 {
-    m_dsaKeyJComponent = m_parserSchema.getText();
+	m_dsaKeyJComponent = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndDSASeedComponent(SignatureData &)
 {
-    m_dsaKeySeedComponent = m_parserSchema.getText();
+	m_dsaKeySeedComponent = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndDSAPGenCounterComponent(SignatureData &)
 {
-    m_dsaKeyPGenCounter = m_parserSchema.getText();
+	m_dsaKeyPGenCounter = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenEndDSAKeyValue(SignatureData &signatureData)
 {
-    CertificateLoader loader;
+	CertificateLoader loader;
 
-    if (CertificateLoader::NO_ERROR !=
-        loader.loadCertificateBasedOnDSAComponents(m_dsaKeyPComponent,
-                                                   m_dsaKeyQComponent,
-                                                   m_dsaKeyGComponent,
-                                                   m_dsaKeyYComponent,
-                                                   m_dsaKeyJComponent,
-                                                   m_dsaKeySeedComponent,
-                                                   m_dsaKeyPGenCounter)) {
-        fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
-        VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
-                      "Certificate could not be loaded.");
-    }
-    signatureData.m_certList.push_back(loader.getCertificatePtr());
+	if (CertificateLoader::NO_ERROR !=
+			loader.loadCertificateBasedOnDSAComponents(m_dsaKeyPComponent,
+					m_dsaKeyQComponent,
+					m_dsaKeyGComponent,
+					m_dsaKeyYComponent,
+					m_dsaKeyJComponent,
+					m_dsaKeySeedComponent,
+					m_dsaKeyPGenCounter)) {
+		fprintf(stderr, "## [validate error]: Certificate could not be loaded\n");
+		VcoreThrowMsg(ParserSchemaException::CertificateLoaderError,
+					  "Certificate could not be loaded.");
+	}
+	signatureData.m_certList.push_back(loader.getCertificatePtr());
 }
 
 void SignatureReader::tokenRole(SignatureData &signatureData)
 {
-    if (!signatureData.m_roleURI.empty()) {
-        fprintf(stderr, "## [validate error]: Multiple definition of Role is not allowed\n");
-        VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
-                      "Multiple definition of Role is not allowed.");
-    }
-    signatureData.m_roleURI = m_parserSchema.getReader().attribute(TOKEN_URI);
+	if (!signatureData.m_roleURI.empty()) {
+		fprintf(stderr, "## [validate error]: Multiple definition of Role is not allowed\n");
+		VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
+					  "Multiple definition of Role is not allowed.");
+	}
+	signatureData.m_roleURI = m_parserSchema.getReader().attribute(TOKEN_URI);
 }
 
 void SignatureReader::tokenProfile(SignatureData &signatureData)
 {
-    if (!signatureData.m_profileURI.empty()) {
-        fprintf(stderr, "## [validate error]: Multiple definition of Profile is not allowed\n");
-        VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
-                      "Multiple definition of Profile is not allowed.");
-    }
-    signatureData.m_profileURI = m_parserSchema.getReader().attribute(TOKEN_URI);
+	if (!signatureData.m_profileURI.empty()) {
+		fprintf(stderr, "## [validate error]: Multiple definition of Profile is not allowed\n");
+		VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
+					  "Multiple definition of Profile is not allowed.");
+	}
+	signatureData.m_profileURI = m_parserSchema.getReader().attribute(TOKEN_URI);
 }
 
 void SignatureReader::tokenEndIdentifier(SignatureData &signatureData)
 {
-    if (!signatureData.m_identifier.empty()) {
-        fprintf(stderr, "## [validate error]: Multiple definition of Identifier is not allowed\n");
-        VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
-                      "Multiple definition of Identifier is not allowed.");
-    }
-    signatureData.m_identifier = m_parserSchema.getText();
+	if (!signatureData.m_identifier.empty()) {
+		fprintf(stderr, "## [validate error]: Multiple definition of Identifier is not allowed\n");
+		VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
+					  "Multiple definition of Identifier is not allowed.");
+	}
+	signatureData.m_identifier = m_parserSchema.getText();
 }
 
 void SignatureReader::tokenObject(SignatureData &signatureData)
 {
-    std::string id = m_parserSchema.getReader().attribute(TOKEN_ID);
+	std::string id = m_parserSchema.getReader().attribute(TOKEN_ID);
 
-    if (id.empty()) {
-        fprintf(stderr, "## [validate error]: Unsupported value of Attribute Id in Object tag\n");
-        VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
-                      "Unsupported value of Attribute Id in Object tag.");
-    }
+	if (id.empty()) {
+		fprintf(stderr, "## [validate error]: Unsupported value of Attribute Id in Object tag\n");
+		VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
+					  "Unsupported value of Attribute Id in Object tag.");
+	}
 
-    signatureData.m_objectList.push_back(id);
+	signatureData.m_objectList.push_back(id);
 }
 
 void SignatureReader::tokenSignatureProperties(SignatureData &)
 {
-    if (++m_signaturePropertiesCounter > 1) {
-        fprintf(stderr, "## [validate error]: Only one SignatureProperties tag is allowed in Object\n");
-        VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
-                      "Only one SignatureProperties tag is allowed in Object");
-    }
+	if (++m_signaturePropertiesCounter > 1) {
+		fprintf(stderr, "## [validate error]: Only one SignatureProperties tag is allowed in Object\n");
+		VcoreThrowMsg(ParserSchemaException::UnsupportedValue,
+					  "Only one SignatureProperties tag is allowed in Object");
+	}
 }
 } // namespace ValidationCore

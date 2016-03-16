@@ -45,8 +45,8 @@ extern "C" {
  * @see certsvc_string_free()
  */
 int certsvc_pkcs12_has_password(CertSvcInstance instance,
-                                CertSvcString filepath,
-                                int *has_password);
+								CertSvcString filepath,
+								int *has_password);
 
 /**
  * Couter-routine for certsvc_pkcs12_private_key_dup.
@@ -74,10 +74,10 @@ void certsvc_pkcs12_private_key_free(char *buffer);
  * @see #CertStoreType
  */
 int certsvc_pkcs12_private_key_dup_from_store(CertSvcInstance instance,
-                                              CertStoreType storeType,
-                                              CertSvcString gname,
-                                              char **buffer,
-                                              size_t *size);
+		CertStoreType storeType,
+		CertSvcString gname,
+		char **buffer,
+		size_t *size);
 
 /**
  * Set the status for the specified certificate in cert-svc store.
@@ -99,10 +99,10 @@ int certsvc_pkcs12_private_key_dup_from_store(CertSvcInstance instance,
  * @see #CertStatus
  */
 int certsvc_pkcs12_set_certificate_status_to_store(CertSvcInstance instance,
-                                                   CertStoreType storeType,
-                                                   int is_root_app,
-                                                   CertSvcString gname,
-                                                   CertStatus status);
+		CertStoreType storeType,
+		int is_root_app,
+		CertSvcString gname,
+		CertStatus status);
 
 /**
  * Get the status for the specified certificate in cert-svc store.
@@ -121,9 +121,9 @@ int certsvc_pkcs12_set_certificate_status_to_store(CertSvcInstance instance,
  * @see #CertStroeType
  */
 int certsvc_pkcs12_get_certificate_status_from_store(CertSvcInstance instance,
-                                                     CertStoreType storeType,
-                                                     CertSvcString gname,
-                                                     CertStatus *status);
+		CertStoreType storeType,
+		CertSvcString gname,
+		CertStatus *status);
 
 /**
  * Get the certificates in cert-svc store.
@@ -145,10 +145,10 @@ int certsvc_pkcs12_get_certificate_status_from_store(CertSvcInstance instance,
  * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
-                                                   CertStoreType storeType,
-                                                   int is_root_app,
-                                                   CertSvcStoreCertList** certList,
-                                                   size_t *length);
+		CertStoreType storeType,
+		int is_root_app,
+		CertSvcStoreCertList **certList,
+		size_t *length);
 
 /**
  * Get the end user certificates in cert-svc store.
@@ -167,9 +167,9 @@ int certsvc_pkcs12_get_certificate_list_from_store(CertSvcInstance instance,
  * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance instance,
-                                                            CertStoreType storeType,
-                                                            CertSvcStoreCertList** certList,
-                                                            size_t* length);
+		CertStoreType storeType,
+		CertSvcStoreCertList **certList,
+		size_t *length);
 
 /**
  * Get the root/trusted certificates in cert-svc store.
@@ -189,9 +189,9 @@ int certsvc_pkcs12_get_end_user_certificate_list_from_store(CertSvcInstance inst
  * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_get_root_certificate_list_from_store(CertSvcInstance instance,
-                                                        CertStoreType storeType,
-                                                        CertSvcStoreCertList** certList,
-                                                        size_t* length);
+		CertStoreType storeType,
+		CertSvcStoreCertList **certList,
+		size_t *length);
 
 /**
  * Free all @a CertSvcStoreCertList in linked list of data structure.
@@ -209,7 +209,7 @@ int certsvc_pkcs12_get_root_certificate_list_from_store(CertSvcInstance instance
  * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_free_certificate_list_loaded_from_store(CertSvcInstance instance,
-                                                           CertSvcStoreCertList** certList);
+		CertSvcStoreCertList **certList);
 
 /**
  * Get the certificate with the gname provided from cert-svc store.
@@ -227,9 +227,9 @@ int certsvc_pkcs12_free_certificate_list_loaded_from_store(CertSvcInstance insta
  * @see #CertStoreType
  */
 int certsvc_pkcs12_get_certificate_from_store(CertSvcInstance instance,
-                                              CertStoreType storeType,
-                                              const char *gname,
-                                              CertSvcCertificate *certificate);
+		CertStoreType storeType,
+		const char *gname,
+		CertSvcCertificate *certificate);
 
 /**
  * Get the encoded certificate buffer with the gname provided from cert-svc store.
@@ -250,10 +250,10 @@ int certsvc_pkcs12_get_certificate_from_store(CertSvcInstance instance,
  * @see #CertStoreType
  */
 int certsvc_pkcs12_get_certificate_info_from_store(CertSvcInstance instance,
-                                                   CertStoreType storeType,
-                                                   CertSvcString gname,
-                                                   char** buffer,
-                                                   size_t* size);
+		CertStoreType storeType,
+		CertSvcString gname,
+		char **buffer,
+		size_t *size);
 
 /**
  * Import PKCS#12 bundle(with .pfx or .p12) or certificate(base64 form with .crt
@@ -277,10 +277,10 @@ int certsvc_pkcs12_get_certificate_info_from_store(CertSvcInstance instance,
  * @see #CertStoreType
  */
 int certsvc_pkcs12_import_from_file_to_store(CertSvcInstance instance,
-                                             CertStoreType storeType,
-                                             CertSvcString path,
-                                             CertSvcString password,
-                                             CertSvcString alias);
+		CertStoreType storeType,
+		CertSvcString path,
+		CertSvcString password,
+		CertSvcString alias);
 
 /**
  * Delete the certificate with gname provided from cert-svc store.
@@ -298,8 +298,8 @@ int certsvc_pkcs12_import_from_file_to_store(CertSvcInstance instance,
  * @see #CertStoreType
  */
 int certsvc_pkcs12_delete_certificate_from_store(CertSvcInstance instance,
-                                                 CertStoreType storeType,
-                                                 CertSvcString gname);
+		CertStoreType storeType,
+		CertSvcString gname);
 
 /**
  * Check the uniqueness of the alias in cert-svc store.
@@ -318,9 +318,9 @@ int certsvc_pkcs12_delete_certificate_from_store(CertSvcInstance instance,
  * @see #CertStoreType
  */
 int certsvc_pkcs12_check_alias_exists_in_store(CertSvcInstance instance,
-                                               CertStoreType storeType,
-                                               CertSvcString alias,
-                                               int *is_unique);
+		CertStoreType storeType,
+		CertSvcString alias,
+		int *is_unique);
 
 /**
  * Get list of certificates from PKCS#12 bundle or single certificate which
@@ -343,9 +343,9 @@ int certsvc_pkcs12_check_alias_exists_in_store(CertSvcInstance instance,
  * @see #CertSvcStoreCertList
  */
 int certsvc_pkcs12_load_certificate_list_from_store(CertSvcInstance instance,
-                                                    CertStoreType storeType,
-                                                    CertSvcString alias,
-                                                    CertSvcCertificateList *certificateList);
+		CertStoreType storeType,
+		CertSvcString alias,
+		CertSvcCertificateList *certificateList);
 
 /**
  * Get the alias name with the gname provided.
@@ -364,9 +364,9 @@ int certsvc_pkcs12_load_certificate_list_from_store(CertSvcInstance instance,
  * @see #CertStoreType
  */
 int certsvc_pkcs12_get_alias_name_for_certificate_in_store(CertSvcInstance instance,
-                                                           CertStoreType storeType,
-                                                           CertSvcString gname,
-                                                           char **alias);
+		CertStoreType storeType,
+		CertSvcString gname,
+		char **alias);
 
 #ifdef __cplusplus
 }

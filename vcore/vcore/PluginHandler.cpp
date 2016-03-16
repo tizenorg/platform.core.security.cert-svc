@@ -45,7 +45,7 @@ PluginHandler::PluginHandler()
 		reinterpret_cast<CreateValidatorPlugin_t>(dlsym(m_dlhandle, "create"));
 	if (!createFun) {
 		LogError("create symbol cannot found from " << PLUGIN_PATH
-			<< ". dlerror : " << dlerror());
+				 << ". dlerror : " << dlerror());
 		return;
 	}
 
@@ -53,7 +53,7 @@ PluginHandler::PluginHandler()
 		reinterpret_cast<DestroyValidatorPlugin_t>(dlsym(m_dlhandle, "destroy"));
 	if (!m_destroy) {
 		LogError("destroy symbole cannot found from " << PLUGIN_PATH
-			<< ". dlerror : " << dlerror());
+				 << ". dlerror : " << dlerror());
 		return;
 	}
 

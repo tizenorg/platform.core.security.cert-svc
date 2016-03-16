@@ -46,14 +46,13 @@ namespace VcoreDPL {
  *
  */
 template<class ParserPolicy, class TokenizerPolicy>
-class VSReader : public AbstractInputReader<VSResultPtr, VSToken>
-{
+class VSReader : public AbstractInputReader<VSResultPtr, VSToken> {
 public:
-    VSReader(std::shared_ptr<AbstractInput> wia)
-        : AbstractInputReader<VSResultPtr, VSToken>(wia,
-                std::unique_ptr<ParserBase>(new VSParser<ParserPolicy>()),
-                std::unique_ptr<TokenizerBase>(new VSTokenizer<TokenizerPolicy>()))
-    {}
+	VSReader(std::shared_ptr<AbstractInput> wia)
+		: AbstractInputReader<VSResultPtr, VSToken>(wia,
+				std::unique_ptr<ParserBase>(new VSParser<ParserPolicy>()),
+				std::unique_ptr<TokenizerBase>(new VSTokenizer<TokenizerPolicy>())) {
+	}
 };
 
 typedef VSReader<CSVParserPolicy, CSVTokenizerPolicy> CSVReader;

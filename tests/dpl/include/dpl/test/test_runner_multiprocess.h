@@ -28,15 +28,14 @@ namespace VcoreDPL {
 namespace Test {
 
 class SimplePipeWrapper :
-        public PipeWrapper
-{
-  public:
-    SimplePipeWrapper();
+	public PipeWrapper {
+public:
+	SimplePipeWrapper();
 
-    virtual ~SimplePipeWrapper();
+	virtual ~SimplePipeWrapper();
 
-    Status send(std::string &message);
-    Status receive(std::string &data, bool &empty, time_t deadline);
+	Status send(std::string &message);
+	Status receive(std::string &data, bool &empty, time_t deadline);
 };
 
 void RunMultiProc(TestRunner::TestCase procMulti);

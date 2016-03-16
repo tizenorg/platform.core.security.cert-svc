@@ -31,21 +31,21 @@ RUNNER_TEST_GROUP_INIT(T0030_Certificate)
  */
 RUNNER_TEST(T0031_Certificate)
 {
-    Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
-    std::string result;
+	Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
+	std::string result;
 
-    result = cert.getCommonName(Certificate::FIELD_SUBJECT);
-    RUNNER_ASSERT_MSG(!result.empty(), "No common name");
-    RUNNER_ASSERT_MSG(!result.compare("www.verisign.com"), "CommonName mismatch");
+	result = cert.getCommonName(Certificate::FIELD_SUBJECT);
+	RUNNER_ASSERT_MSG(!result.empty(), "No common name");
+	RUNNER_ASSERT_MSG(!result.compare("www.verisign.com"), "CommonName mismatch");
 
-    result = cert.getCommonName(Certificate::FIELD_ISSUER);
-    RUNNER_ASSERT_MSG(!result.empty(), "No common name");
-    RUNNER_ASSERT_MSG(!result.compare("VeriSign Class 3 Extended Validation SSL SGC CA"),
-            "CommonName mismatch");
+	result = cert.getCommonName(Certificate::FIELD_ISSUER);
+	RUNNER_ASSERT_MSG(!result.empty(), "No common name");
+	RUNNER_ASSERT_MSG(!result.compare("VeriSign Class 3 Extended Validation SSL SGC CA"),
+					  "CommonName mismatch");
 
-    result = cert.getCountryName();
-    RUNNER_ASSERT_MSG(!result.empty(), "No country");
-    RUNNER_ASSERT_MSG(!result.compare("US"), "Country mismatch");
+	result = cert.getCountryName();
+	RUNNER_ASSERT_MSG(!result.empty(), "No country");
+	RUNNER_ASSERT_MSG(!result.compare("US"), "Country mismatch");
 }
 
 /*
@@ -55,21 +55,22 @@ RUNNER_TEST(T0031_Certificate)
  */
 RUNNER_TEST(T0032_Certificate)
 {
-    Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
+	Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
 
-    Certificate::Fingerprint fin =
-        cert.getFingerprint(Certificate::FINGERPRINT_SHA1);
+	Certificate::Fingerprint fin =
+		cert.getFingerprint(Certificate::FINGERPRINT_SHA1);
 
-    unsigned char buff[20] = {
-        0xb9, 0x72, 0x1e, 0xd5, 0x49,
-        0xed, 0xbf, 0x31, 0x84, 0xd8,
-        0x27, 0x0c, 0xfe, 0x03, 0x11,
-        0x19, 0xdf, 0xc2, 0x2b, 0x0a};
-    RUNNER_ASSERT_MSG(fin.size() == 20, "Wrong size of fingerprint");
+	unsigned char buff[20] = {
+		0xb9, 0x72, 0x1e, 0xd5, 0x49,
+		0xed, 0xbf, 0x31, 0x84, 0xd8,
+		0x27, 0x0c, 0xfe, 0x03, 0x11,
+		0x19, 0xdf, 0xc2, 0x2b, 0x0a
+	};
+	RUNNER_ASSERT_MSG(fin.size() == 20, "Wrong size of fingerprint");
 
-    for (size_t i = 0; i<20; ++i) {
-        RUNNER_ASSERT_MSG(fin[i] == buff[i], "Fingerprint mismatch");
-    }
+	for (size_t i = 0; i < 20; ++i) {
+		RUNNER_ASSERT_MSG(fin[i] == buff[i], "Fingerprint mismatch");
+	}
 }
 
 /*
@@ -80,17 +81,17 @@ RUNNER_TEST(T0032_Certificate)
  */
 RUNNER_TEST(T0033_Certificate)
 {
-    Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
+	Certificate cert(TestData::certVerisign, Certificate::FORM_BASE64);
 
-    Certificate::AltNameSet nameSet = cert.getAlternativeNameDNS();
+	Certificate::AltNameSet nameSet = cert.getAlternativeNameDNS();
 
-    RUNNER_ASSERT(nameSet.size() == 8);
+	RUNNER_ASSERT(nameSet.size() == 8);
 
-    std::string str("verisign.com");
-    RUNNER_ASSERT(nameSet.find(str) != nameSet.end());
+	std::string str("verisign.com");
+	RUNNER_ASSERT(nameSet.find(str) != nameSet.end());
 
-    str = std::string("fake.com");
-    RUNNER_ASSERT(nameSet.find(str) == nameSet.end());
+	str = std::string("fake.com");
+	RUNNER_ASSERT(nameSet.find(str) == nameSet.end());
 
 }
 
@@ -101,12 +102,12 @@ RUNNER_TEST(T0033_Certificate)
  */
 RUNNER_TEST(T0034_Certificate_isCA)
 {
-    Certificate cert1(TestData::googleCA, Certificate::FORM_BASE64);
-    RUNNER_ASSERT(cert1.isCA() > 0);
+	Certificate cert1(TestData::googleCA, Certificate::FORM_BASE64);
+	RUNNER_ASSERT(cert1.isCA() > 0);
 
-    Certificate cert2(TestData::google2nd, Certificate::FORM_BASE64);
-    RUNNER_ASSERT(cert2.isCA() > 0);
+	Certificate cert2(TestData::google2nd, Certificate::FORM_BASE64);
+	RUNNER_ASSERT(cert2.isCA() > 0);
 
-    Certificate cert3(TestData::google3rd, Certificate::FORM_BASE64);
-    RUNNER_ASSERT(cert3.isCA() == 0);
+	Certificate cert3(TestData::google3rd, Certificate::FORM_BASE64);
+	RUNNER_ASSERT(cert3.isCA() == 0);
 }

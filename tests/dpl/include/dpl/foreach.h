@@ -32,15 +32,15 @@ namespace Private {
  * Used to detect type of valid reference to value object.
  */
 template <typename T>
-T& ValueReference(T& t)
+T &ValueReference(T &t)
 {
-    return(t);
+	return (t);
 }
 
 template <typename T>
-const T& ValueReference(const T& t)
+const T &ValueReference(const T &t)
 {
-    return(t);
+	return (t);
 }
 } //Private
 } //DPL

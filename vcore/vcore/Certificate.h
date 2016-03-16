@@ -33,10 +33,10 @@
 #include "vcore/exception.h"
 
 extern "C" {
-struct x509_st;
-typedef struct x509_st X509;
-struct X509_name_st;
-typedef struct X509_name_st X509_NAME;
+	struct x509_st;
+	typedef struct x509_st X509;
+	struct X509_name_st;
+	typedef struct X509_name_st X509_NAME;
 }
 
 namespace ValidationCore {
@@ -48,136 +48,133 @@ typedef std::list<CertificatePtr> CertificateList;
 
 class Certificate : public std::enable_shared_from_this<Certificate> {
 public:
-    class Exception {
-    public:
-        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, Base64Error);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongParamError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError);
-    };
+	class Exception {
+	public:
+		VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, OpensslInternalError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, Base64Error);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongParamError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError);
+	};
 
-    typedef std::vector<unsigned char> Fingerprint;
+	typedef std::vector<unsigned char> Fingerprint;
 
-    // ascii string
-    typedef std::string AltName;
-    typedef std::set<AltName> AltNameSet;
+	// ascii string
+	typedef std::string AltName;
+	typedef std::set<AltName> AltNameSet;
 
-    enum FingerprintType
-    {
-        FINGERPRINT_MD5,
-        FINGERPRINT_SHA1
-    };
-    enum FieldType
-    {
-        FIELD_ISSUER,
-        FIELD_SUBJECT
-    };
+	enum FingerprintType {
+		FINGERPRINT_MD5,
+		FINGERPRINT_SHA1
+	};
+	enum FieldType {
+		FIELD_ISSUER,
+		FIELD_SUBJECT
+	};
 
-    enum FormType
-    {
-        FORM_DER,
-        FORM_BASE64
-    };
+	enum FormType {
+		FORM_DER,
+		FORM_BASE64
+	};
 
-    static CertificatePtr createFromFile(const std::string &location);
+	static CertificatePtr createFromFile(const std::string &location);
 
-    explicit Certificate(X509 *cert);
+	explicit Certificate(X509 *cert);
 
-    explicit Certificate(const std::string &data,
-                         FormType form = FORM_DER);
+	explicit Certificate(const std::string &data,
+						 FormType form = FORM_DER);
 
-    ~Certificate();
+	~Certificate();
 
-    // It returns pointer to internal structure!
-    // Do not free this pointer!
-    X509 *getX509(void) const;
+	// It returns pointer to internal structure!
+	// Do not free this pointer!
+	X509 *getX509(void) const;
 
-    std::string getDER(void) const;
+	std::string getDER(void) const;
 
-    std::string getBase64(void) const;
+	std::string getBase64(void) const;
 
-    // This const is cheating here because you have no
-    // guarantee that X509_get_subject_name will not
-    // change X509 object.
-    bool isSignedBy(const CertificatePtr &parent) const;
+	// This const is cheating here because you have no
+	// guarantee that X509_get_subject_name will not
+	// change X509 object.
+	bool isSignedBy(const CertificatePtr &parent) const;
 
-    Fingerprint getFingerprint(FingerprintType type) const;
+	Fingerprint getFingerprint(FingerprintType type) const;
 
-    // getName uses deprecated functions. Usage is strongly discouraged.
-    // utf8 string
-    std::string getOneLine(FieldType type = FIELD_SUBJECT) const;
-    std::string getCommonName(FieldType type = FIELD_SUBJECT) const;
-    std::string getCountryName(FieldType type = FIELD_SUBJECT) const;
-    std::string getStateOrProvinceName(FieldType type = FIELD_SUBJECT) const;
-    std::string getLocalityName(FieldType type = FIELD_SUBJECT) const;
-    std::string getOrganizationName(FieldType type = FIELD_SUBJECT) const;
-    std::string getOrganizationalUnitName(FieldType type = FIELD_SUBJECT) const;
-    std::string getEmailAddres(FieldType type = FIELD_SUBJECT) const;
+	// getName uses deprecated functions. Usage is strongly discouraged.
+	// utf8 string
+	std::string getOneLine(FieldType type = FIELD_SUBJECT) const;
+	std::string getCommonName(FieldType type = FIELD_SUBJECT) const;
+	std::string getCountryName(FieldType type = FIELD_SUBJECT) const;
+	std::string getStateOrProvinceName(FieldType type = FIELD_SUBJECT) const;
+	std::string getLocalityName(FieldType type = FIELD_SUBJECT) const;
+	std::string getOrganizationName(FieldType type = FIELD_SUBJECT) const;
+	std::string getOrganizationalUnitName(FieldType type = FIELD_SUBJECT) const;
+	std::string getEmailAddres(FieldType type = FIELD_SUBJECT) const;
 
-    std::string getNameHash(FieldType type = FIELD_SUBJECT) const;
+	std::string getNameHash(FieldType type = FIELD_SUBJECT) const;
 
-    // TODO: UID type is unsigned char. std::string should be changed to unsigned char container
-    std::string getUID(FieldType type = FIELD_SUBJECT) const;
-    std::string getOCSPURL() const;
+	// TODO: UID type is unsigned char. std::string should be changed to unsigned char container
+	std::string getUID(FieldType type = FIELD_SUBJECT) const;
+	std::string getOCSPURL() const;
 
 
 
-    // Openssl supports 9 types of alternative name filed.
-    // 4 of them are "string similar" types so it is possible
-    // to create more generic function.
-    AltNameSet getAlternativeNameDNS() const;
+	// Openssl supports 9 types of alternative name filed.
+	// 4 of them are "string similar" types so it is possible
+	// to create more generic function.
+	AltNameSet getAlternativeNameDNS() const;
 
-    time_t getNotAfter() const;
+	time_t getNotAfter() const;
 
-    time_t getNotBefore() const;
+	time_t getNotBefore() const;
 
-    ASN1_TIME* getNotAfterTime() const;
+	ASN1_TIME *getNotAfterTime() const;
 
-    ASN1_TIME* getNotBeforeTime() const;
+	ASN1_TIME *getNotBeforeTime() const;
 
-    /**
-     * @brief This is convenient function.
-     *
-     * @details It can't be const function (however it doesn't change internal
-     * object). For details see #isSignedBy() function description.
-     */
-    bool isRootCert();
+	/**
+	 * @brief This is convenient function.
+	 *
+	 * @details It can't be const function (however it doesn't change internal
+	 * object). For details see #isSignedBy() function description.
+	 */
+	bool isRootCert();
 
-    /**
-     * @brief Gets list of CRL distribution's points URIs
-     */
-    std::list<std::string> getCrlUris() const;
+	/**
+	 * @brief Gets list of CRL distribution's points URIs
+	 */
+	std::list<std::string> getCrlUris() const;
 
-    long getVersion() const;
+	long getVersion() const;
 
-    // utf8 string
-    std::string getSerialNumberString() const;
-    std::string getKeyUsageString() const;
-    std::string getSignatureAlgorithmString() const;
-    std::string getPublicKeyAlgoString() const;
-    std::string getPublicKeyString() const;
-    void getPublicKeyDER(unsigned char **pubkey, size_t *len) const;
+	// utf8 string
+	std::string getSerialNumberString() const;
+	std::string getKeyUsageString() const;
+	std::string getSignatureAlgorithmString() const;
+	std::string getPublicKeyAlgoString() const;
+	std::string getPublicKeyString() const;
+	void getPublicKeyDER(unsigned char **pubkey, size_t *len) const;
 
-    /*
-     * 0 - not CA
-     * 1 - CA
-     * 2 - deprecated and not used
-     * 3 - older version of CA
-     * 4 - older version of CA
-     * 5 - netscape CA
-     */
-    int isCA() const;
+	/*
+	 * 0 - not CA
+	 * 1 - CA
+	 * 2 - deprecated and not used
+	 * 3 - older version of CA
+	 * 4 - older version of CA
+	 * 5 - netscape CA
+	 */
+	int isCA() const;
 
-    static std::string FingerprintToColonHex(
-            const Fingerprint &fingerprint);
+	static std::string FingerprintToColonHex(
+		const Fingerprint &fingerprint);
 
 protected:
-    X509_NAME *getX509Name(FieldType type) const;
+	X509_NAME *getX509Name(FieldType type) const;
 
-    // utf8 string
-    std::string getField(FieldType type, int fieldNid) const;
+	// utf8 string
+	std::string getField(FieldType type, int fieldNid) const;
 
-    X509 *m_x509;
+	X509 *m_x509;
 };
 } // namespace ValidationCore

@@ -23,25 +23,25 @@
 #ifndef CERT_SERVER_LOGIC_H_
 #define CERT_SERVER_LOGIC_H_
 
-int getCertificateDetailFromStore(CertStoreType storeType, CertType certType, const char* gname, char* cert);
+int getCertificateDetailFromStore(CertStoreType storeType, CertType certType, const char *gname, char *cert);
 
-int getCertificateDetailFromSystemStore(const char* gname, char* cert);
+int getCertificateDetailFromSystemStore(const char *gname, char *cert);
 
-int deleteCertificateFromStore(CertStoreType storeType, const char* gname);
+int deleteCertificateFromStore(CertStoreType storeType, const char *gname);
 
-int getCertificateStatusFromStore(CertStoreType storeType, const char* gname, CertStatus *status);
+int getCertificateStatusFromStore(CertStoreType storeType, const char *gname, CertStatus *status);
 
-int setCertificateStatusToStore(CertStoreType storeType, int is_root_app, const char* gname, CertStatus status);
+int setCertificateStatusToStore(CertStoreType storeType, int is_root_app, const char *gname, CertStatus status);
 
-int checkAliasExistsInStore(CertStoreType storeType, const char* alias, int *punique);
+int checkAliasExistsInStore(CertStoreType storeType, const char *alias, int *punique);
 
-int installCertificateToStore(CertStoreType storeType, const char* gname, const char *common_name, const char *private_key_gname, const char *associated_gname, const char *pCertBuffer, CertType certType);
+int installCertificateToStore(CertStoreType storeType, const char *gname, const char *common_name, const char *private_key_gname, const char *associated_gname, const char *pCertBuffer, CertType certType);
 
 int getCertificateListFromStore(int reqType, CertStoreType storeType, int is_root_app, char **ppCertListBuffer, size_t *bufferLen, size_t *certCount);
 
-int getCertificateAliasFromStore(CertStoreType storeType, const char* gname, char* alias);
+int getCertificateAliasFromStore(CertStoreType storeType, const char *gname, char *alias);
 
-int loadCertificatesFromStore(CertStoreType storeType, const char* gname, char **ppCertBlockBuffer, size_t *bufferLen, size_t *certBlockCount);
+int loadCertificatesFromStore(CertStoreType storeType, const char *gname, char **ppCertBlockBuffer, size_t *bufferLen, size_t *certBlockCount);
 
 int update_ca_certificate_file(char *cert);
 

@@ -33,11 +33,11 @@ RUNNER_TEST(T0301_dup_x509)
 	CertSvcCertificate certificate;
 
 	int result = certsvc_certificate_new_from_memory(
-			vinstance,
-			reinterpret_cast<const unsigned char *>(TestData::googleCA.c_str()),
-			TestData::googleCA.size(),
-			CERTSVC_FORM_DER_BASE64,
-			&certificate);
+					 vinstance,
+					 reinterpret_cast<const unsigned char *>(TestData::googleCA.c_str()),
+					 TestData::googleCA.size(),
+					 CERTSVC_FORM_DER_BASE64,
+					 &certificate);
 
 	X509 *x509 = NULL;
 	result = certsvc_certificate_dup_x509(certificate, &x509);
@@ -59,11 +59,11 @@ RUNNER_TEST(T0302_dup_pubkey_der)
 	CertSvcCertificate cert;
 
 	int result = certsvc_certificate_new_from_memory(
-			vinstance,
-			reinterpret_cast<const unsigned char *>(TestData::googleCA.c_str()),
-			TestData::googleCA.size(),
-			CERTSVC_FORM_DER_BASE64,
-			&cert);
+					 vinstance,
+					 reinterpret_cast<const unsigned char *>(TestData::googleCA.c_str()),
+					 TestData::googleCA.size(),
+					 CERTSVC_FORM_DER_BASE64,
+					 &cert);
 
 	RUNNER_ASSERT_MSG(CERTSVC_SUCCESS == result, "Error in reading certificate.");
 

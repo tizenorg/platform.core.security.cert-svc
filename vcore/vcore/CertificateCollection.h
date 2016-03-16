@@ -40,130 +40,129 @@ namespace ValidationCore {
 
 class CertificateCollection {
 public:
-    class Exception {
-    public:
-        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, CertificateError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongUsage);
-    };
+	class Exception {
+	public:
+		VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, CertificateError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongUsage);
+	};
 
-    CertificateCollection();
+	CertificateCollection();
 
-    typedef CertificateList::const_iterator const_iterator;
+	typedef CertificateList::const_iterator const_iterator;
 
-    /*
-     * Remove all certificates from collection.
-     */
-    void clear();
+	/*
+	 * Remove all certificates from collection.
+	 */
+	void clear();
 
-    /*
-     * In current implemenation this function MUST success.
-     *
-     * This function will add new certificate to collection.
-     * This function DOES NOT clean collection.
-     */
-    void load(const CertificateList &certList);
+	/*
+	 * In current implemenation this function MUST success.
+	 *
+	 * This function will add new certificate to collection.
+	 * This function DOES NOT clean collection.
+	 */
+	void load(const CertificateList &certList);
 
-    /*
-     * This function will return all certificates from
-     * collection encoded in base64 format.
-     */
-    std::string toBase64String() const;
+	/*
+	 * This function will return all certificates from
+	 * collection encoded in base64 format.
+	 */
+	std::string toBase64String() const;
 
-    /*
-     * This will return all certificate from collection.
-     */
-    CertificateList getCertificateList() const;
+	/*
+	 * This will return all certificate from collection.
+	 */
+	CertificateList getCertificateList() const;
 
-    /*
-     * This function will return true if certificates
-     * in in this structure were sorted and create
-     * certificate chain.
+	/*
+	 * This function will return true if certificates
+	 * in in this structure were sorted and create
+	 * certificate chain.
 
-     * Note: You MUST sort certificates first.
-     */
-    bool isChain() const;
+	 * Note: You MUST sort certificates first.
+	 */
+	bool isChain() const;
 
-    /*
-     * This function will return true if all certificate are
-     * able to create certificate chain.
-     *
-     * This function will sort certificates if collection
-     * is not sorted.
-     *
-     * Note: This function will make all iterators invalid.
-     */
-    bool sort();
+	/*
+	 * This function will return true if all certificate are
+	 * able to create certificate chain.
+	 *
+	 * This function will sort certificates if collection
+	 * is not sorted.
+	 *
+	 * Note: This function will make all iterators invalid.
+	 */
+	bool sort();
 
-    /*
-     * Precondition : cert list sorted and has more than on cert.
-     * This function add root cert in cert list to complete cert chain
-     */
-    bool completeCertificateChain();
+	/*
+	 * Precondition : cert list sorted and has more than on cert.
+	 * This function add root cert in cert list to complete cert chain
+	 */
+	bool completeCertificateChain();
 
-    /*
-     * This function will return Certificate chain.
-     *
-     * First certificate on the list is EndEntity certificate.
-     *
-     * Last certificate on the list is RootCA certificate or
-     * CA certificate if RootCA is not present.
-     *
-     * Note: You MUST sort certificates first and
-     * check if certificates creates proper chain.
-     */
-    CertificateList getChain() const;
+	/*
+	 * This function will return Certificate chain.
+	 *
+	 * First certificate on the list is EndEntity certificate.
+	 *
+	 * Last certificate on the list is RootCA certificate or
+	 * CA certificate if RootCA is not present.
+	 *
+	 * Note: You MUST sort certificates first and
+	 * check if certificates creates proper chain.
+	 */
+	CertificateList getChain() const;
 
-    /*
-     * It returns size of certificate collection.
-     */
-    size_t size() const;
+	/*
+	 * It returns size of certificate collection.
+	 */
+	size_t size() const;
 
-    /*
-     * Return true if collection is empty.
-     */
-    bool empty() const;
+	/*
+	 * Return true if collection is empty.
+	 */
+	bool empty() const;
 
-    /*
-     * This will return end iterator to internal collection.
-     *
-     * Note: this iterator will lose validity if you call non const
-     * method on CertificateCollection class.
-     */
-    const_iterator begin() const;
+	/*
+	 * This will return end iterator to internal collection.
+	 *
+	 * Note: this iterator will lose validity if you call non const
+	 * method on CertificateCollection class.
+	 */
+	const_iterator begin() const;
 
-    /*
-     * This will return end iterator to internal collection.
-     *
-     * Note: this iterator will lose validity if you call non const
-     * method on CertificateCollection class.
-     */
-    const_iterator end() const;
+	/*
+	 * This will return end iterator to internal collection.
+	 *
+	 * Note: this iterator will lose validity if you call non const
+	 * method on CertificateCollection class.
+	 */
+	const_iterator end() const;
 
-    /*
-     * This function will return the last certificate from collection.
-     *
-     * Note: There is no point to call this function if certificate
-     * collection is not sorted!
-     */
-    CertificatePtr back() const;
+	/*
+	 * This function will return the last certificate from collection.
+	 *
+	 * Note: There is no point to call this function if certificate
+	 * collection is not sorted!
+	 */
+	CertificatePtr back() const;
 
 protected:
-    void sortCollection(void);
+	void sortCollection(void);
 
-    enum CollectionStatus
-    {
-        // Certificate collection are not sorted in any way
-        COLLECTION_UNSORTED,
-        // Certificate collection creates certificate chain
-        COLLECTION_SORTED,
-        // Cerfificate collection is not able to create certificate chain
-        COLLECTION_CHAIN_BROKEN,
-    };
+	enum CollectionStatus {
+		// Certificate collection are not sorted in any way
+		COLLECTION_UNSORTED,
+		// Certificate collection creates certificate chain
+		COLLECTION_SORTED,
+		// Cerfificate collection is not able to create certificate chain
+		COLLECTION_CHAIN_BROKEN,
+	};
 
-    CollectionStatus m_collectionStatus;
-    CertificateList m_certList;
+	CollectionStatus m_collectionStatus;
+	CertificateList m_certList;
 };
 
 typedef std::list<CertificateCollection> CertificateCollectionList;

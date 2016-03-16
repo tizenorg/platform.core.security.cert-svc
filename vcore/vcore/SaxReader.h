@@ -32,110 +32,107 @@
 namespace ValidationCore {
 class SaxReader {
 public:
-    SaxReader();
-    ~SaxReader();
+	SaxReader();
+	~SaxReader();
 
-    class Exception {
-    public:
-        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, FileOpeningError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, FileNotValid);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, ParserInternalError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongToken);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, ReadingValueError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, ReadingNameError);
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, UnsupportedType);
-    };
+	class Exception {
+	public:
+		VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, FileOpeningError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, FileNotValid);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, ParserInternalError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, WrongToken);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, ReadingValueError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, ReadingNameError);
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, UnsupportedType);
+	};
 
-    enum NodeType
-    {
-        NODE_UNSUPPORTED,
-        NODE_BEGIN,
-        NODE_END,
-        NODE_TEXT
-    };
+	enum NodeType {
+		NODE_UNSUPPORTED,
+		NODE_BEGIN,
+		NODE_END,
+		NODE_TEXT
+	};
 
-    enum ThrowType
-    {
-        THROW_ENABLE = 0,
-        THROW_DISABLE
-    };
+	enum ThrowType {
+		THROW_ENABLE = 0,
+		THROW_DISABLE
+	};
 
-    /*
-     * xml validation modes
-     */
-    enum ValidationType
-    {
-        VALIDATION_DISABLE,
-        VALIDATION_XMLSCHEME,
-        VALIDATION_DTD
-    };
+	/*
+	 * xml validation modes
+	 */
+	enum ValidationType {
+		VALIDATION_DISABLE,
+		VALIDATION_XMLSCHEME,
+		VALIDATION_DTD
+	};
 
-    /*
-     * initializes parser
-     */
-    void initialize(
-            const std::string &filename,
-            bool defaultArgs = false,
-            ValidationType validation = VALIDATION_DISABLE,
-            const std::string &schema = std::string());
-    /*
-     * deinitializes parser
-     */
-    void deinitialize();
+	/*
+	 * initializes parser
+	 */
+	void initialize(
+		const std::string &filename,
+		bool defaultArgs = false,
+		ValidationType validation = VALIDATION_DISABLE,
+		const std::string &schema = std::string());
+	/*
+	 * deinitializes parser
+	 */
+	void deinitialize();
 
-    /**
-     * Move to next xml node.
-     */
-    bool next();
+	/**
+	 * Move to next xml node.
+	 */
+	bool next();
 
-    /**
-     * Move to next xml node. If next node name is differ from token the exception wiil
-     * be thronw.
-     */
-    void next(const std::string &token);
+	/**
+	 * Move to next xml node. If next node name is differ from token the exception wiil
+	 * be thronw.
+	 */
+	void next(const std::string &token);
 
-    /**
-     * Check if xml tag is empty.
-     */
-    bool isEmpty(void);
+	/**
+	 * Check if xml tag is empty.
+	 */
+	bool isEmpty(void);
 
-    /**
-     * Read attribute tag.
-     */
-    std::string attribute(const std::string &token, ThrowType throwStatus = THROW_ENABLE);
+	/**
+	 * Read attribute tag.
+	 */
+	std::string attribute(const std::string &token, ThrowType throwStatus = THROW_ENABLE);
 
-    /**
-     * Read xml tag name without namespace.
-     */
-    std::string name();
+	/**
+	 * Read xml tag name without namespace.
+	 */
+	std::string name();
 
-    /**
-     * Read xml tag namespace URI
-     */
-    std::string namespaceURI();
+	/**
+	 * Read xml tag namespace URI
+	 */
+	std::string namespaceURI();
 
-    /**
-     * Read xml tag value.
-     */
-    std::string value();
+	/**
+	 * Read xml tag value.
+	 */
+	std::string value();
 
-    /**
-     * Return information about node type.
-     */
-    NodeType type();
+	/**
+	 * Return information about node type.
+	 */
+	NodeType type();
 
-    /**
-     * Save all contonet of xml file which is between current tag and
-     * it's close tag into buffer.
-     */
-    void dumpNode(std::string &buffer);
+	/**
+	 * Save all contonet of xml file which is between current tag and
+	 * it's close tag into buffer.
+	 */
+	void dumpNode(std::string &buffer);
 
 private:
-    /*
-     * internal libxml text reader
-     */
-    xmlTextReaderPtr m_reader;
+	/*
+	 * internal libxml text reader
+	 */
+	xmlTextReaderPtr m_reader;
 };
 }
 

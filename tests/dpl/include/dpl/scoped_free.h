@@ -30,27 +30,23 @@
 
 namespace VcoreDPL {
 template<typename Class>
-struct ScopedFreePolicy
-{
-    typedef Class* Type;
-    static Type NullValue()
-    {
-        return NULL;
-    }
-    static void Destroy(Type ptr)
-    {
-        free(ptr);
-    }
+struct ScopedFreePolicy {
+	typedef Class *Type;
+	static Type NullValue() {
+		return NULL;
+	}
+	static void Destroy(Type ptr) {
+		free(ptr);
+	}
 };
 
 template<typename Memory>
-class ScopedFree : public ScopedResource<ScopedFreePolicy<Memory> >
-{
-    typedef ScopedFreePolicy<Memory> Policy;
-    typedef ScopedResource<Policy> BaseType;
+class ScopedFree : public ScopedResource<ScopedFreePolicy<Memory> > {
+	typedef ScopedFreePolicy<Memory> Policy;
+	typedef ScopedResource<Policy> BaseType;
 
-  public:
-    explicit ScopedFree(Memory *ptr = Policy::NullValue()) : BaseType(ptr) { }
+public:
+	explicit ScopedFree(Memory *ptr = Policy::NullValue()) : BaseType(ptr) { }
 };
 } // namespace VcoreDPL
 

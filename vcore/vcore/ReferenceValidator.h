@@ -38,7 +38,9 @@ class ReferenceValidator : VcoreDPL::Noncopyable
         ERROR_READING_DIR,
         ERROR_UNSUPPORTED_FILE_TYPE,
         ERROR_REFERENCE_NOT_FOUND,
-        ERROR_DECODING_URL
+        ERROR_DECODING_URL,
+        ERROR_OUTBOUND_LNK,
+        ERROR_READING_LNK
     };
 
     ReferenceValidator(const std::string &dirpath);
@@ -46,6 +48,7 @@ class ReferenceValidator : VcoreDPL::Noncopyable
     virtual ~ReferenceValidator();
 
     Result checkReferences(const SignatureData &signatureData);
+    Result checkOutbound(const std::string &linkPath, const std::string &appPath);
 
   private:
     class Impl;

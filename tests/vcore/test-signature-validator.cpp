@@ -20,6 +20,7 @@
 #include <dpl/test/test_runner.h>
 #include <vcore/SignatureFinder.h>
 #include <vcore/SignatureValidator.h>
+#include <vcore/ReferenceValidator.h>
 
 #include "test-common.h"
 
@@ -294,6 +295,29 @@ RUNNER_TEST(T00110_positive_platform_uncheck_ref)
                 "visibility check failed.");
     }
 }
+
+RUNNER_TEST(T00111_positive_wgt_link)
+{
+    std::string appPath = TestData::widget_positive_link_path;
+    std::string linkPath = appPath + "/link";
+    ReferenceValidator fileValidator(appPath);
+
+    RUNNER_ASSERT_MSG(
+        ReferenceValidator::NO_ERROR == fileValidator.checkOutbound(linkPath, appPath),
+        "Link file shoud point within package");
+}
+RUNNER_TEST(T00112_negative_wgt_link)
+{
+    std::string appPath = TestData::widget_negative_link_path;
+    std::string linkPath = appPath + "/link";
+    ReferenceValidator fileValidator(appPath);
+
+    RUNNER_ASSERT_MSG(
+        ReferenceValidator::NO_ERROR != fileValidator.checkOutbound(linkPath, appPath),
+        "checkOutbound() shoud be fail");
+}
+
+
 RUNNER_TEST(T00151_negative_hash_check_ref)
 {
     SignatureFileInfoSet signatureSet;
@@ -417,6 +441,7 @@ RUNNER_TEST(T00155_negative_tpk_with_added_malfile)
                 << validator.errorToString(result));
     }
 }
+
 
 RUNNER_TEST(T00156_negative_tpk_with_userdata_file_changed_in_list)
 {

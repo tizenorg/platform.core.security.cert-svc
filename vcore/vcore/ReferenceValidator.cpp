@@ -25,10 +25,16 @@
 #include <errno.h>
 #include <fstream>
 #include <memory>
+#include <unistd.h>
+#include <limits.h>
 
 #include <pcrecpp.h>
 
 #include <dpl/log/log.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 namespace {
 
@@ -53,7 +59,8 @@ class ReferenceValidator::Impl
 
     virtual ~Impl(){}
 
-    Result checkReferences(const SignatureData &signatureData){
+    Result checkReferences(const SignatureData &signatureData)
+    {
         const ReferenceSet &refSet = signatureData.getReferenceSet();
         ReferenceSet refDecoded;
 
@@ -71,6 +78,21 @@ class ReferenceValidator::Impl
             refDecoded,
             std::string(),
             signatureData.isAuthorSignature());
+    }
+
+    Result checkOutbound(const std::string &linkPath, const std::string &appPath)
+    {
+        char resolvedPath[PATH_MAX];
+
+        char *ret = realpath(linkPath.c_str(), resolvedPath);
+        if (resolvedPath == NULL || ret == NULL)
+            return ERROR_READING_LNK;
+
+        std::string linkRealPath(resolvedPath);
+        if (linkRealPath.compare(0, appPath.size(), appPath) == 0)
+            return NO_ERROR;
+        else
+            return ERROR_OUTBOUND_LNK;
     }
 
   private:
@@ -187,6 +209,24 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
                 closedir(dirp);
                 return ERROR_REFERENCE_NOT_FOUND;
             }
+        } else if (result->d_type == DT_LNK) {
+            std::string linkPath(directory + result->d_name);
+
+            if (referenceSet.end() ==
+                referenceSet.find(linkPath))
+            {
+                LogDebug("Found file : " << (directory + result->d_name));
+                LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
+                closedir(dirp);
+                return ERROR_REFERENCE_NOT_FOUND;
+            }
+
+            Result ret = checkOutbound(linkPath, m_dirpath);
+            if (ret != NO_ERROR) {
+                LogError("Link file point wrong path");
+                closedir(dirp);
+                return ret;
+            }
         } else {
             LogError("Unknown file type.");
             closedir(dirp);
@@ -218,4 +258,9 @@ ReferenceValidator::Result ReferenceValidator::checkReferences(
     return m_impl->checkReferences(signatureData);
 }
 
+ReferenceValidator::Result ReferenceValidator::checkOutbound(
+    const std::string &linkPath, const std::string &appPath)
+{
+    return m_impl->checkOutbound(linkPath, appPath);
+}
 } // ValidationCore

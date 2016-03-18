@@ -294,6 +294,55 @@ RUNNER_TEST(T00110_positive_platform_uncheck_ref)
                 "visibility check failed.");
     }
 }
+RUNNER_TEST(T00111_positive_wgt_link)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_positive_link_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_positive_link_path,
+                true,
+                true,
+                data);
+
+        // this condition is for OCSP Success in signature1.xml
+        if (!data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
+                "If DT_LNK type point within package, it should be success: "
+                << validator.errorToString(result));
+    }
+}
+
+RUNNER_TEST(T00112_negative_wgt_link)
+{
+    SignatureFileInfoSet signatureSet;
+    SignatureFinder signatureFinder(TestData::widget_negative_link_path);
+    RUNNER_ASSERT_MSG(
+        SignatureFinder::NO_ERROR == signatureFinder.find(signatureSet),
+        "SignatureFinder failed");
+
+    for (auto &sig : signatureSet) {
+        SignatureValidator validator(sig);
+        SignatureData data;
+        VCerr result = validator.check(
+                TestData::widget_negative_link_path,
+                true,
+                true,
+                data);
+
+        if (!data.isAuthorSignature())
+            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_REF,
+                "If DT_LNK type point outside of package, it should be fail: "
+                << validator.errorToString(result));
+    }
+}
+
 RUNNER_TEST(T00151_negative_hash_check_ref)
 {
     SignatureFileInfoSet signatureSet;

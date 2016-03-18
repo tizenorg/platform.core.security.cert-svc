@@ -31,7 +31,7 @@ Requires: ca-certificates-tizen
 %global TZ_SYS_ETC              %{?TZ_SYS_ETC:%TZ_SYS_ETC}%{!?TZ_SYS_ETC:/opt/etc}
 %global TZ_SYS_SHARE            %{?TZ_SYS_SHARE:%TZ_SYS_SHARE}%{!?TZ_SYS_SHARE:/opt/share}
 %global TZ_SYS_RO_SHARE         %{?TZ_SYS_RO_SHARE:%TZ_SYS_RO_SHARE}%{!?TZ_SYS_RO_SHARE:%_datadir}
-%global TZ_SYS_RW_APP           %{?TZ_SYS_RW_APP:%TZ_SYS_RW_APP}%!?TZ_SYS_RW_APP:/opt/usr/apps}
+%global TZ_SYS_RW_APP           %{?TZ_SYS_RW_APP:%TZ_SYS_RW_APP}%{!?TZ_SYS_RW_APP:/opt/usr/apps}
 
 %global TZ_SYS_CA_CERTS         %{?TZ_SYS_CA_CERTS:%TZ_SYS_CA_CERTS}%{!?TZ_SYS_CA_CERTS:%TZ_SYS_ETC/ssl/certs}
 %global TZ_SYS_RO_CA_CERTS_ORIG %{?TZ_SYS_RO_CA_CERTS_ORIG:%TZ_SYS_RO_CA_CERTS_ORIG}%{!?TZ_SYS_CA_RO_CERTS_ORGIN:%TZ_SYS_RO_SHARE/ca-certificates/certs}

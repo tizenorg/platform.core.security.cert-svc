@@ -15,6 +15,7 @@
  */
 /*
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ *              Sangwan Kwon (sangwan.kwon@samsung.com)
  * @file        ReferenceValidator.h
  * @version     1.0
  * @brief       Compare signature reference list with widget package.
@@ -38,7 +39,9 @@ class ReferenceValidator : VcoreDPL::Noncopyable
         ERROR_READING_DIR,
         ERROR_UNSUPPORTED_FILE_TYPE,
         ERROR_REFERENCE_NOT_FOUND,
-        ERROR_DECODING_URL
+        ERROR_DECODING_URL,
+        ERROR_OUTBOUND_LNK,
+        ERROR_READING_LNK
     };
 
     ReferenceValidator(const std::string &dirpath);
@@ -46,6 +49,7 @@ class ReferenceValidator : VcoreDPL::Noncopyable
     virtual ~ReferenceValidator();
 
     Result checkReferences(const SignatureData &signatureData);
+    Result checkOutbound(const std::string &linkPath, const std::string &appPath);
 
   private:
     class Impl;

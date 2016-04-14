@@ -24,14 +24,13 @@
 #include <unistd.h>
 #include <cstring>
 #include <new>
+#include <iostream>
 
 #include <openssl/err.h>
 #include <openssl/pkcs12.h>
 #include <openssl/sha.h>
 #include <openssl/x509.h>
 #include <openssl/pem.h>
-
-#include <tzplatform_config.h>
 
 #include <cert-svc/cinstance.h>
 #include <cert-svc/ccert.h>
@@ -671,7 +670,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1017_load_cert_list_from_store)
 
 RUNNER_TEST(CERTSVC_PKCS12_1018_get_duplicate_private_key)
 {
-	const char *privatekey_path = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12/temp.txt");
+	const char *privatekey_path = CERTSVC_PKCS12_STORAGE_DIR "/temp.txt";
 
 	int result;
 
@@ -985,7 +984,7 @@ RUNNER_TEST(CERTSVC_PKCS12_1027_get_alias_name_from_gname_from_store)
 
 		char user_cert_path[512];
 
-		const char *output_template = tzplatform_mkpath(TZ_SYS_SHARE, "cert-svc/pkcs12/file_%d");
+		const char *output_template = CERTSVC_PKCS12_STORAGE_DIR "/file_%d";
 
 		snprintf(user_cert_path, sizeof(user_cert_path), output_template, count++);
 		FILE *fp = fopen(user_cert_path, "w");

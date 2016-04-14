@@ -20,7 +20,6 @@
 
 PKG_CHECK_MODULES(PKCS12_TEST_DEP
     REQUIRED
-    libtzplatform-config
     )
 
 SET(PKCS12_TEST_SOURCES

@@ -3,8 +3,8 @@ Description=Start cert server for cert-svc managing root ssl certs
 
 [Service]
 ExecStart=@TZ_SYS_BIN@/cert-server
-User=system
-Group=system
+User=security_fw
+Group=security_fw
 Sockets=cert-server.socket
 
 [Install]

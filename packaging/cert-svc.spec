@@ -26,6 +26,7 @@ BuildRequires: ca-certificates
 BuildRequires: ca-certificates-devel
 Requires: ca-certificates
 Requires: ca-certificates-tizen
+Requires: security-config
 
 %global TZ_SYS_BIN              %{?TZ_SYS_BIN:%TZ_SYS_BIN}%{!?TZ_SYS_BIN:%_bindir}
 %global TZ_SYS_ETC              %{?TZ_SYS_ETC:%TZ_SYS_ETC}%{!?TZ_SYS_ETC:/opt/etc}
@@ -144,8 +145,8 @@ fi
 %_unitdir/sockets.target.wants/cert-server.socket
 %_libdir/libcert-svc-vcore.so.*
 %TZ_SYS_BIN/cert-server
-%attr(-, system, system) %CERT_SVC_PATH
-%attr(-, system, system) %CERT_SVC_RO_PATH
+%attr(-, security_fw, security_fw) %CERT_SVC_PATH
+%attr(-, security_fw, security_fw) %CERT_SVC_RO_PATH
 
 %files devel
 %_includedir/*

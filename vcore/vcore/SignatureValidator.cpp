@@ -269,9 +269,18 @@ VCerr SignatureValidator::Impl::preStep(void)
 	if (result != E_SIG_NONE)
 		return result;
 
-	// Is Root CA certificate trusted?
-	Set storeIdSet = createCertificateIdentifier().find(m_data.getCertList().back());
+	auto certificatePtr = m_data.getCertList().back();
 
+	// Find root certificate's domain in origianl fingerprint list.
+	Set storeIdSet = createCertificateIdentifier(FINGERPRINT_LIST_PATH).find(certificatePtr);
+
+	// If it does not exit, find it in extention fingerprint list.
+	if(storeIdSet.isEmpty()) {
+		LogDebug("Cannot find store id in FINGERPRINT_LIST_PATH. Find it in extention continue.");
+		storeIdSet = createCertificateIdentifier(FINGERPRINT_LIST_EXT_PATH).find(certificatePtr);
+	}
+
+	// Is Root CA certificate trusted?
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
 	if (m_data.isAuthorSignature()) {
 		if (!storeIdSet.contains(TIZEN_DEVELOPER)) {

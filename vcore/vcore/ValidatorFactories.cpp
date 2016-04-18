@@ -26,24 +26,22 @@
 #include <dpl/log/log.h>
 
 #include <string>
+#include <memory>
 
 namespace ValidationCore {
 
-const CertificateIdentifier& createCertificateIdentifier()
+const CertificateIdentifier& createCertificateIdentifier(const char *fingerprintListPath)
 {
     static CertificateIdentifier certificateIdentifier;
-    static bool initialized = false;
-    if (!initialized) {
-        CertificateConfigReader reader;
-        std::string file(FINGERPRINT_LIST_PATH);
-        LogDebug("File with fingerprint list is : " << file);
-        std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
-        LogDebug("File with fingerprint list schema is : " << schema);
-        reader.initialize(file, schema);
-        reader.read(certificateIdentifier);
 
-        initialized = true;
-    }
+	CertificateConfigReader reader;
+	std::string file(fingerprintListPath);
+	LogDebug("File with fingerprint list is : " << file);
+	std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
+	LogDebug("File with fingerprint list schema is : " << schema);
+	reader.initialize(file, schema);
+	reader.read(certificateIdentifier);
+
     return certificateIdentifier;
 }
 

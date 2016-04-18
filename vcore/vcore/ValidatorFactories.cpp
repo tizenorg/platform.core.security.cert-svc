@@ -16,6 +16,7 @@
 /*
  * @file
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @author      Sangwan kwon (sangwan.kwon@samsung.com)
  * @version     1.0
  * @brief
  */
@@ -26,24 +27,42 @@
 #include <dpl/log/log.h>
 
 #include <string>
+#include <fstream>
+#include <memory>
 
 namespace ValidationCore {
 
 const CertificateIdentifier& createCertificateIdentifier()
 {
-    static CertificateIdentifier certificateIdentifier;
-    static bool initialized = false;
-    if (!initialized) {
-        CertificateConfigReader reader;
-        std::string file(FINGERPRINT_LIST_PATH);
-        LogDebug("File with fingerprint list is : " << file);
-        std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
-        LogDebug("File with fingerprint list schema is : " << schema);
-        reader.initialize(file, schema);
-        reader.read(certificateIdentifier);
+	static CertificateIdentifier certificateIdentifier;
+	static bool initialized = false;
 
-        initialized = true;
-    }
+	if (!initialized) {
+		std::string file(FINGERPRINT_LIST_PATH);
+		std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
+		LogDebug("File with fingerprint list is : " << file);
+		LogDebug("File with fingerprint list schema is : " << schema);
+
+		// Read the fingerprint original list.
+		CertificateConfigReader reader;
+		reader.initialize(file, schema);
+		reader.read(certificateIdentifier);
+
+		// Check the fingerprint extention list exist.
+		if (std::ifstream(FINGERPRINT_LIST_EXT_PATH))
+		{
+			std::string extFile(FINGERPRINT_LIST_EXT_PATH);
+			LogDebug("Exist fingerprint extention file, add it.");
+
+			// Read the fingerprint extention list.
+			CertificateConfigReader extReader;
+			extReader.initialize(extFile, schema);
+			extReader.read(certificateIdentifier);
+		}
+
+		initialized = true;
+	}
+
     return certificateIdentifier;
 }
 

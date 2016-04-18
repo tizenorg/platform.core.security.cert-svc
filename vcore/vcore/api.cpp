@@ -17,6 +17,7 @@
  * @file        api.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
  * @author      Jacek Migacz (j.migacz@samsung.com)
+ * @author      Sangwan Kwon (sangwan.kwon@samsung.com)
  * @version     1.0
  * @brief       This is part of C-api proposition for cert-svc.
  */
@@ -740,7 +741,8 @@ public:
         return CERTSVC_SUCCESS;
     }
 
-    int getVisibility(CertSvcCertificate certificate, CertSvcVisibility *visibility)
+	// TODO : sangan.kwon, modify method by using CertificateIdentifier
+    int getVisibility(CertSvcCertificate certificate, CertSvcVisibility *visibility, const char *fingerprintListPath)
     {
 		int ret = CERTSVC_FAIL;
 		//xmlChar *xmlPathCertificateSet  = (xmlChar*) "CertificateSet"; /*unused variable*/
@@ -760,7 +762,7 @@ public:
 		std::string fingerprint = Certificate::FingerprintToColonHex(certPtr->getFingerprint(Certificate::FINGERPRINT_SHA1));
 
 		/*   load file */
-		xmlDocPtr doc = xmlParseFile(FINGERPRINT_LIST_PATH);
+		xmlDocPtr doc = xmlParseFile(fingerprintListPath);
 		if ((doc == NULL) || (xmlDocGetRootElement(doc) == NULL))
 		{
 			LogError("Failed to prase fingerprint_list.xml");
@@ -1425,11 +1427,16 @@ int certsvc_certificate_verify_with_caflag(
 int certsvc_certificate_get_visibility(CertSvcCertificate certificate, CertSvcVisibility *visibility)
 {
     try {
-        return impl(certificate.privateInstance)->getVisibility(certificate, visibility);
+        int result = impl(certificate.privateInstance)->getVisibility(certificate, visibility, FINGERPRINT_LIST_PATH);
+        if (result != CERTSVC_SUCCESS) {
+            LogDebug("Cannot find store id in FINGERPRINT_LIST_PATH. Find it in extention continue.");
+            result = impl(certificate.privateInstance)->getVisibility(certificate, visibility, FINGERPRINT_LIST_EXT_PATH);
+        }
+        return result;
     } catch (...)
-	{
-		LogError("exception occur");
-	}
+    {
+        LogError("exception occur");
+    }
     return CERTSVC_FAIL;
 }
 

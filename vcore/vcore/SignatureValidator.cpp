@@ -16,6 +16,7 @@
 /*
  * @file        SignatureValidator.cpp
  * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @author      Sangwan Kwon (sangwan.kwon@samsung.com)
  * @version     1.0
  * @brief       Implementatin of tizen signature validation protocol.
  */
@@ -269,9 +270,11 @@ VCerr SignatureValidator::Impl::preStep(void)
 	if (result != E_SIG_NONE)
 		return result;
 
-	// Is Root CA certificate trusted?
-	Set storeIdSet = createCertificateIdentifier().find(m_data.getCertList().back());
+	// Get Identifier from fingerprint original, extention file.
+	auto certificatePtr = m_data.getCertList().back();
+	auto storeIdSet = createCertificateIdentifier().find(certificatePtr);
 
+	// Is Root CA certificate trusted?
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
 	if (m_data.isAuthorSignature()) {
 		if (!storeIdSet.contains(TIZEN_DEVELOPER)) {

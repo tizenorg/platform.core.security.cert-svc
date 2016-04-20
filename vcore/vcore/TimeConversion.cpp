@@ -21,6 +21,7 @@
  * @brief
  */
 #include <vcore/TimeConversion.h>
+#include <dpl/log/log.h>
 
 #include <cstring>
 #include <climits>
@@ -285,11 +286,17 @@ int asn1TimeToTimeT(ASN1_TIME *t, time_t *res)
     if (ret == 0)
         return 0;
 
+    LogDebug("Convert asn1 to struct tm : "
+        << tm.tm_year + 1900 <<  tm.tm_mon + 1 << tm.tm_mday);
     *res = mktime(&tm);
 
     // If time_t occured overflow, set TIME_MAX.
-    if(*res == -1)
+    if(*res == -1) {
+        LogDebug("Occured overflow time_t. it may year 2038 problem.");
         *res = TIME_MAX;
+    }
+
+    LogDebug("Convert struct tm to time_t : " << asctime(gmtime(res)));
 
     return 1;
 }

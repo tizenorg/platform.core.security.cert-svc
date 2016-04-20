@@ -370,6 +370,7 @@ void XmlSec::loadPEMCertificateFile(XmlSecContext &context, xmlSecKeysMngrPtr mn
 
 void XmlSec::validateInternal(XmlSecContext &context)
 {
+    LogDebug("Start to validate.");
     Assert(!context.signatureFile.empty());
     Assert(!!context.certificatePtr || !context.certificatePath.empty());
 

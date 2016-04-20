@@ -349,7 +349,7 @@ std::string Certificate::getNameHash(FieldType type) const
 
     snprintf(buf, 9, "%08lx", ulNameHash);
 
-    LogDebug("str name hash [" << buf << "]");
+//  LogDebug("str name hash [" << buf << "]");
 
     return std::string(buf);
 }
@@ -441,14 +441,35 @@ Certificate::AltNameSet Certificate::getAlternativeNameDNS() const
     return set;
 }
 
-time_t Certificate::getNotAfter() const
+ASN1_TIME* Certificate::getNotAfterTime() const
 {
-    ASN1_TIME *time = X509_get_notAfter(m_x509);
-    if (!time)
+    auto timeafter = X509_get_notAfter(m_x509);
+    if (!timeafter)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Reading Not After error.");
 
+    LogDebug("Get notAfter ASN1_TIME : " << (char*)timeafter->data);
+
+    return timeafter;
+}
+
+ASN1_TIME* Certificate::getNotBeforeTime() const
+{
+    auto timebefore = X509_get_notBefore(m_x509);
+    if (!timebefore)
+        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
+                      "Reading Not Before error.");
+
+    LogDebug("Get notBefore ASN1_TIME : " << (char*)timebefore->data);
+
+    return timebefore;
+}
+
+time_t Certificate::getNotAfter() const
+{
+    auto time = getNotAfterTime();
     time_t output;
+
     if (asn1TimeToTimeT(time, &output) == 0)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Converting ASN1_time to time_t error.");
@@ -458,37 +479,14 @@ time_t Certificate::getNotAfter() const
 
 time_t Certificate::getNotBefore() const
 {
-    ASN1_TIME *time = X509_get_notBefore(m_x509);
-    if (!time)
-        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
-                      "Reading Not Before error.");
-
+    auto time = getNotBeforeTime();
     time_t output;
+
     if (asn1TimeToTimeT(time, &output) == 0)
         VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
                       "Converting ASN1_time to time_t error.");
 
     return output;
-}
-
-ASN1_TIME* Certificate::getNotAfterTime() const
-{
-    ASN1_TIME *timeafter = X509_get_notAfter(m_x509);
-    if (!timeafter)
-        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
-                      "Reading Not After error.");
-
-    return timeafter;
-}
-
-ASN1_TIME* Certificate::getNotBeforeTime() const
-{
-    ASN1_TIME *timebefore = X509_get_notBefore(m_x509);
-    if (!timebefore)
-        VcoreThrowMsg(Certificate::Exception::OpensslInternalError,
-                      "Reading Not Before error.");
-
-    return timebefore;
 }
 
 bool Certificate::isRootCert()

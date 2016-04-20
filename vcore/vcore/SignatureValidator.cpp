@@ -219,6 +219,7 @@ VCerr SignatureValidator::Impl::parseSignature(void)
  */
 VCerr SignatureValidator::Impl::makeDataBySignature(bool completeWithSystemCert)
 {
+	LogDebug("Start to make chain.");
 	m_data = SignatureData(m_fileInfo.getFileName(), m_fileInfo.getFileNumber());
 
 	if (parseSignature()) {
@@ -231,24 +232,28 @@ VCerr SignatureValidator::Impl::makeDataBySignature(bool completeWithSystemCert)
 
 	try {
 		CertificateCollection collection;
-		collection.load(m_data.getCertList());
 
+		// Load Certificates and make chain.
+		collection.load(m_data.getCertList());
 		if (!collection.sort() || collection.empty()) {
 			LogError("Certificates do not form valid chain.");
 			return E_SIG_INVALID_CHAIN;
 		}
 
+		// Add root certificate to chain.
 		if (completeWithSystemCert && !collection.completeCertificateChain()) {
 			if (m_data.isAuthorSignature() || m_data.getSignatureNumber() == 1) {
 				LogError("Failed to complete cert chain with system cert");
 				return E_SIG_INVALID_CHAIN;
 			} else {
-				LogError("distributor's signature has got unrecognized root CA certificate.");
+				LogDebug("Distributor N's certificate has got "
+					"unrecognized root CA certificate.");
 				m_disregarded = true;
 			}
 		}
 
 		m_data.setSortedCertificateList(collection.getChain());
+		LogDebug("Finish making chain successfully.");
 
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
@@ -266,36 +271,41 @@ VCerr SignatureValidator::Impl::makeDataBySignature(bool completeWithSystemCert)
 
 VCerr SignatureValidator::Impl::preStep(void)
 {
+	// Make chain process.
 	VCerr result = makeDataBySignature(true);
 	if (result != E_SIG_NONE)
 		return result;
 
 	// Get Identifier from fingerprint original, extention file.
+	LogDebug("Start to check certificate domain.");
 	auto certificatePtr = m_data.getCertList().back();
 	auto storeIdSet = createCertificateIdentifier().find(certificatePtr);
 
-	// Is Root CA certificate trusted?
+	// Check root CA certificate has proper domain.
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
 	if (m_data.isAuthorSignature()) {
 		if (!storeIdSet.contains(TIZEN_DEVELOPER)) {
-			LogError("author-signature.xml's root certificate isn't in tizen developer domain.");
+			LogError("author-signature.xml's root certificate "
+				"isn't in tizen developer domain.");
 			return E_SIG_INVALID_CHAIN;
 		}
 	} else {
 		if (storeIdSet.contains(TIZEN_DEVELOPER)) {
-			LogError("distributor signautre root certificate shouldn't be in tizen developer domain.");
+			LogError("distributor signautre root certificate "
+				"shouldn't be in tizen developer domain.");
 			return E_SIG_INVALID_CHAIN;
 		}
 		if (m_data.getSignatureNumber() == 1 && !storeIdSet.isContainsVis()) {
 			LogError("signature1.xml has got unrecognized root CA certificate.");
 			return E_SIG_INVALID_CHAIN;
 		} else if (!storeIdSet.isContainsVis()) {
-			LogError("signatureN.xml (not 1) has got unrecognized root CA certificate.");
+			LogDebug("signatureN.xml has got unrecognized root CA certificate.");
 			m_disregarded = true;
 		}
 	}
 
 	m_data.setStorageType(storeIdSet);
+	LogDebug("Finish checking certificate domain.");
 
 	/*
 	 * We add only Root CA certificate because the rest
@@ -311,6 +321,7 @@ VCerr SignatureValidator::Impl::preStep(void)
 	CertTimeStatus status = _timeValidation(lower, upper, current);
 
 	if (status != CertTimeStatus::VALID) {
+		LogDebug("Certificate's time is invalid.");
 		if (_isTimeStrict(storeIdSet))
 			return status == CertTimeStatus::EXPIRED
 					? E_SIG_CERT_EXPIRED : E_SIG_CERT_NOT_YET;
@@ -333,31 +344,35 @@ VCerr SignatureValidator::Impl::baseCheck(
 	bool checkReferences)
 {
 	try {
+		// Make certificate chain, check certificate info
 		VCerr result = preStep();
 		if (result != E_SIG_NONE)
 			return result;
 
-		if (!m_data.isAuthorSignature()) {
-			if (!m_data.getSignatureNumber() != 1)
-				m_context.allowBrokenChain = true;
+		// Since disregard case, uncheck root certs in signatureN.xml
+		if (!m_data.isAuthorSignature() && m_data.getSignatureNumber() != 1)
+			m_context.allowBrokenChain = true;
 
-			XmlSecSingleton::Instance().validate(m_context);
+		// XmlSec validate
+		XmlSecSingleton::Instance().validate(m_context);
 
-			m_data.setReference(m_context.referenceSet);
-			if (!checkObjectReferences()) {
-				LogWarning("Failed to check Object References");
+		// Check reference of 'Object' tag - OID
+		m_data.setReference(m_context.referenceSet);
+		if (!checkObjectReferences()) {
+			LogWarning("Failed to check Object References");
+			return E_SIG_INVALID_REF;
+		}
+
+		// Check reference's existence
+		if (checkReferences) {
+			ReferenceValidator fileValidator(contentPath);
+			if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(m_data)) {
+				LogWarning("Invalid package - file references broken");
 				return E_SIG_INVALID_REF;
-			}
-
-			if (checkReferences) {
-				ReferenceValidator fileValidator(contentPath);
-				if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(m_data)) {
-					LogWarning("Invalid package - file references broken");
-					return E_SIG_INVALID_REF;
-				}
 			}
 		}
 
+		// Check OCSP
 		if (checkOcsp && Ocsp::check(m_data) == Ocsp::Result::REVOKED) {
 			LogError("Certificate is Revoked by OCSP server.");
 			return E_SIG_REVOKED;
@@ -405,10 +420,12 @@ VCerr SignatureValidator::Impl::baseCheckList(
 	const UriList &uriList)
 {
 	try {
+		// Make certificate chain, check certificate info
 		VCerr result = preStep();
 		if (result != E_SIG_NONE)
 			return result;
 
+		// XmlSec validate
 		if (uriList.size() == 0)
 			XmlSecSingleton::Instance().validateNoHash(m_context);
 		else

@@ -67,8 +67,6 @@ bool isHashMatchedFile(const std::string &path, const std::string &hash)
 	CertificatePtr certPtr = Certificate::createFromFile(path);
 	std::string name = certPtr->getNameHash(Certificate::FIELD_SUBJECT);
 
-	LogDebug("candidate file path[" << path << "] name[" << name << "] hash[" << hash << "]");
-
 	return isHashMatchedName(name, hash);
 }
 
@@ -139,6 +137,7 @@ CertificatePtr searchCert(const std::string &dir, const CertificatePtr &certPtr,
 
 CertificatePtr getIssuerCertFromStore(const CertificatePtr &certPtr)
 {
+	LogDebug("Start to get issuer from store.");
 	CertificatePtr found = searchCert(TZ_SYS_CA_CERTS_TIZEN, certPtr, false);
 	if (found.get() != NULL) {
 		LogDebug("Found issuer cert in tizen root CA dir");

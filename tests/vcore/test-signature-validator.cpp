@@ -432,6 +432,7 @@ RUNNER_TEST(T00154_negative_signature_uncheck_ref)
                 false,
                 data);
 
+        //TODO(sangwan.kwon) : delete if condition about author signature 
         if (!data.isAuthorSignature())
             RUNNER_ASSERT_MSG(result == E_SIG_INVALID_SIG,
                 "dist sig should be failed: "
@@ -456,14 +457,9 @@ RUNNER_TEST(T00155_negative_tpk_with_added_malfile)
                 true,
                 data);
 
-        if (data.isAuthorSignature())
-            RUNNER_ASSERT_MSG(result == E_SIG_NONE,
-                "author sig validation should be success: "
-                << validator.errorToString(result));
-        else
-            RUNNER_ASSERT_MSG(result == E_SIG_INVALID_REF,
-                "dist sig validation should be failed: "
-                << validator.errorToString(result));
+        RUNNER_ASSERT_MSG(result == E_SIG_INVALID_REF,
+            "dist sig validation should be failed: "
+            << validator.errorToString(result));
     }
 }
 

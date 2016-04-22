@@ -414,12 +414,6 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		else
 			XmlSecSingleton::Instance().validatePartialHash(m_context, uriList);
 
-		m_data.setReference(m_context.referenceSet);
-		if (!checkObjectReferences()) {
-			LogWarning("Failed to check Object References");
-			return E_SIG_INVALID_REF;
-		}
-
 		if (checkOcsp && Ocsp::check(m_data) == Ocsp::Result::REVOKED) {
 			LogError("Certificate is Revoked by OCSP server.");
 			return E_SIG_REVOKED;

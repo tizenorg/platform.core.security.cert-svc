@@ -13,9 +13,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+/*
+ * @file        TimeConversion.cpp
+ * @author      Bartlomiej Grzelewski (b.grzelewski@samsung.com)
+ * @author      Sangwan Kwon (sangwan.kwon@samsung.com)
+ * @version     0.1
+ * @brief
+ */
 #include <vcore/TimeConversion.h>
 
 #include <cstring>
+
+#define TIME_MAX 2147483647 // time_t max value in 32bit
 
 namespace {
 
@@ -276,6 +285,11 @@ int asn1TimeToTimeT(ASN1_TIME *t, time_t *res)
         return 0;
 
     *res = mktime(&tm);
+
+    // If time_t occured overflow, set TIME_MAX.
+    if(*res == -1)
+        *res = TIME_MAX;
+
     return 1;
 }
 

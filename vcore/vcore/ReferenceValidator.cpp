@@ -28,6 +28,8 @@
 #include <memory>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <pcrecpp.h>
 
@@ -175,6 +177,21 @@ ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
 
         if (!strcmp(result->d_name, SPECIAL_SYMBOL_UPPER_DIR)) {
             continue;
+        }
+
+        if (result->d_type == DT_UNKNOWN) {
+            // try to stat inode when readdir is not returning known type
+            std::string path = currentDir + "/" + result->d_name;
+            struct stat s;
+            if (lstat(path.c_str(), &s) != 0) {
+                closedir(dirp);
+                return ERROR_LSTAT;
+            }
+            if (S_ISREG(s.st_mode)) {
+                result->d_type = DT_REG;
+            } else if (S_ISDIR(s.st_mode)) {
+                result->d_type = DT_DIR;
+            }
         }
 
         if (currentDir == m_dirpath && result->d_type == DT_REG &&

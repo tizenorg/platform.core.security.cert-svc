@@ -41,7 +41,8 @@ class ReferenceValidator : VcoreDPL::Noncopyable
         ERROR_REFERENCE_NOT_FOUND,
         ERROR_DECODING_URL,
         ERROR_OUTBOUND_LNK,
-        ERROR_READING_LNK
+        ERROR_READING_LNK,
+        ERROR_LSTAT
     };
 
     ReferenceValidator(const std::string &dirpath);

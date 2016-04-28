@@ -109,7 +109,6 @@ make %{?_smp_mflags}
 
 %install
 %make_install
-%install_service multi-user.target.wants cert-server.service
 %install_service sockets.target.wants cert-server.socket
 
 mkdir -p %buildroot%CERT_SVC_PKCS12
@@ -127,11 +126,11 @@ fi
 systemctl daemon-reload
 # install
 if [ $1 = 1 ]; then
-    systemctl start cert-server.service
+    systemctl start cert-server.socket
 fi
 # upgrade / reinstall
 if [ $1 = 2 ]; then
-    systemctl restart cert-server.service
+    systemctl restart cert-server.socket
 fi
 
 %postun -p /sbin/ldconfig
@@ -141,7 +140,6 @@ fi
 %license LICENSE
 %_unitdir/cert-server.service
 %_unitdir/cert-server.socket
-%_unitdir/multi-user.target.wants/cert-server.service
 %_unitdir/sockets.target.wants/cert-server.socket
 %_libdir/libcert-svc-vcore.so.*
 %TZ_SYS_BIN/cert-server

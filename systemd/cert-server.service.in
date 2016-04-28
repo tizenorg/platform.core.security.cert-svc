@@ -6,6 +6,3 @@ ExecStart=@TZ_SYS_BIN@/cert-server
 User=security_fw
 Group=security_fw
 Sockets=cert-server.socket
-
-[Install]
-WantedBy=multi-user.target

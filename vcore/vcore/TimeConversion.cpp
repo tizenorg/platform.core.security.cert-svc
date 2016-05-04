@@ -286,8 +286,9 @@ int asn1TimeToTimeT(ASN1_TIME *t, time_t *res)
     if (ret == 0)
         return 0;
 
-    LogDebug("Convert asn1 to struct tm : "
-        << tm.tm_year + 1900 <<  tm.tm_mon + 1 << tm.tm_mday);
+    char buf[27]; // asctime_r return 26 characters
+    LogDebug("Convert asn1 to tm: "
+        << asctime_r(static_cast<const struct tm*>(&tm), buf));
     *res = mktime(&tm);
 
     // If time_t occured overflow, set TIME_MAX.
@@ -296,7 +297,7 @@ int asn1TimeToTimeT(ASN1_TIME *t, time_t *res)
         *res = TIME_MAX;
     }
 
-    LogDebug("Convert struct tm to time_t : " << asctime(gmtime(res)));
+    LogDebug("Result time_t(tm format): " << asctime_r(gmtime(res), buf));
 
     return 1;
 }

@@ -296,7 +296,10 @@ int asn1TimeToTimeT(ASN1_TIME *t, time_t *res)
         *res = TIME_MAX;
     }
 
-    LogDebug("Result time_t(tm format): " << asctime_r(localtime(res), buf));
+    // For Debugging.
+    struct tm localTm;
+    localtime_r(res, &localTm);
+    LogDebug("Result time_t(tm format): " << asctime_r(&localTm, buf));
 
     return 1;
 }

@@ -39,6 +39,10 @@
 
 #include <vcore/SignatureValidator.h>
 
+#ifdef PROFILE_MOBILE
+#include <cchecker/ocsp.h>
+#endif
+
 using namespace ValidationCore::CertStoreId;
 
 namespace {
@@ -398,12 +402,16 @@ VCerr SignatureValidator::Impl::baseCheck(
 	} catch (const XmlSec::Exception::Base &e) {
 		LogError("XmlSec unknown exception : " << e.DumpToString());
 		return E_SIG_INVALID_FORMAT;
+	} catch (const Ocsp::Exception::OcspUnsupported &e) {
+		LogInfo("Ocsp unsupported : " << e.DumpToString());
+		return E_SIG_NONE;
 	} catch (const Ocsp::Exception::Base &e) {
-		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
-		/*
-		 *  Don't care ocsp exception here.
-		 *  because exception case will be handled by cert-checker after app installed
-		 */
+		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
+#ifdef PROFILE_MOBILE
+		LogInfo("Launch cert-checker.");
+		if (cchecker_ocsp_request() != 0)
+			LogError("Load cert-checker failed.");
+#endif
 	} catch (const std::exception &e) {
 		LogError("std exception occured : " << e.what());
 		return E_SIG_UNKNOWN;
@@ -456,12 +464,16 @@ VCerr SignatureValidator::Impl::baseCheckList(
 	} catch (const XmlSec::Exception::Base &e) {
 		LogError("XmlSec unknown exception : " << e.DumpToString());
 		return E_SIG_INVALID_FORMAT;
+	} catch (const Ocsp::Exception::OcspUnsupported &e) {
+		LogInfo("Ocsp unsupported : " << e.DumpToString());
+		return E_SIG_NONE;
 	} catch (const Ocsp::Exception::Base &e) {
-		LogInfo("OCSP will be handled by cert-checker later. : " << e.DumpToString());
-		/*
-		 *  Don't care ocsp exception here.
-		 *  because exception case will be handled by cert-checker after app installed
-		 */
+		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
+#ifdef PROFILE_MOBILE
+		LogInfo("Launch cert-checker.");
+		if (cchecker_ocsp_request() != 0)
+			LogError("Load cert-checker failed.");
+#endif
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::checkList");
 		return E_SIG_UNKNOWN;

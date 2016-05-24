@@ -27,6 +27,9 @@ BuildRequires: ca-certificates-devel
 Requires: ca-certificates
 Requires: ca-certificates-tizen
 Requires: security-config
+%if "%{?profile}" == "mobile"
+BuildRequires: pkgconfig(cert-checker)
+%endif
 
 %global TZ_SYS_BIN              %{?TZ_SYS_BIN:%TZ_SYS_BIN}%{!?TZ_SYS_BIN:%_bindir}
 %global TZ_SYS_ETC              %{?TZ_SYS_ETC:%TZ_SYS_ETC}%{!?TZ_SYS_ETC:/opt/etc}
@@ -87,23 +90,24 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
 
 %{!?build_type:%define build_type "Release"}
 %cmake . -DVERSION=%version \
-        -DINCLUDEDIR=%_includedir \
-        -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
-        -DTZ_SYS_RO_SHARE=%TZ_SYS_RO_SHARE \
-        -DTZ_SYS_BIN=%TZ_SYS_BIN \
-        -DTZ_SYS_CA_CERTS=%TZ_SYS_CA_CERTS \
-        -DTZ_SYS_CA_CERTS_ORIG=%TZ_SYS_CA_CERTS_ORIG \
-        -DTZ_SYS_CA_BUNDLE=%TZ_SYS_CA_BUNDLE \
-        -DCERT_SVC_PATH=%CERT_SVC_PATH \
-        -DCERT_SVC_RO_PATH=%CERT_SVC_RO_PATH \
-        -DCERT_SVC_DB=%CERT_SVC_DB \
-        -DCERT_SVC_PKCS12=%CERT_SVC_PKCS12 \
+         -DINCLUDEDIR=%_includedir \
+         -DTZ_SYS_SHARE=%TZ_SYS_SHARE \
+         -DTZ_SYS_RO_SHARE=%TZ_SYS_RO_SHARE \
+         -DTZ_SYS_BIN=%TZ_SYS_BIN \
+         -DTZ_SYS_CA_CERTS=%TZ_SYS_CA_CERTS \
+         -DTZ_SYS_CA_CERTS_ORIG=%TZ_SYS_CA_CERTS_ORIG \
+         -DTZ_SYS_CA_BUNDLE=%TZ_SYS_CA_BUNDLE \
+         -DCERT_SVC_PATH=%CERT_SVC_PATH \
+         -DCERT_SVC_RO_PATH=%CERT_SVC_RO_PATH \
+         -DCERT_SVC_DB=%CERT_SVC_DB \
+         -DCERT_SVC_PKCS12=%CERT_SVC_PKCS12 \
+         -DPROFILE_TARGET=%{?profile} \
 %if 0%{?certsvc_test_build}
-        -DCERTSVC_TEST_BUILD=1 \
-        -DCERT_SVC_TESTS=%CERT_SVC_TESTS \
+         -DCERTSVC_TEST_BUILD=1 \
+         -DCERT_SVC_TESTS=%CERT_SVC_TESTS \
 %endif
-        -DCMAKE_BUILD_TYPE=%build_type \
-        -DSYSTEMD_UNIT_DIR=%_unitdir
+         -DCMAKE_BUILD_TYPE=%build_type \
+         -DSYSTEMD_UNIT_DIR=%_unitdir
 
 make %{?_smp_mflags}
 

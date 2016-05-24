@@ -6,6 +6,7 @@ PKG_CHECK_MODULES(VCORE_DEPS
     xmlsec1
     dlog
     libsystemd-journal
+    cert-checker
     )
 
 ADD_DEFINITIONS(${VCORE_DEPS_CFLAGS})

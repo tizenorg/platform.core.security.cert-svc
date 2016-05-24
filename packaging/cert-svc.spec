@@ -22,6 +22,7 @@ BuildRequires: pkgconfig(key-manager)
 BuildRequires: pkgconfig(libtzplatform-config)
 BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: pkgconfig(sqlite3)
+BuildRequires: pkgconfig(cert-checker)
 BuildRequires: ca-certificates
 BuildRequires: ca-certificates-devel
 Requires: ca-certificates

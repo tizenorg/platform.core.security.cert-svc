@@ -32,7 +32,8 @@
  * @param[in] alias Logical name for certificate bundle identification (can't be empty).
  * @return CERTSVC_SUCCESS, CERTSVC_FAIL, CERTSVC_DUPLICATED_ALIAS, CERTSVC_IO_ERROR, CERTSVC_WRONG_ARGUMENT, CERTSVC_BAD_ALLOC.
  */
-int pkcs12_import_from_file_to_store(CertStoreType storeType, const char *path, const char *password, const char *alias);
+int pkcs12_import_from_file_to_store(CertStoreType storeType, const char *path,
+									 const char *password, const char *alias);
 
 /**
  * TO check if the p12/pfx file is protected by password or not.

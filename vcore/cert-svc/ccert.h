@@ -32,78 +32,78 @@ extern "C" {
 #endif
 
 typedef struct CertSvcCertificate_t {
-    size_t privateHandler;
-    CertSvcInstance privateInstance;
+	size_t privateHandler;
+	CertSvcInstance privateInstance;
 } CertSvcCertificate;
 
 typedef struct CertSvcCertificateList_t {
-    size_t privateHandler;
-    CertSvcInstance privateInstance;
+	size_t privateHandler;
+	CertSvcInstance privateInstance;
 } CertSvcCertificateList;
 
 #define MAX_STORE_ENUMS 5
 typedef enum certImportType_t {
-    NONE_STORE   =  0,
-    VPN_STORE    =  1 << 0,
-    WIFI_STORE   =  1 << 1,
-    EMAIL_STORE  =  1 << 2,
-    SYSTEM_STORE =  1 << 3,
-    ALL_STORE    =  VPN_STORE | WIFI_STORE | EMAIL_STORE | SYSTEM_STORE
+	NONE_STORE   =  0,
+	VPN_STORE    =  1 << 0,
+	WIFI_STORE   =  1 << 1,
+	EMAIL_STORE  =  1 << 2,
+	SYSTEM_STORE =  1 << 3,
+	ALL_STORE    =  VPN_STORE | WIFI_STORE | EMAIL_STORE | SYSTEM_STORE
 } CertStoreType;
 
 typedef enum certStatus_t {
-    DISABLED     =  0,
-    ENABLED      =  1
+	DISABLED     =  0,
+	ENABLED      =  1
 } CertStatus;
 
-typedef struct CertSvcStoreCertList_t{
-    char *gname;            // keyfile group name
-    char *title;            // common Name / Alias provided by the user
-    CertStatus status;
-    CertStoreType storeType;
-    struct CertSvcStoreCertList_t *next;
+typedef struct CertSvcStoreCertList_t {
+	char *gname;            // keyfile group name
+	char *title;            // common Name / Alias provided by the user
+	CertStatus status;
+	CertStoreType storeType;
+	struct CertSvcStoreCertList_t *next;
 } CertSvcStoreCertList;
 
 typedef enum certType_t {
-    PEM_CRT          = 1 << 0,
-    P12_END_USER     = 1 << 1,
-    P12_INTERMEDIATE = 1 << 2,
-    P12_TRUSTED      = 1 << 3,
-    P12_PKEY         = 1 << 4,
-    INVALID_DATA     = 1 << 5
+	PEM_CRT          = 1 << 0,
+	P12_END_USER     = 1 << 1,
+	P12_INTERMEDIATE = 1 << 2,
+	P12_TRUSTED      = 1 << 3,
+	P12_PKEY         = 1 << 4,
+	INVALID_DATA     = 1 << 5
 } CertType;
 
 typedef enum CertSvcCertificateForm_t {
-/*    CERTSVC_FORM_PEM, */
-    CERTSVC_FORM_DER,
-    CERTSVC_FORM_DER_BASE64
+	/*    CERTSVC_FORM_PEM, */
+	CERTSVC_FORM_DER,
+	CERTSVC_FORM_DER_BASE64
 } CertSvcCertificateForm;
 
 typedef enum CertSvcCertificateField_t {
-    CERTSVC_SUBJECT,
-    CERTSVC_SUBJECT_COMMON_NAME,
-    CERTSVC_SUBJECT_COUNTRY_NAME,
-    CERTSVC_SUBJECT_STATE_NAME,
-    CERTSVC_SUBJECT_LOCALITY_NAME,
-    CERTSVC_SUBJECT_ORGANIZATION_NAME,
-    CERTSVC_SUBJECT_ORGANIZATION_UNIT_NAME,
-    CERTSVC_SUBJECT_EMAIL_ADDRESS,
-/*    CERTSVC_SUBJECT_UID, */
-    CERTSVC_ISSUER,
-    CERTSVC_ISSUER_COMMON_NAME,
-    CERTSVC_ISSUER_COUNTRY_NAME,
-    CERTSVC_ISSUER_STATE_NAME,
-    CERTSVC_ISSUER_LOCALITY_NAME,
-    CERTSVC_ISSUER_ORGANIZATION_NAME,
-    CERTSVC_ISSUER_ORGANIZATION_UNIT_NAME,
-    CERTSVC_ISSUER_EMAIL_ADDRESS,
-/*    CERTSVC_ISSUER_UID, */
-    CERTSVC_VERSION,
-    CERTSVC_SERIAL_NUMBER,
-    CERTSVC_KEY_USAGE,
-    CERTSVC_KEY,
-    CERTSVC_KEY_ALGO,
-    CERTSVC_SIGNATURE_ALGORITHM
+	CERTSVC_SUBJECT,
+	CERTSVC_SUBJECT_COMMON_NAME,
+	CERTSVC_SUBJECT_COUNTRY_NAME,
+	CERTSVC_SUBJECT_STATE_NAME,
+	CERTSVC_SUBJECT_LOCALITY_NAME,
+	CERTSVC_SUBJECT_ORGANIZATION_NAME,
+	CERTSVC_SUBJECT_ORGANIZATION_UNIT_NAME,
+	CERTSVC_SUBJECT_EMAIL_ADDRESS,
+	/*    CERTSVC_SUBJECT_UID, */
+	CERTSVC_ISSUER,
+	CERTSVC_ISSUER_COMMON_NAME,
+	CERTSVC_ISSUER_COUNTRY_NAME,
+	CERTSVC_ISSUER_STATE_NAME,
+	CERTSVC_ISSUER_LOCALITY_NAME,
+	CERTSVC_ISSUER_ORGANIZATION_NAME,
+	CERTSVC_ISSUER_ORGANIZATION_UNIT_NAME,
+	CERTSVC_ISSUER_EMAIL_ADDRESS,
+	/*    CERTSVC_ISSUER_UID, */
+	CERTSVC_VERSION,
+	CERTSVC_SERIAL_NUMBER,
+	CERTSVC_KEY_USAGE,
+	CERTSVC_KEY,
+	CERTSVC_KEY_ALGO,
+	CERTSVC_SIGNATURE_ALGORITHM
 } CertSvcCertificateField;
 
 typedef enum CertSvcVisibility_t {
@@ -130,9 +130,9 @@ typedef enum CertSvcVisibility_t {
  * @see #CertSvcCertificate
  */
 int certsvc_get_certificate(CertSvcInstance instance,
-                            CertStoreType storeType,
-                            const char *gname,
-                            CertSvcCertificate *certificate);
+							CertStoreType storeType,
+							const char *gname,
+							CertSvcCertificate *certificate);
 
 /**
  * Load certificate to @a CertSvcCertificate from file.
@@ -150,8 +150,8 @@ int certsvc_get_certificate(CertSvcInstance instance,
  * @see #CertSvcCertificate
  */
 int certsvc_certificate_new_from_file(CertSvcInstance instance,
-                                      const char *location,
-                                      CertSvcCertificate *certificate);
+									  const char *location,
+									  CertSvcCertificate *certificate);
 
 /**
  * Load certificate to @a CertSvcCertificate from memory.
@@ -171,10 +171,10 @@ int certsvc_certificate_new_from_file(CertSvcInstance instance,
  * @see #CertSvcCertificateForm
  */
 int certsvc_certificate_new_from_memory(CertSvcInstance instance,
-                                        const unsigned char *memory,
-                                        size_t len,
-                                        CertSvcCertificateForm form,
-                                        CertSvcCertificate *certificate);
+										const unsigned char *memory,
+										size_t len,
+										CertSvcCertificateForm form,
+										CertSvcCertificate *certificate);
 
 /**
  * Free structures connected with certificate.
@@ -219,9 +219,9 @@ int certsvc_certificate_save_file(CertSvcCertificate certificate, const char *lo
  * @see #CertSvcCertificateList
  */
 int certsvc_certificate_search(CertSvcInstance instance,
-                               CertSvcCertificateField field,
-                               const char *value,
-                               CertSvcCertificateList *handler);
+							   CertSvcCertificateField field,
+							   const char *value,
+							   CertSvcCertificateList *handler);
 
 /**
  * Get certificate from list founded by certsvc_certificate_search().
@@ -241,8 +241,8 @@ int certsvc_certificate_search(CertSvcInstance instance,
  * @see #CertSvcCertificateList
  */
 int certsvc_certificate_list_get_one(CertSvcCertificateList handler,
-                                     size_t position,
-                                     CertSvcCertificate *certificate);
+									 size_t position,
+									 CertSvcCertificate *certificate);
 
 /**
  * Return number of elements on the list.
@@ -256,7 +256,7 @@ int certsvc_certificate_list_get_one(CertSvcCertificateList handler,
  * @see #CertSvcCertificateList
  */
 int certsvc_certificate_list_get_length(CertSvcCertificateList handler,
-                                        size_t *size);
+										size_t *size);
 
 /**
  * Free @a CertSvcCertificateList. It will not free certificates on the list.
@@ -292,8 +292,8 @@ void certsvc_certificate_list_all_free(CertSvcCertificateList handler);
  * @see #CertSvcCertificate
  */
 int certsvc_certificate_is_signed_by(CertSvcCertificate child,
-                                     CertSvcCertificate parent,
-                                     int *status);
+									 CertSvcCertificate parent,
+									 int *status);
 
 /**
  * Extract data field from certificate. Data in buffer could be free by
@@ -312,8 +312,8 @@ int certsvc_certificate_is_signed_by(CertSvcCertificate child,
  * @see #CertSvcCertificateField
  */
 int certsvc_certificate_get_string_field(CertSvcCertificate certificate,
-                                         CertSvcCertificateField field,
-                                         CertSvcString *buffer);
+		CertSvcCertificateField field,
+		CertSvcString *buffer);
 
 /**
  * Extract NOT AFTER field from certificate.
@@ -406,11 +406,11 @@ int certsvc_base64_decode(CertSvcString base64, CertSvcString *message);
  *
  */
 int certsvc_message_verify(
-    CertSvcCertificate certificate,
-    CertSvcString message,
-    CertSvcString signature,
-    const char *algorithm,
-    int *status);
+	CertSvcCertificate certificate,
+	CertSvcString message,
+	CertSvcString signature,
+	const char *algorithm,
+	int *status);
 
 /**
  * Verify certificate. Root CA certificate should be stored in @a trusted.
@@ -425,12 +425,12 @@ int certsvc_message_verify(
  * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_certificate_verify(
-    CertSvcCertificate certificate,
-    const CertSvcCertificate *trusted,
-    size_t trustedSize,
-    const CertSvcCertificate *untrusted,
-    size_t untrustedSize,
-    int *status);
+	CertSvcCertificate certificate,
+	const CertSvcCertificate *trusted,
+	size_t trustedSize,
+	const CertSvcCertificate *untrusted,
+	size_t untrustedSize,
+	int *status);
 
 /**
  * Verify certificate with strict check of CA flag. Root CA certificate should
@@ -446,12 +446,12 @@ int certsvc_certificate_verify(
  * @return #CERTSVC_SUCCESS on success, otherwise a zero or negative error value
  */
 int certsvc_certificate_verify_with_caflag(
-    CertSvcCertificate certificate,
-    const CertSvcCertificate *trusted,
-    size_t trustedSize,
-    const CertSvcCertificate *untrusted,
-    size_t untrustedSize,
-    int *status);
+	CertSvcCertificate certificate,
+	const CertSvcCertificate *trusted,
+	size_t trustedSize,
+	const CertSvcCertificate *untrusted,
+	size_t untrustedSize,
+	int *status);
 
 /**
  * Get visibility from Tizen app signing root certificate.
@@ -463,7 +463,8 @@ int certsvc_certificate_verify_with_caflag(
  *
  * @see #CertSvcVisibility
  */
-int certsvc_certificate_get_visibility(CertSvcCertificate certificate, CertSvcVisibility *visibility);
+int certsvc_certificate_get_visibility(CertSvcCertificate certificate,
+									   CertSvcVisibility *visibility);
 
 
 #ifdef __cplusplus

@@ -76,7 +76,7 @@ inline CertTimeStatus _timeValidation(time_t lower, time_t upper, time_t current
 inline bool _isTimeStrict(const Set &stores)
 {
 	return (stores.contains(TIZEN_TEST) || stores.contains(TIZEN_VERIFY))
-		? true : false;
+		   ? true : false;
 }
 
 } // namespace anonymous
@@ -150,15 +150,16 @@ bool SignatureValidator::Impl::checkRoleURI(void)
 
 	if (roleURI != TOKEN_ROLE_AUTHOR_URI && m_data.isAuthorSignature()) {
 		LogWarning("URI attribute in Role tag does not "
-			"match with signature filename.");
+				   "match with signature filename.");
 		return false;
 	}
 
 	if (roleURI != TOKEN_ROLE_DIST_URI && !m_data.isAuthorSignature()) {
 		LogWarning("URI attribute in Role tag does not "
-			"match with signature filename.");
+				   "match with signature filename.");
 		return false;
 	}
+
 	return true;
 }
 
@@ -167,9 +168,10 @@ bool SignatureValidator::Impl::checkProfileURI(void)
 {
 	if (TOKEN_PROFILE_URI != m_data.getProfileURI()) {
 		LogWarning("Profile tag contains unsupported value "
-			"in URI attribute " << m_data.getProfileURI());
+				   "in URI attribute " << m_data.getProfileURI());
 		return false;
 	}
+
 	return true;
 }
 
@@ -236,9 +238,9 @@ VCerr SignatureValidator::Impl::makeDataBySignature(bool completeWithSystemCert)
 
 	try {
 		CertificateCollection collection;
-
 		// Load Certificates and make chain.
 		collection.load(m_data.getCertList());
+
 		if (!collection.sort() || collection.empty()) {
 			LogError("Certificates do not form valid chain.");
 			return E_SIG_INVALID_CHAIN;
@@ -251,14 +253,13 @@ VCerr SignatureValidator::Impl::makeDataBySignature(bool completeWithSystemCert)
 				return E_SIG_INVALID_CHAIN;
 			} else {
 				LogDebug("Distributor N's certificate has got "
-					"unrecognized root CA certificate.");
+						 "unrecognized root CA certificate.");
 				m_disregarded = true;
 			}
 		}
 
 		m_data.setSortedCertificateList(collection.getChain());
 		LogDebug("Finish making chain successfully.");
-
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return E_SIG_INVALID_CHAIN;
@@ -277,6 +278,7 @@ VCerr SignatureValidator::Impl::preStep(void)
 {
 	// Make chain process.
 	VCerr result = makeDataBySignature(true);
+
 	if (result != E_SIG_NONE)
 		return result;
 
@@ -284,21 +286,22 @@ VCerr SignatureValidator::Impl::preStep(void)
 	LogDebug("Start to check certificate domain.");
 	auto certificatePtr = m_data.getCertList().back();
 	auto storeIdSet = createCertificateIdentifier().find(certificatePtr);
-
 	// Check root CA certificate has proper domain.
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
+
 	if (m_data.isAuthorSignature()) {
 		if (!storeIdSet.contains(TIZEN_DEVELOPER)) {
 			LogError("author-signature.xml's root certificate "
-				"isn't in tizen developer domain.");
+					 "isn't in tizen developer domain.");
 			return E_SIG_INVALID_CHAIN;
 		}
 	} else {
 		if (storeIdSet.contains(TIZEN_DEVELOPER)) {
 			LogError("distributor signautre root certificate "
-				"shouldn't be in tizen developer domain.");
+					 "shouldn't be in tizen developer domain.");
 			return E_SIG_INVALID_CHAIN;
 		}
+
 		if (m_data.getSignatureNumber() == 1 && !storeIdSet.isContainsVis()) {
 			LogError("signature1.xml has got unrecognized root CA certificate.");
 			return E_SIG_INVALID_CHAIN;
@@ -310,14 +313,12 @@ VCerr SignatureValidator::Impl::preStep(void)
 
 	m_data.setStorageType(storeIdSet);
 	LogDebug("Finish checking certificate domain.");
-
 	/*
 	 * We add only Root CA certificate because the rest
 	 * of certificates are present in signature files ;-)
 	 */
 	m_context.signatureFile = m_data.getSignatureFileName();
 	m_context.certificatePtr = m_data.getCertList().back();
-
 	/* certificate time check */
 	time_t lower = m_data.getEndEntityCertificatePtr()->getNotBefore();
 	time_t upper = m_data.getEndEntityCertificatePtr()->getNotAfter();
@@ -326,9 +327,10 @@ VCerr SignatureValidator::Impl::preStep(void)
 
 	if (status != CertTimeStatus::VALID) {
 		LogDebug("Certificate's time is invalid.");
+
 		if (_isTimeStrict(storeIdSet))
 			return status == CertTimeStatus::EXPIRED
-					? E_SIG_CERT_EXPIRED : E_SIG_CERT_NOT_YET;
+				   ? E_SIG_CERT_EXPIRED : E_SIG_CERT_NOT_YET;
 
 		time_t mid = _getMidTime(lower, upper);
 		LogInfo("Use middle notBeforeTime and notAfterTime."
@@ -350,6 +352,7 @@ VCerr SignatureValidator::Impl::baseCheck(
 	try {
 		// Make certificate chain, check certificate info
 		VCerr result = preStep();
+
 		if (result != E_SIG_NONE)
 			return result;
 
@@ -359,9 +362,9 @@ VCerr SignatureValidator::Impl::baseCheck(
 
 		// XmlSec validate
 		XmlSecSingleton::Instance().validate(m_context);
-
 		// Check reference of 'Object' tag - OID
 		m_data.setReference(m_context.referenceSet);
+
 		if (!checkObjectReferences()) {
 			LogWarning("Failed to check Object References");
 			return E_SIG_INVALID_REF;
@@ -370,6 +373,7 @@ VCerr SignatureValidator::Impl::baseCheck(
 		// Check reference's existence
 		if (checkReferences) {
 			ReferenceValidator fileValidator(contentPath);
+
 			if (ReferenceValidator::NO_ERROR != fileValidator.checkReferences(m_data)) {
 				LogWarning("Invalid package - file references broken");
 				return E_SIG_INVALID_REF;
@@ -383,7 +387,6 @@ VCerr SignatureValidator::Impl::baseCheck(
 		}
 
 		LogDebug("Signature validation check done successfully ");
-
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return E_SIG_INVALID_CHAIN;
@@ -409,8 +412,10 @@ VCerr SignatureValidator::Impl::baseCheck(
 		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
 #ifdef PROFILE_MOBILE
 		LogInfo("Launch cert-checker.");
+
 		if (cchecker_ocsp_request() != 0)
 			LogError("Load cert-checker failed.");
+
 #endif
 	} catch (const std::exception &e) {
 		LogError("std exception occured : " << e.what());
@@ -430,6 +435,7 @@ VCerr SignatureValidator::Impl::baseCheckList(
 	try {
 		// Make certificate chain, check certificate info
 		VCerr result = preStep();
+
 		if (result != E_SIG_NONE)
 			return result;
 
@@ -445,7 +451,6 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		}
 
 		LogDebug("Signature validation of check list done successfully ");
-
 	} catch (const CertificateCollection::Exception::Base &e) {
 		LogError("CertificateCollection exception : " << e.DumpToString());
 		return E_SIG_INVALID_CHAIN;
@@ -471,8 +476,10 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
 #ifdef PROFILE_MOBILE
 		LogInfo("Launch cert-checker.");
+
 		if (cchecker_ocsp_request() != 0)
 			LogError("Load cert-checker failed.");
+
 #endif
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::checkList");
@@ -489,12 +496,9 @@ VCerr SignatureValidator::Impl::check(
 	SignatureData &outData)
 {
 	VCerr result;
-
 	result = baseCheck(contentPath, checkOcsp, checkReferences);
 	result = additionalCheck(result);
-
 	outData = m_data;
-
 	return result;
 }
 
@@ -504,12 +508,9 @@ VCerr SignatureValidator::Impl::checkList(
 	SignatureData &outData)
 {
 	VCerr result;
-
 	result = baseCheckList(checkOcsp, uriList);
 	result = additionalCheck(result);
-
 	outData = m_data;
-
 	return result;
 }
 
@@ -518,31 +519,58 @@ VCerr SignatureValidator::Impl::makeChainBySignature(
 	CertificateList &certList)
 {
 	VCerr result = makeDataBySignature(completeWithSystemCert);
+
 	if (result != E_SIG_NONE)
 		return result;
 
 	certList = m_data.getCertList();
-
 	return E_SIG_NONE;
 }
 
 std::string SignatureValidator::Impl::errorToString(VCerr code)
 {
 	switch (code) {
-	case E_SIG_NONE:           return "Success.";
-	case E_SIG_INVALID_FORMAT: return "Invalid format of signature file.";
-	case E_SIG_INVALID_CERT:   return "Invalid format of certificate in signature.";
-	case E_SIG_INVALID_CHAIN:  return "Invalid certificate chain with certificate in signature.";
-	case E_SIG_INVALID_SIG:    return "Invalid signature. Signed with wrong key, changed signature file or changed package file.";
-	case E_SIG_INVALID_REF:    return "Invalid file reference. An unsinged file was found.";
-	case E_SIG_CERT_EXPIRED:   return "Certificate in signature was expired.";
-	case E_SIG_CERT_NOT_YET:   return "Certificate in signature is not valid yet.";
-	case E_SIG_DISREGARDED:    return "Signature validation can be disregarded in some cases.";
-	case E_SIG_REVOKED:        return "One of certificate was revoked in certificate chain.";
-	case E_SIG_PLUGIN:         return "Failed to load plugin for additional validation check.";
-	case E_SIG_OUT_OF_MEM:     return "Out of memory.";
-	case E_SIG_UNKNOWN:        return "Unknown error.";
-	default:                   return m_pluginHandler.errorToString(code);
+	case E_SIG_NONE:
+		return "Success.";
+
+	case E_SIG_INVALID_FORMAT:
+		return "Invalid format of signature file.";
+
+	case E_SIG_INVALID_CERT:
+		return "Invalid format of certificate in signature.";
+
+	case E_SIG_INVALID_CHAIN:
+		return "Invalid certificate chain with certificate in signature.";
+
+	case E_SIG_INVALID_SIG:
+		return "Invalid signature. Signed with wrong key, changed signature file or changed package file.";
+
+	case E_SIG_INVALID_REF:
+		return "Invalid file reference. An unsinged file was found.";
+
+	case E_SIG_CERT_EXPIRED:
+		return "Certificate in signature was expired.";
+
+	case E_SIG_CERT_NOT_YET:
+		return "Certificate in signature is not valid yet.";
+
+	case E_SIG_DISREGARDED:
+		return "Signature validation can be disregarded in some cases.";
+
+	case E_SIG_REVOKED:
+		return "One of certificate was revoked in certificate chain.";
+
+	case E_SIG_PLUGIN:
+		return "Failed to load plugin for additional validation check.";
+
+	case E_SIG_OUT_OF_MEM:
+		return "Out of memory.";
+
+	case E_SIG_UNKNOWN:
+		return "Unknown error.";
+
+	default:
+		return m_pluginHandler.errorToString(code);
 	}
 }
 
@@ -572,10 +600,10 @@ VCerr SignatureValidator::check(
 		return E_SIG_OUT_OF_MEM;
 
 	return m_pImpl->check(
-			contentPath,
-			checkOcsp,
-			checkReferences,
-			outData);
+			   contentPath,
+			   checkOcsp,
+			   checkReferences,
+			   outData);
 }
 
 VCerr SignatureValidator::checkList(
@@ -587,9 +615,9 @@ VCerr SignatureValidator::checkList(
 		return E_SIG_OUT_OF_MEM;
 
 	return m_pImpl->checkList(
-			checkOcsp,
-			uriList,
-			outData);
+			   checkOcsp,
+			   uriList,
+			   outData);
 }
 
 VCerr SignatureValidator::makeChainBySignature(

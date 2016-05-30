@@ -30,7 +30,7 @@ namespace ValidationCore {
 // CertificateConfigReader and CertificateIdentificator so
 // we are using factory method to create CertificateIdentificator.
 
-const CertificateIdentifier& createCertificateIdentifier();
+const CertificateIdentifier &createCertificateIdentifier();
 } // namespace ValidationCore
 
 #endif // _WRT_ENGINE_SRC_INSTALLER_CORE_VALIDATION_CORE_VALIDATORFACTORY_H_

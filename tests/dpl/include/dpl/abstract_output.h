@@ -29,31 +29,29 @@ namespace VcoreDPL {
 class BinaryQueue;
 typedef std::auto_ptr<BinaryQueue> BinaryQueueAutoPtr;
 
-class AbstractOutput
-{
-  public:
-    class Exception
-    {
-      public:
-        DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, WriteFailed)
-    };
+class AbstractOutput {
+public:
+	class Exception {
+	public:
+		DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
+		DECLARE_EXCEPTION_TYPE(Base, WriteFailed)
+	};
 
-  public:
-    virtual ~AbstractOutput() {}
+public:
+	virtual ~AbstractOutput() {}
 
-    /**
-     * Write binary data to output
-     * If output is blocked, Write returns zero, if instance is a type of
-     * WaitableAbstractOutput one can wait for writability then
-     *
-     * @param[in] buffer Input buffer with data to be written
-     * @param[in] bufferSize Maximum number of bytes to write from buffer
-     * @return Number of bytes success successfuly written or zero if output is
-     * blocked
-     * @throw WriteFailed
-     */
-    virtual size_t Write(const BinaryQueue &buffer, size_t bufferSize) = 0;
+	/**
+	 * Write binary data to output
+	 * If output is blocked, Write returns zero, if instance is a type of
+	 * WaitableAbstractOutput one can wait for writability then
+	 *
+	 * @param[in] buffer Input buffer with data to be written
+	 * @param[in] bufferSize Maximum number of bytes to write from buffer
+	 * @return Number of bytes success successfuly written or zero if output is
+	 * blocked
+	 * @throw WriteFailed
+	 */
+	virtual size_t Write(const BinaryQueue &buffer, size_t bufferSize) = 0;
 };
 } // namespace VcoreDPL
 

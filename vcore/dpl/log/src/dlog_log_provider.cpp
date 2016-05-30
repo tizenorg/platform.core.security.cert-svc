@@ -37,36 +37,36 @@ typedef void (*dlogMacro)(const char *, const char *);
 
 void error(const char *tag, const char *msg)
 {
-    SLOG(LOG_ERROR, tag, "%s", msg);
+	SLOG(LOG_ERROR, tag, "%s", msg);
 }
 
 void warning(const char *tag, const char *msg)
 {
-    SLOG(LOG_WARN, tag, "%s", msg);
+	SLOG(LOG_WARN, tag, "%s", msg);
 }
 
 void info(const char *tag, const char *msg)
 {
-    SLOG(LOG_INFO, tag, "%s", msg);
+	SLOG(LOG_INFO, tag, "%s", msg);
 }
 
 void debug(const char *tag, const char *msg)
 {
-    SLOG(LOG_DEBUG, tag, "%s", msg);
+	SLOG(LOG_DEBUG, tag, "%s", msg);
 }
 
 void pedantic(const char *tag, const char *msg)
 {
-    SLOG(LOG_VERBOSE, tag, "%s", msg);
+	SLOG(LOG_VERBOSE, tag, "%s", msg);
 }
 
 std::map<AbstractLogProvider::LogLevel, dlogMacro> dlogMacros = {
-        // [](const char* tag, const char* msg) { SLOG(LOG_ERROR, tag, "%s", msg); } won't compile
-        { AbstractLogProvider::LogLevel::Error,     error },
-        { AbstractLogProvider::LogLevel::Warning,   warning },
-        { AbstractLogProvider::LogLevel::Info,      info },
-        { AbstractLogProvider::LogLevel::Debug,     debug},
-        { AbstractLogProvider::LogLevel::Pedantic,  pedantic}
+	// [](const char* tag, const char* msg) { SLOG(LOG_ERROR, tag, "%s", msg); } won't compile
+	{ AbstractLogProvider::LogLevel::Error,     error },
+	{ AbstractLogProvider::LogLevel::Warning,   warning },
+	{ AbstractLogProvider::LogLevel::Info,      info },
+	{ AbstractLogProvider::LogLevel::Debug,     debug},
+	{ AbstractLogProvider::LogLevel::Pedantic,  pedantic}
 };
 
 } // namespace anonymous
@@ -79,28 +79,30 @@ DLOGLogProvider::~DLOGLogProvider()
 
 void DLOGLogProvider::SetTag(const char *tag)
 {
-    size_t size = strlen(tag)+1;
-    char *buff = new (std::nothrow) char[size];
-    if (buff)
-        memcpy(buff, tag, size);
-    m_tag.reset(buff);
+	size_t size = strlen(tag) + 1;
+	char *buff = new(std::nothrow) char[size];
+
+	if (buff)
+		memcpy(buff, tag, size);
+
+	m_tag.reset(buff);
 }
 
 void DLOGLogProvider::Log(AbstractLogProvider::LogLevel level,
-                          const char *message,
-                          const char *filename,
-                          int line,
-                          const char *function) const
+						  const char *message,
+						  const char *filename,
+						  int line,
+						  const char *function) const
 {
-    std::ostringstream val;
-    val << std::string("[") << LocateSourceFileName(filename) << std::string(":") << line <<
-           std::string("] ") << function << std::string("(): ") << message;
+	std::ostringstream val;
+	val << std::string("[") << LocateSourceFileName(filename) << std::string(":") << line <<
+		std::string("] ") << function << std::string("(): ") << message;
 
-    try {
-        dlogMacros.at(level)(m_tag.get(), val.str().c_str());
-    } catch (const std::out_of_range&) {
-        SLOG(LOG_ERROR, m_tag.get(), "Unsupported log level: %d", level);
-    }
+	try {
+		dlogMacros.at(level)(m_tag.get(), val.str().c_str());
+	} catch (const std::out_of_range &) {
+		SLOG(LOG_ERROR, m_tag.get(), "Unsupported log level: %d", level);
+	}
 }
 }
 } // namespace VcoreDPL

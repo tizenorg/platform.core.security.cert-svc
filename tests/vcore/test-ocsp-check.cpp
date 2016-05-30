@@ -40,19 +40,14 @@ RUNNER_TEST(T0031_check_positive)
 	try {
 		SignatureData data;
 		CertificateList certList;
-
 		certList.push_back(CertificatePtr(new Certificate(TestData::certEE, Certificate::FORM_BASE64)));
 		certList.push_back(CertificatePtr(new Certificate(TestData::certIM, Certificate::FORM_BASE64)));
 		certList.push_back(CertificatePtr(new Certificate(TestData::certRoot, Certificate::FORM_BASE64)));
-
 		data.setSortedCertificateList(certList);
-
 		Ocsp::Result result = Ocsp::check(data);
-
 		RUNNER_ASSERT_MSG(
 			result == Ocsp::Result::GOOD,
 			"verisign cert shouldn't be revoked");
-
 	} catch (Ocsp::Exception::Base &e) {
 		RUNNER_ASSERT_MSG(0, "Exception occured in T0031 : " << e.DumpToString());
 	}

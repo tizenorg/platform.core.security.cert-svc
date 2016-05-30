@@ -37,47 +37,45 @@ namespace VcoreDPL {
  * and produce tokens until end of source. If parsing ends in invalid state
  * then IsStateValid() should return false
  */
-template<class Token> class AbstractInputTokenizer
-{
+template<class Token> class AbstractInputTokenizer {
 public:
-    class Exception
-    {
-    public:
-        DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
-        DECLARE_EXCEPTION_TYPE(Base, TokenizerError)
-    };
+	class Exception {
+	public:
+		DECLARE_EXCEPTION_TYPE(VcoreDPL::Exception, Base)
+		DECLARE_EXCEPTION_TYPE(Base, TokenizerError)
+	};
 
-    typedef Token TokenType;
+	typedef Token TokenType;
 
-    AbstractInputTokenizer() {}
-    virtual ~AbstractInputTokenizer() {}
+	AbstractInputTokenizer() {}
+	virtual ~AbstractInputTokenizer() {}
 
-    /**
-     * @brief Reset resets data source
-     * @param wia AbstractWaitableInputAdapter instance
-     */
-    virtual void Reset(std::shared_ptr<AbstractInput> wia)
-    {
-        m_input = wia;
-    }
+	/**
+	 * @brief Reset resets data source
+	 * @param wia AbstractWaitableInputAdapter instance
+	 */
+	virtual void Reset(std::shared_ptr<AbstractInput> wia)
+	{
+		m_input = wia;
+	}
 
-    /**
-     * @brief GetNextToken
-     *
-     * Parses next token.
-     * Returns pointer to token
-     * @throw TokenizerError in condition of input source error
-     * If returned empty pointer IsStateValid() == true -> end of input
-     *                           IsStateValid() == false -> error
-     *
-     * @param token token to be set
-     * @return
-     */
-    virtual std::unique_ptr<Token> GetNextToken() = 0;
-    virtual bool IsStateValid() = 0;
+	/**
+	 * @brief GetNextToken
+	 *
+	 * Parses next token.
+	 * Returns pointer to token
+	 * @throw TokenizerError in condition of input source error
+	 * If returned empty pointer IsStateValid() == true -> end of input
+	 *                           IsStateValid() == false -> error
+	 *
+	 * @param token token to be set
+	 * @return
+	 */
+	virtual std::unique_ptr<Token> GetNextToken() = 0;
+	virtual bool IsStateValid() = 0;
 
 protected:
-    std::shared_ptr<AbstractInput> m_input;
+	std::shared_ptr<AbstractInput> m_input;
 };
 
 }

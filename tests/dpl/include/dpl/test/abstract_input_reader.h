@@ -49,59 +49,56 @@ namespace VcoreDPL {
  * There a waste in form of virtuality for parser and tokenizer
  * -> this for forcing same tokenT type in both components
  */
-template<class ResultT, class TokenT> class AbstractInputReader
-{
+template<class ResultT, class TokenT> class AbstractInputReader {
 public:
-    typedef ResultT TokenType;
-    typedef TokenT ResultType;
-    typedef AbstractInputParser<ResultT, TokenT> ParserBase;
-    typedef AbstractInputTokenizer<TokenT> TokenizerBase;
+	typedef ResultT TokenType;
+	typedef TokenT ResultType;
+	typedef AbstractInputParser<ResultT, TokenT> ParserBase;
+	typedef AbstractInputTokenizer<TokenT> TokenizerBase;
 
-    class Exception
-    {
-    public:
-        typedef typename TokenizerBase::Exception::TokenizerError TokenizerError;
-        typedef typename ParserBase::Exception::ParserError ParserError;
-    };
+	class Exception {
+	public:
+		typedef typename TokenizerBase::Exception::TokenizerError TokenizerError;
+		typedef typename ParserBase::Exception::ParserError ParserError;
+	};
 
-    AbstractInputReader(std::shared_ptr<AbstractInput> ia,
-                        std::unique_ptr<ParserBase> && parser,
-                        std::unique_ptr<TokenizerBase> && tokenizer)
-        : m_parser(std::move(parser)), m_tokenizer(std::move(tokenizer))
-    {
-        m_tokenizer->Reset(ia);
-    }
+	AbstractInputReader(std::shared_ptr<AbstractInput> ia,
+						std::unique_ptr<ParserBase> &&parser,
+						std::unique_ptr<TokenizerBase> &&tokenizer)
+		: m_parser(std::move(parser)), m_tokenizer(std::move(tokenizer))
+	{
+		m_tokenizer->Reset(ia);
+	}
 
-    virtual ~AbstractInputReader() {}
+	virtual ~AbstractInputReader() {}
 
-    ResultT ReadInput()
-    {
-        typedef typename Exception::TokenizerError TokenizerError;
-        typedef typename Exception::ParserError ParserError;
+	ResultT ReadInput()
+	{
+		typedef typename Exception::TokenizerError TokenizerError;
+		typedef typename Exception::ParserError ParserError;
 
-        while(true)
-        {
-            std::unique_ptr<TokenT> token = m_tokenizer->GetNextToken();
-            if(!token)
-            {
-                if(!m_tokenizer->IsStateValid())
-                {
-                    ThrowMsg(TokenizerError, "Tokenizer error");
-                }
-                if(!m_parser->IsStateValid())
-                {
-                    ThrowMsg(ParserError, "Parser error");
-                }
+		while (true) {
+			std::unique_ptr<TokenT> token = m_tokenizer->GetNextToken();
 
-                return m_parser->GetResult();
-            }
-            m_parser->ConsumeToken(std::move(token));
-        }
-    }
+			if (!token) {
+				if (!m_tokenizer->IsStateValid()) {
+					ThrowMsg(TokenizerError, "Tokenizer error");
+				}
+
+				if (!m_parser->IsStateValid()) {
+					ThrowMsg(ParserError, "Parser error");
+				}
+
+				return m_parser->GetResult();
+			}
+
+			m_parser->ConsumeToken(std::move(token));
+		}
+	}
 
 protected:
-    std::unique_ptr<ParserBase> m_parser;
-    std::unique_ptr<TokenizerBase> m_tokenizer;
+	std::unique_ptr<ParserBase> m_parser;
+	std::unique_ptr<TokenizerBase> m_tokenizer;
 };
 
 }

@@ -45,18 +45,18 @@ const Type VIS_PLATFORM = 1 << 10;
 
 class Set {
 public:
-    Set();
-    virtual ~Set();
+	Set();
+	virtual ~Set();
 
-    void add(Type second);
-    bool contains(Type second) const;
-    bool isContainsVis() const;
-    bool isEmpty() const;
+	void add(Type second);
+	bool contains(Type second) const;
+	bool isContainsVis() const;
+	bool isEmpty() const;
 
-    std::string typeToString() const;
+	std::string typeToString() const;
 
 private:
-    Type m_certificateStorage;
+	Type m_certificateStorage;
 };
 
 } // namespace CertStoreId

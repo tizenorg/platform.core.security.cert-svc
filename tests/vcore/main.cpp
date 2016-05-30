@@ -21,10 +21,9 @@
  */
 #include <dpl/test/test_runner.h>
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	VcoreDPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
-
 	return 0;
 }
 

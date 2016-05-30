@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved 
+ * Copyright (c) 2000 - 2015 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Contact: Kidong Kim <kd0228.kim@samsung.com>
  *

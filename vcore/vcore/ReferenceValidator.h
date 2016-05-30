@@ -29,32 +29,30 @@
 
 namespace ValidationCore {
 
-class ReferenceValidator : VcoreDPL::Noncopyable
-{
-  public:
-    enum Result
-    {
-        NO_ERROR = 0,
-        ERROR_OPENING_DIR,
-        ERROR_READING_DIR,
-        ERROR_UNSUPPORTED_FILE_TYPE,
-        ERROR_REFERENCE_NOT_FOUND,
-        ERROR_DECODING_URL,
-        ERROR_OUTBOUND_LNK,
-        ERROR_READING_LNK,
-        ERROR_LSTAT
-    };
+class ReferenceValidator : VcoreDPL::Noncopyable {
+public:
+	enum Result {
+		NO_ERROR = 0,
+		ERROR_OPENING_DIR,
+		ERROR_READING_DIR,
+		ERROR_UNSUPPORTED_FILE_TYPE,
+		ERROR_REFERENCE_NOT_FOUND,
+		ERROR_DECODING_URL,
+		ERROR_OUTBOUND_LNK,
+		ERROR_READING_LNK,
+		ERROR_LSTAT
+	};
 
-    ReferenceValidator(const std::string &dirpath);
+	ReferenceValidator(const std::string &dirpath);
 
-    virtual ~ReferenceValidator();
+	virtual ~ReferenceValidator();
 
-    Result checkReferences(const SignatureData &signatureData);
-    Result checkOutbound(const std::string &linkPath, const std::string &appPath);
+	Result checkReferences(const SignatureData &signatureData);
+	Result checkOutbound(const std::string &linkPath, const std::string &appPath);
 
-  private:
-    class Impl;
-    Impl *m_impl;
+private:
+	class Impl;
+	Impl *m_impl;
 };
 }
 

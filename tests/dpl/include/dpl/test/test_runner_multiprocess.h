@@ -28,15 +28,14 @@ namespace VcoreDPL {
 namespace Test {
 
 class SimplePipeWrapper :
-        public PipeWrapper
-{
-  public:
-    SimplePipeWrapper();
+	public PipeWrapper {
+public:
+	SimplePipeWrapper();
 
-    virtual ~SimplePipeWrapper();
+	virtual ~SimplePipeWrapper();
 
-    Status send(std::string &message);
-    Status receive(std::string &data, bool &empty, time_t deadline);
+	Status send(std::string &message);
+	Status receive(std::string &data, bool &empty, time_t deadline);
 };
 
 void RunMultiProc(TestRunner::TestCase procMulti);
@@ -44,17 +43,17 @@ void RunMultiProc(TestRunner::TestCase procMulti);
 } // namespace VcoreDPL
 
 #define RUNNER_MULTIPROCESS_TEST(Proc)                                               \
-    void Proc();                                                                     \
-    void Proc##Multi();                                                              \
-    static int Static##Proc##Init()                                                  \
-    {                                                                                \
-        VcoreDPL::Test::TestRunnerSingleton::Instance().RegisterTest(#Proc, &Proc);       \
-        return 0;                                                                    \
-    }                                                                                \
-    const int DPL_UNUSED Static##Proc##InitVar = Static##Proc##Init();               \
-    void Proc(){                                                                     \
-        VcoreDPL::Test::RunMultiProc(&Proc##Multi);                                       \
-    }                                                                                \
-    void Proc##Multi()
+	void Proc();                                                                     \
+	void Proc##Multi();                                                              \
+	static int Static##Proc##Init()                                                  \
+	{                                                                                \
+		VcoreDPL::Test::TestRunnerSingleton::Instance().RegisterTest(#Proc, &Proc);       \
+		return 0;                                                                    \
+	}                                                                                \
+	const int DPL_UNUSED Static##Proc##InitVar = Static##Proc##Init();               \
+	void Proc(){                                                                     \
+		VcoreDPL::Test::RunMultiProc(&Proc##Multi);                                       \
+	}                                                                                \
+	void Proc##Multi()
 
 #endif // DPL_TEST_RUNNER_MULTIPROCESS_H

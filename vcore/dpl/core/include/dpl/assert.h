@@ -27,25 +27,25 @@ namespace VcoreDPL {
 // Do not call directly
 // Always use Assert macro
 void AssertProc(const char *condition,
-                const char *file,
-                int line,
-                const char *function) __attribute__ ((__noreturn__));
+				const char *file,
+				int line,
+				const char *function) __attribute__((__noreturn__));
 } // namespace VcoreDPL
 
 #define Assert(Condition)                                               \
-do {                                                                    \
-    if (!(Condition)) {                                                 \
-        VcoreDPL::AssertProc(#Condition, __FILE__, __LINE__, __FUNCTION__);  \
-    }                                                                   \
-} while (0)
+	do {                                                                    \
+		if (!(Condition)) {                                                 \
+			VcoreDPL::AssertProc(#Condition, __FILE__, __LINE__, __FUNCTION__);  \
+		}                                                                   \
+	} while (0)
 
 #define AssertMsg(Condition, Msg)                                         \
-    do {                                                                  \
-        if (!(Condition)) {                                               \
-            VcoreDPL::AssertProc(                                              \
-                (std::string(std::string(#Condition)+" ") + Msg).c_str(), \
-                __FILE__, __LINE__, __FUNCTION__);                        \
-        }                                                                 \
-    } while (0)
+	do {                                                                  \
+		if (!(Condition)) {                                               \
+			VcoreDPL::AssertProc(                                              \
+					(std::string(std::string(#Condition)+" ") + Msg).c_str(), \
+					__FILE__, __LINE__, __FUNCTION__);                        \
+		}                                                                 \
+	} while (0)
 
 #endif // DPL_ASSERT_H

@@ -29,31 +29,29 @@
 
 namespace VcoreDPL {
 void AssertProc(const char *condition,
-                const char *file,
-                int line,
-                const char *function)
+				const char *file,
+				int line,
+				const char *function)
 {
-
 #define INTERNAL_LOG(message)          \
-do {                                   \
-    std::cerr << message << std::endl; \
-} while (0)
+	do {                                   \
+		std::cerr << message << std::endl; \
+	} while (0)
+	// Try to log failed assertion to log system
+	Try {
+		INTERNAL_LOG("########################################################################");
+		INTERNAL_LOG("###                      DPL assertion failed!                       ###");
+		INTERNAL_LOG("########################################################################");
+		INTERNAL_LOG("### Condition: " << condition);
+		INTERNAL_LOG("### File: " << file);
+		INTERNAL_LOG("### Line: " << line);
+		INTERNAL_LOG("### Function: " << function);
+		INTERNAL_LOG("########################################################################");
+	} catch (Exception) {
+		// Just ignore possible double errors
+	}
 
-    // Try to log failed assertion to log system
-    Try {
-        INTERNAL_LOG("########################################################################");
-        INTERNAL_LOG("###                      DPL assertion failed!                       ###");
-        INTERNAL_LOG("########################################################################");
-        INTERNAL_LOG("### Condition: " << condition);
-        INTERNAL_LOG("### File: " << file);
-        INTERNAL_LOG("### Line: " << line);
-        INTERNAL_LOG("### Function: " << function);
-        INTERNAL_LOG("########################################################################");
-    } catch (Exception) {
-        // Just ignore possible double errors
-    }
-
-    // Fail with c-library abort
-    abort();
+	// Fail with c-library abort
+	abort();
 }
 } // namespace VcoreDPL

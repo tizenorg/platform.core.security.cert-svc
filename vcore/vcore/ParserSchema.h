@@ -30,165 +30,168 @@
 
 namespace ValidationCore {
 namespace ParserSchemaException {
-    VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
-    VCORE_DECLARE_EXCEPTION_TYPE(Base, XmlReaderError);
-    VCORE_DECLARE_EXCEPTION_TYPE(Base, CertificateLoaderError);
-    VCORE_DECLARE_EXCEPTION_TYPE(Base, UnsupportedAlgorithm);
-    VCORE_DECLARE_EXCEPTION_TYPE(Base, UnsupportedValue);
+VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base);
+VCORE_DECLARE_EXCEPTION_TYPE(Base, XmlReaderError);
+VCORE_DECLARE_EXCEPTION_TYPE(Base, CertificateLoaderError);
+VCORE_DECLARE_EXCEPTION_TYPE(Base, UnsupportedAlgorithm);
+VCORE_DECLARE_EXCEPTION_TYPE(Base, UnsupportedValue);
 }
 
 template<typename ParserType, typename DataType>
 class ParserSchema {
 public:
 
-    struct TagDescription {
-        TagDescription(const std::string &tag,
-                const std::string & xmlNamespace) :
-            tagName(tag),
-            namespaceUri(xmlNamespace)
-        {
-        }
+	struct TagDescription {
+		TagDescription(const std::string &tag,
+					   const std::string &xmlNamespace) :
+			tagName(tag),
+			namespaceUri(xmlNamespace)
+		{
+		}
 
-        std::string tagName;
-        std::string namespaceUri;
+		std::string tagName;
+		std::string namespaceUri;
 
-        bool operator<(const TagDescription &second) const
-        {
-            if (tagName < second.tagName) {
-                return true;
-            }
-            if (tagName > second.tagName) {
-                return false;
-            }
-            if (namespaceUri < second.namespaceUri) {
-                return true;
-            }
-            return false;
-        }
-    };
+		bool operator<(const TagDescription &second) const
+		{
+			if (tagName < second.tagName) {
+				return true;
+			}
+
+			if (tagName > second.tagName) {
+				return false;
+			}
+
+			if (namespaceUri < second.namespaceUri) {
+				return true;
+			}
+
+			return false;
+		}
+	};
 
 
-    ParserSchema(ParserType *parser)
-      : m_functions(parser) {}
+	ParserSchema(ParserType *parser)
+		: m_functions(parser) {}
 
-    virtual ~ParserSchema() {}
+	virtual ~ParserSchema() {}
 
-    void initialize(
-            const std::string &filename,
-            bool defaultArgs,
-            SaxReader::ValidationType valType,
-            const std::string &xmlschema)
-    {
-        VcoreTry
-        {
-            m_reader.initialize(filename, defaultArgs, valType, xmlschema);
-        }
-        VcoreCatch (SaxReader::Exception::Base)
-        {
-            VcoreReThrowMsg(ParserSchemaException::XmlReaderError, "XmlReaderError");
-        }
-    }
+	void initialize(
+		const std::string &filename,
+		bool defaultArgs,
+		SaxReader::ValidationType valType,
+		const std::string &xmlschema)
+	{
+		VcoreTry {
+			m_reader.initialize(filename, defaultArgs, valType, xmlschema);
+		}
+		VcoreCatch(SaxReader::Exception::Base) {
+			VcoreReThrowMsg(ParserSchemaException::XmlReaderError, "XmlReaderError");
+		}
+	}
 
-    void deinitialize()
-    {
-        m_reader.deinitialize();
-    }
+	void deinitialize()
+	{
+		m_reader.deinitialize();
+	}
 
-    void read(DataType &dataContainer)
-    {
-        VcoreTry
-        {
-            while (m_reader.next()) {
-                switch (m_reader.type()) {
-                case SaxReader::NODE_BEGIN:
-                    beginNode(dataContainer);
-                    break;
-                case SaxReader::NODE_END:
-                    endNode(dataContainer);
-                    break;
-                case SaxReader::NODE_TEXT:
-                    textNode(dataContainer);
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-        VcoreCatch (SaxReader::Exception::Base)
-        {
-            VcoreReThrowMsg(ParserSchemaException::XmlReaderError, "XmlReaderError");
-        }
-    }
+	void read(DataType &dataContainer)
+	{
+		VcoreTry {
+			while (m_reader.next())
+			{
+				switch (m_reader.type()) {
+				case SaxReader::NODE_BEGIN:
+					beginNode(dataContainer);
+					break;
 
-    typedef void (ParserType::*FunctionPtr)(DataType &data);
-    typedef std::map<TagDescription, FunctionPtr> FunctionMap;
+				case SaxReader::NODE_END:
+					endNode(dataContainer);
+					break;
 
-    void addBeginTagCallback(
-            const std::string &tag,
-            const std::string &namespaceUri,
-            FunctionPtr function)
-    {
-        TagDescription desc(tag, namespaceUri);
-        m_beginFunctionMap[desc] = function;
-    }
+				case SaxReader::NODE_TEXT:
+					textNode(dataContainer);
+					break;
 
-    void addEndTagCallback(
-            const std::string &tag,
-            const std::string &namespaceUri,
-            FunctionPtr function)
-    {
-        TagDescription desc(tag, namespaceUri);
-        m_endFunctionMap[desc] = function;
-    }
+				default:
+					break;
+				}
+			}
+		}
+		VcoreCatch(SaxReader::Exception::Base) {
+			VcoreReThrowMsg(ParserSchemaException::XmlReaderError, "XmlReaderError");
+		}
+	}
 
-    SaxReader& getReader()
-    {
-        return m_reader;
-    }
+	typedef void (ParserType::*FunctionPtr)(DataType &data);
+	typedef std::map<TagDescription, FunctionPtr> FunctionMap;
 
-    std::string& getText()
-    {
-        return m_textNode;
-    }
+	void addBeginTagCallback(
+		const std::string &tag,
+		const std::string &namespaceUri,
+		FunctionPtr function)
+	{
+		TagDescription desc(tag, namespaceUri);
+		m_beginFunctionMap[desc] = function;
+	}
+
+	void addEndTagCallback(
+		const std::string &tag,
+		const std::string &namespaceUri,
+		FunctionPtr function)
+	{
+		TagDescription desc(tag, namespaceUri);
+		m_endFunctionMap[desc] = function;
+	}
+
+	SaxReader &getReader()
+	{
+		return m_reader;
+	}
+
+	std::string &getText()
+	{
+		return m_textNode;
+	}
 
 protected:
-    void beginNode(DataType &dataContainer)
-    {
-        TagDescription desc(m_reader.name(), m_reader.namespaceURI());
-        FunctionPtr fun = m_beginFunctionMap[desc];
+	void beginNode(DataType &dataContainer)
+	{
+		TagDescription desc(m_reader.name(), m_reader.namespaceURI());
+		FunctionPtr fun = m_beginFunctionMap[desc];
 
-        if (fun == 0) {
-            return;
-        }
+		if (fun == 0) {
+			return;
+		}
 
-        (m_functions->*fun)(dataContainer);
-    }
+		(m_functions->*fun)(dataContainer);
+	}
 
-    void endNode(DataType &dataContainer)
-    {
-        TagDescription desc(m_reader.name(), m_reader.namespaceURI());
-        FunctionPtr fun = m_endFunctionMap[desc];
+	void endNode(DataType &dataContainer)
+	{
+		TagDescription desc(m_reader.name(), m_reader.namespaceURI());
+		FunctionPtr fun = m_endFunctionMap[desc];
 
-        if (fun == 0) {
-            return;
-        }
+		if (fun == 0) {
+			return;
+		}
 
-        (m_functions->*fun)(dataContainer);
-    }
+		(m_functions->*fun)(dataContainer);
+	}
 
-    void textNode(DataType &dataContainer)
-    {
-        (void)dataContainer;
-        m_textNode = m_reader.value();
-    }
+	void textNode(DataType &dataContainer)
+	{
+		(void)dataContainer;
+		m_textNode = m_reader.value();
+	}
 
-    ParserType *m_functions;
-    SaxReader m_reader;
-    FunctionMap m_beginFunctionMap;
-    FunctionMap m_endFunctionMap;
+	ParserType *m_functions;
+	SaxReader m_reader;
+	FunctionMap m_beginFunctionMap;
+	FunctionMap m_endFunctionMap;
 
-    // temporary values require due parsing textNode
-    std::string m_textNode;
+	// temporary values require due parsing textNode
+	std::string m_textNode;
 };
 
 } // namespace ValidationCore

@@ -27,20 +27,20 @@
 #include <cstdio>
 
 namespace ValidationCore {
-Exception* Exception::m_lastException = NULL;
+Exception *Exception::m_lastException = NULL;
 unsigned int Exception::m_exceptionCount = 0;
 void (*Exception::m_terminateHandler)() = NULL;
 
 void LogUnhandledException(const std::string &str)
 {
-    LogDebug("" << str);
+	LogDebug("" << str);
 }
 
 void LogUnhandledException(const std::string &str,
-                           const char *filename,
-                           int line,
-                           const char *function)
+						   const char *filename,
+						   int line,
+						   const char *function)
 {
-    LogError("[" << filename << ":" << line << "][" << function << "]" << str);
+	LogError("[" << filename << ":" << line << "][" << function << "]" << str);
 }
 } // namespace ValidationCore

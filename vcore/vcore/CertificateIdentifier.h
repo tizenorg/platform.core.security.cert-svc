@@ -22,7 +22,7 @@
 #ifndef \
     _WRT_ENGINE_SRC_INSTALLER_CORE_VALIDATION_CORE_CERTIFICATEIDENTIFICATOR_H_
 #define \
-    _WRT_ENGINE_SRC_INSTALLER_CORE_VALIDATION_CORE_CERTIFICATEIDENTIFICATOR_H_
+	_WRT_ENGINE_SRC_INSTALLER_CORE_VALIDATION_CORE_CERTIFICATEIDENTIFICATOR_H_
 
 #include <map>
 #include <dpl/noncopyable.h>
@@ -35,35 +35,37 @@ class CertificateIdentifier : public VcoreDPL::Noncopyable {
 public:
 	typedef std::map<Certificate::Fingerprint, CertStoreId::Set> FingerPrintMap;
 
-    CertificateIdentifier()
-    {
-    }
-    ~CertificateIdentifier()
-    {
-    }
+	CertificateIdentifier()
+	{
+	}
+	~CertificateIdentifier()
+	{
+	}
 
-    void add(const Certificate::Fingerprint &fingerprint,
-            CertStoreId::Type domain)
-    {
-        fingerPrintMap[fingerprint].add(domain);
-    }
+	void add(const Certificate::Fingerprint &fingerprint,
+			 CertStoreId::Type domain)
+	{
+		fingerPrintMap[fingerprint].add(domain);
+	}
 
-    CertStoreId::Set find(const Certificate::Fingerprint &fingerprint) const
-    {
-        FingerPrintMap::const_iterator iter = fingerPrintMap.find(fingerprint);
-        if (iter == fingerPrintMap.end()) {
-            return CertStoreId::Set();
-        }
-        return iter->second;
-    }
+	CertStoreId::Set find(const Certificate::Fingerprint &fingerprint) const
+	{
+		FingerPrintMap::const_iterator iter = fingerPrintMap.find(fingerprint);
 
-    CertStoreId::Set find(const CertificatePtr &certificate) const
-    {
-        return find(certificate->getFingerprint(Certificate::FINGERPRINT_SHA1));
-    }
+		if (iter == fingerPrintMap.end()) {
+			return CertStoreId::Set();
+		}
+
+		return iter->second;
+	}
+
+	CertStoreId::Set find(const CertificatePtr &certificate) const
+	{
+		return find(certificate->getFingerprint(Certificate::FINGERPRINT_SHA1));
+	}
 
 private:
-    FingerPrintMap fingerPrintMap;
+	FingerPrintMap fingerPrintMap;
 };
 } // namespace ValidationCore
 

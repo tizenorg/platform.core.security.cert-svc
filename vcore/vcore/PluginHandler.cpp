@@ -36,6 +36,7 @@ PluginHandler::PluginHandler()
 	, m_fail(true)
 {
 	m_dlhandle = dlopen(PLUGIN_PATH.c_str(), RTLD_NOW);
+
 	if (!m_dlhandle) {
 		LogInfo("Plugin library has not been found/opened : " << PLUGIN_PATH);
 		return;
@@ -43,28 +44,30 @@ PluginHandler::PluginHandler()
 
 	CreateValidatorPlugin_t createFun =
 		reinterpret_cast<CreateValidatorPlugin_t>(dlsym(m_dlhandle, "create"));
+
 	if (!createFun) {
 		LogError("create symbol cannot found from " << PLUGIN_PATH
-			<< ". dlerror : " << dlerror());
+				 << ". dlerror : " << dlerror());
 		return;
 	}
 
 	m_destroy =
 		reinterpret_cast<DestroyValidatorPlugin_t>(dlsym(m_dlhandle, "destroy"));
+
 	if (!m_destroy) {
 		LogError("destroy symbole cannot found from " << PLUGIN_PATH
-			<< ". dlerror : " << dlerror());
+				 << ". dlerror : " << dlerror());
 		return;
 	}
 
 	m_plugin = createFun();
+
 	if (!m_plugin) {
 		LogError("cannot create plugin with create func.");
 		return;
 	}
 
 	LogDebug("create plugin with createFun success.");
-
 	m_fail = false;
 }
 

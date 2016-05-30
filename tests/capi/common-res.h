@@ -34,9 +34,9 @@ namespace TestData {
 class SigComponents {
 public:
 	SigComponents(std::string &cert, std::string &mes, std::string &sig)
-	  : certificate(cert)
-	  , message(mes)
-	  , signature(sig) {}
+		: certificate(cert)
+		, message(mes)
+		, signature(sig) {}
 
 	std::string certificate;
 	std::string message;

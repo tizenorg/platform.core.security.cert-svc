@@ -27,11 +27,10 @@
 
 namespace VcoreDPL {
 class AbstractInputOutput :
-    public AbstractInput,
-    public AbstractOutput
-{
-  public:
-    virtual ~AbstractInputOutput() {}
+	public AbstractInput,
+	public AbstractOutput {
+public:
+	virtual ~AbstractInputOutput() {}
 };
 } // namespace VcoreDPL
 

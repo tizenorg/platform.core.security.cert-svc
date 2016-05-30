@@ -32,30 +32,30 @@ namespace Private {
  * Used to detect type of valid reference to value object.
  */
 template <typename T>
-T& ValueReference(T& t)
+T &ValueReference(T &t)
 {
-    return(t);
+	return (t);
 }
 
 template <typename T>
-const T& ValueReference(const T& t)
+const T &ValueReference(const T &t)
 {
-    return(t);
+	return (t);
 }
 } //Private
 } //DPL
 
 #define DPL_FOREACH_IMPL(temporaryName, iterator, container)            \
-    __typeof__ (VcoreDPL::Private::ValueReference((container))) &            \
-    temporaryName = (container);                                        \
-    for (__typeof__ (temporaryName.begin())iterator =                  \
-             temporaryName.begin();                                     \
-         (iterator) != temporaryName.end(); ++iterator)
+	__typeof__ (VcoreDPL::Private::ValueReference((container))) &            \
+	temporaryName = (container);                                        \
+	for (__typeof__ (temporaryName.begin())iterator =                  \
+			temporaryName.begin();                                     \
+			(iterator) != temporaryName.end(); ++iterator)
 
 #define FOREACH(iterator, container)                                    \
-    DPL_FOREACH_IMPL(                                                   \
-        DPL_MACRO_CONCAT(foreachContainerReference, __COUNTER__),       \
-        iterator,                                      \
-        container)
+	DPL_FOREACH_IMPL(                                                   \
+			DPL_MACRO_CONCAT(foreachContainerReference, __COUNTER__),       \
+			iterator,                                      \
+			container)
 
 #endif // DPL_FOREACH_H

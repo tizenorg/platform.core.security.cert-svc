@@ -24,30 +24,29 @@
 
 namespace VcoreDPL {
 namespace Log {
-class AbstractLogProvider
-{
+class AbstractLogProvider {
 public:
-    enum class LogLevel {
-        None,
-        Error,
-        Warning,
-        Info,
-        Debug,
-        Pedantic
-    };
+	enum class LogLevel {
+		None,
+		Error,
+		Warning,
+		Info,
+		Debug,
+		Pedantic
+	};
 
-    virtual ~AbstractLogProvider() {}
+	virtual ~AbstractLogProvider() {}
 
-    virtual void SetTag(const char *tag);
+	virtual void SetTag(const char *tag);
 
-    virtual void Log(LogLevel level,
-                     const char *message,
-                     const char *fileName,
-                     int line,
-                     const char *function) const = 0;
+	virtual void Log(LogLevel level,
+					 const char *message,
+					 const char *fileName,
+					 int line,
+					 const char *function) const = 0;
 
 protected:
-    static const char *LocateSourceFileName(const char *filename);
+	static const char *LocateSourceFileName(const char *filename);
 };
 }
 } // namespace VcoreDPL

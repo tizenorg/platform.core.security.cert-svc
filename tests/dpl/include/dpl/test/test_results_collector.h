@@ -38,57 +38,57 @@ typedef std::shared_ptr<TestResultsCollectorBase>
 TestResultsCollectorBasePtr;
 
 class TestResultsCollectorBase :
-    private VcoreDPL::Noncopyable
-{
-  public:
-    typedef TestResultsCollectorBase* (*CollectorConstructorFunc)();
-    typedef std::list<std::string> TestCaseIdList;
-    struct FailStatus
-    {
-        enum Type
-        {
-            NONE,
-            FAILED,
-            IGNORED,
-            INTERNAL
-        };
-    };
+	private VcoreDPL::Noncopyable {
+public:
+	typedef TestResultsCollectorBase *(*CollectorConstructorFunc)();
+	typedef std::list<std::string> TestCaseIdList;
+	struct FailStatus {
+		enum Type {
+			NONE,
+			FAILED,
+			IGNORED,
+			INTERNAL
+		};
+	};
 
-    virtual ~TestResultsCollectorBase() {}
+	virtual ~TestResultsCollectorBase() {}
 
-    virtual bool Configure()
-    {
-        return true;
-    }
-    virtual void Start(int count) { DPL_UNUSED_PARAM(count); }
-    virtual void Finish() { }
-    virtual void CollectCurrentTestGroupName(const std::string& /*groupName*/)
-    {}
+	virtual bool Configure()
+	{
+		return true;
+	}
+	virtual void Start(int count)
+	{
+		DPL_UNUSED_PARAM(count);
+	}
+	virtual void Finish() { }
+	virtual void CollectCurrentTestGroupName(const std::string & /*groupName*/)
+	{}
 
-    virtual void CollectTestsCasesList(const TestCaseIdList& /*list*/) {}
-    virtual void CollectResult(const std::string& id,
-                               const std::string& description,
-                               const FailStatus::Type status = FailStatus::NONE,
-                               const std::string& reason = "") = 0;
-    virtual std::string CollectorSpecificHelp() const
-    {
-        return "";
-    }
-    virtual bool ParseCollectorSpecificArg (const std::string& /*arg*/)
-    {
-        return false;
-    }
+	virtual void CollectTestsCasesList(const TestCaseIdList & /*list*/) {}
+	virtual void CollectResult(const std::string &id,
+							   const std::string &description,
+							   const FailStatus::Type status = FailStatus::NONE,
+							   const std::string &reason = "") = 0;
+	virtual std::string CollectorSpecificHelp() const
+	{
+		return "";
+	}
+	virtual bool ParseCollectorSpecificArg(const std::string & /*arg*/)
+	{
+		return false;
+	}
 
-    static TestResultsCollectorBase* Create(const std::string& name);
-    static void RegisterCollectorConstructor(
-        const std::string& name,
-        CollectorConstructorFunc
-        constructor);
-    static std::vector<std::string> GetCollectorsNames();
+	static TestResultsCollectorBase *Create(const std::string &name);
+	static void RegisterCollectorConstructor(
+		const std::string &name,
+		CollectorConstructorFunc
+		constructor);
+	static std::vector<std::string> GetCollectorsNames();
 
-  private:
-    typedef std::map<std::string, CollectorConstructorFunc> ConstructorsMap;
-    static ConstructorsMap m_constructorsMap;
+private:
+	typedef std::map<std::string, CollectorConstructorFunc> ConstructorsMap;
+	static ConstructorsMap m_constructorsMap;
 };
 }
 }

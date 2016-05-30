@@ -26,17 +26,16 @@
 
 namespace VcoreDPL {
 
-class VSToken
-{
+class VSToken {
 public:
-    VSToken(const std::string & c);
-    VSToken(); //newline token - no new class to simplify
-    const std::string & cell() const;
+	VSToken(const std::string &c);
+	VSToken(); //newline token - no new class to simplify
+	const std::string &cell() const;
 
-    bool isNewLine();
+	bool isNewLine();
 private:
-    bool m_newline;
-    std::string m_cell;
+	bool m_newline;
+	std::string m_cell;
 };
 
 }

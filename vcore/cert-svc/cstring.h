@@ -31,19 +31,19 @@ extern "C" {
 
 
 typedef struct CertSvcStringList_t {
-    size_t privateHandler;
-    CertSvcInstance privateInstance;
+	size_t privateHandler;
+	CertSvcInstance privateInstance;
 } CertSvcStringList;
 
 typedef struct CertSvcString_t {
-    /*
-     * You are not allowed to use private fields of this structure. It is internal
-     * implementation of strings and it may change at any time without notice!
-     * To extract data use certsvc_string_to_cstring function!
-     */
-    char *privateHandler;
-    size_t privateLength;
-    CertSvcInstance privateInstance;
+	/*
+	 * You are not allowed to use private fields of this structure. It is internal
+	 * implementation of strings and it may change at any time without notice!
+	 * To extract data use certsvc_string_to_cstring function!
+	 */
+	char *privateHandler;
+	size_t privateLength;
+	CertSvcInstance privateInstance;
 } CertSvcString;
 
 /**
@@ -64,10 +64,10 @@ typedef struct CertSvcString_t {
  * @see certsvc_string_free()
  */
 int certsvc_string_new(
-    CertSvcInstance instance,
-    const char *input,
-    size_t size,
-    CertSvcString *output);
+	CertSvcInstance instance,
+	const char *input,
+	size_t size,
+	CertSvcString *output);
 
 /**
  * Create CertSvcString with @a input null-terminated string. @a output CertSvcString will
@@ -85,10 +85,10 @@ int certsvc_string_new(
  * @see certsvc_string_free()
  */
 int certsvc_string_not_managed(
-    CertSvcInstance instance,
-    const char *input,
-    size_t size,
-    CertSvcString *output);
+	CertSvcInstance instance,
+	const char *input,
+	size_t size,
+	CertSvcString *output);
 
 /**
  * Get CertSvcString from CertSvcStringList with newly allocated memory.
@@ -106,8 +106,8 @@ int certsvc_string_not_managed(
  * @see certsvc_string_free()
  */
 int certsvc_string_list_get_one(CertSvcStringList hander,
-                                size_t position,
-                                CertSvcString *buffer);
+								size_t position,
+								CertSvcString *buffer);
 
 /**
  * Get list size of CertSvcStringList.

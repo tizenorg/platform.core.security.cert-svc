@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 typedef struct CertSvcInstance_t {
-    void *privatePtr;
+	void *privatePtr;
 } CertSvcInstance;
 
 /**

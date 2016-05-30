@@ -52,231 +52,242 @@ const char MARK_ENCODED_CHAR = '%';
 
 namespace ValidationCore {
 
-class ReferenceValidator::Impl
-{
-  public:
-    Impl(const std::string &dirpath)
-      : m_dirpath(dirpath)
-      , m_signatureRegexp(REGEXP_DISTRIBUTOR_SIGNATURE)
-    {}
+class ReferenceValidator::Impl {
+public:
+	Impl(const std::string &dirpath)
+		: m_dirpath(dirpath)
+		, m_signatureRegexp(REGEXP_DISTRIBUTOR_SIGNATURE)
+	{}
 
-    virtual ~Impl(){}
+	virtual ~Impl() {}
 
-    Result checkReferences(const SignatureData &signatureData)
-    {
-        const ReferenceSet &refSet = signatureData.getReferenceSet();
-        ReferenceSet refDecoded;
+	Result checkReferences(const SignatureData &signatureData)
+	{
+		const ReferenceSet &refSet = signatureData.getReferenceSet();
+		ReferenceSet refDecoded;
 
-        try {
-            for (auto it = refSet.begin(); it != refSet.end(); ++it) {
-                if (std::string::npos != it->find(MARK_ENCODED_CHAR))
-                    refDecoded.insert(decodeProcent(*it));
-                else
-                    refDecoded.insert(*it);
-            }
-        } catch (Result &) {
-            return ERROR_DECODING_URL;
-        }
-        return dfsCheckDirectories(
-            refDecoded,
-            std::string(),
-            signatureData.isAuthorSignature());
-    }
+		try {
+			for (auto it = refSet.begin(); it != refSet.end(); ++it) {
+				if (std::string::npos != it->find(MARK_ENCODED_CHAR))
+					refDecoded.insert(decodeProcent(*it));
+				else
+					refDecoded.insert(*it);
+			}
+		} catch (Result &) {
+			return ERROR_DECODING_URL;
+		}
 
-    Result checkOutbound(const std::string &linkPath, const std::string &appPath)
-    {
-        char resolvedPath[PATH_MAX];
-        if (realpath((appPath + "/" + linkPath).c_str(), resolvedPath) == NULL)
-            return ERROR_READING_LNK;
+		return dfsCheckDirectories(
+				   refDecoded,
+				   std::string(),
+				   signatureData.isAuthorSignature());
+	}
 
-        std::string linkRealPath(resolvedPath);
-        if (linkRealPath.compare(0, appPath.size(), appPath) == 0)
-            return NO_ERROR;
-        else
-            return ERROR_OUTBOUND_LNK;
-    }
+	Result checkOutbound(const std::string &linkPath, const std::string &appPath)
+	{
+		char resolvedPath[PATH_MAX];
 
-  private:
-    int hexToInt(char hex);
-    std::string decodeProcent(const std::string &path);
+		if (realpath((appPath + "/" + linkPath).c_str(), resolvedPath) == NULL)
+			return ERROR_READING_LNK;
 
-    Result dfsCheckDirectories(
-        const ReferenceSet &referenceSet,
-        const std::string &directory,
-        bool isAuthorSignature);
+		std::string linkRealPath(resolvedPath);
 
-    inline bool isDistributorSignature(const char *cstring) const
-    {
-        return m_signatureRegexp.FullMatch(cstring);
-    }
+		if (linkRealPath.compare(0, appPath.size(), appPath) == 0)
+			return NO_ERROR;
+		else
+			return ERROR_OUTBOUND_LNK;
+	}
 
-    std::string m_dirpath;
-    pcrecpp::RE m_signatureRegexp;
+private:
+	int hexToInt(char hex);
+	std::string decodeProcent(const std::string &path);
+
+	Result dfsCheckDirectories(
+		const ReferenceSet &referenceSet,
+		const std::string &directory,
+		bool isAuthorSignature);
+
+	inline bool isDistributorSignature(const char *cstring) const
+	{
+		return m_signatureRegexp.FullMatch(cstring);
+	}
+
+	std::string m_dirpath;
+	pcrecpp::RE m_signatureRegexp;
 };
 
-int ReferenceValidator::Impl::hexToInt(char a) {
-    if (a >= '0' && a <= '9') return a-'0';
-    if (a >= 'A' && a <= 'F') return a-'A' + 10;
-    if (a >= 'a' && a <= 'f') return a-'a' + 10;
-    LogError("Symbol '" << a << "' is out of scope.");
-    throw ERROR_DECODING_URL;
+int ReferenceValidator::Impl::hexToInt(char a)
+{
+	if (a >= '0' && a <= '9') return a - '0';
+
+	if (a >= 'A' && a <= 'F') return a - 'A' + 10;
+
+	if (a >= 'a' && a <= 'f') return a - 'a' + 10;
+
+	LogError("Symbol '" << a << "' is out of scope.");
+	throw ERROR_DECODING_URL;
 }
 
-std::string ReferenceValidator::Impl::decodeProcent(const std::string &path) {
-    std::vector<int> input(path.begin(), path.end());
-    std::vector<char> output;
-    try {
-        size_t i = 0;
-        while(i<input.size()) {
-            if (MARK_ENCODED_CHAR == input[i]) {
-                if (i+2 >= input.size())
-                    throw ERROR_DECODING_URL;
+std::string ReferenceValidator::Impl::decodeProcent(const std::string &path)
+{
+	std::vector<int> input(path.begin(), path.end());
+	std::vector<char> output;
 
-                int result = hexToInt(input[i+1])*16 + hexToInt(input[i+2]);
-                output.push_back(static_cast<char>(result));
-                i+=3;
-            } else {
-                output.push_back(static_cast<char>(input[i]));
-                ++i;
-            }
-        }
-    } catch (Result &) {
-        LogError("Error while decoding url path : " << path);
-        throw ERROR_DECODING_URL;
-    }
-    return std::string(output.begin(), output.end());
+	try {
+		size_t i = 0;
+
+		while (i < input.size()) {
+			if (MARK_ENCODED_CHAR == input[i]) {
+				if (i + 2 >= input.size())
+					throw ERROR_DECODING_URL;
+
+				int result = hexToInt(input[i + 1]) * 16 + hexToInt(input[i + 2]);
+				output.push_back(static_cast<char>(result));
+				i += 3;
+			} else {
+				output.push_back(static_cast<char>(input[i]));
+				++i;
+			}
+		}
+	} catch (Result &) {
+		LogError("Error while decoding url path : " << path);
+		throw ERROR_DECODING_URL;
+	}
+
+	return std::string(output.begin(), output.end());
 }
 
 ReferenceValidator::Result ReferenceValidator::Impl::dfsCheckDirectories(
-    const ReferenceSet &referenceSet,
-    const std::string &directory,
-    bool isAuthorSignature)
+	const ReferenceSet &referenceSet,
+	const std::string &directory,
+	bool isAuthorSignature)
 {
-    int ret;
-    DIR *dirp;
-    struct dirent entry;
-    struct dirent *result;
+	int ret;
+	DIR *dirp;
+	struct dirent entry;
+	struct dirent *result;
+	std::string currentDir = m_dirpath;
 
-    std::string currentDir = m_dirpath;
-    if (!directory.empty()) {
-        currentDir += "/";
-        currentDir += directory;
-    }
+	if (!directory.empty()) {
+		currentDir += "/";
+		currentDir += directory;
+	}
 
-    if ((dirp = opendir(currentDir.c_str())) == NULL) {
-        LogError("Error opening directory : " << currentDir);
-        return ERROR_OPENING_DIR;
-    }
+	if ((dirp = opendir(currentDir.c_str())) == NULL) {
+		LogError("Error opening directory : " << currentDir);
+		return ERROR_OPENING_DIR;
+	}
 
-    for (ret = readdir_r(dirp, &entry, &result);
-            ret == 0 && result != NULL;
-            ret = readdir_r(dirp, &entry, &result)) {
-        if (!strcmp(result->d_name, SPECIAL_SYMBOL_CURRENT_DIR)) {
-            continue;
-        }
+	for (ret = readdir_r(dirp, &entry, &result);
+			ret == 0 && result != NULL;
+			ret = readdir_r(dirp, &entry, &result)) {
+		if (!strcmp(result->d_name, SPECIAL_SYMBOL_CURRENT_DIR)) {
+			continue;
+		}
 
-        if (!strcmp(result->d_name, SPECIAL_SYMBOL_UPPER_DIR)) {
-            continue;
-        }
+		if (!strcmp(result->d_name, SPECIAL_SYMBOL_UPPER_DIR)) {
+			continue;
+		}
 
-        if (result->d_type == DT_UNKNOWN) {
-            // try to stat inode when readdir is not returning known type
-            std::string path = currentDir + "/" + result->d_name;
-            struct stat s;
-            if (lstat(path.c_str(), &s) != 0) {
-                closedir(dirp);
-                return ERROR_LSTAT;
-            }
-            if (S_ISREG(s.st_mode)) {
-                result->d_type = DT_REG;
-            } else if (S_ISDIR(s.st_mode)) {
-                result->d_type = DT_DIR;
-            }
-        }
+		if (result->d_type == DT_UNKNOWN) {
+			// try to stat inode when readdir is not returning known type
+			std::string path = currentDir + "/" + result->d_name;
+			struct stat s;
 
-        if (currentDir == m_dirpath && result->d_type == DT_REG &&
-            !strcmp(result->d_name, SPECIAL_SYMBOL_AUTHOR_SIGNATURE_FILE) &&
-            isAuthorSignature)
-        {
-            continue;
-        }
+			if (lstat(path.c_str(), &s) != 0) {
+				closedir(dirp);
+				return ERROR_LSTAT;
+			}
 
-        if (currentDir == m_dirpath && result->d_type == DT_REG &&
-            isDistributorSignature(result->d_name)) {
-            continue;
-        }
+			if (S_ISREG(s.st_mode)) {
+				result->d_type = DT_REG;
+			} else if (S_ISDIR(s.st_mode)) {
+				result->d_type = DT_DIR;
+			}
+		}
 
-        if (result->d_type == DT_DIR) {
-            LogDebug("Open directory : " << (directory + result->d_name));
-            std::string tmp_directory = directory + result->d_name + "/";
-            Result result = dfsCheckDirectories(referenceSet,
-                                                tmp_directory,
-                                                isAuthorSignature);
-            if (result != NO_ERROR) {
-                closedir(dirp);
-                return result;
-            }
-        } else if (result->d_type == DT_REG) {
-            if (referenceSet.end() ==
-                referenceSet.find(directory + result->d_name))
-            {
-                LogDebug("Found file : " << (directory + result->d_name));
-                LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
-                closedir(dirp);
-                return ERROR_REFERENCE_NOT_FOUND;
-            }
-        } else if (result->d_type == DT_LNK) {
-            std::string linkPath(directory + result->d_name);
+		if (currentDir == m_dirpath && result->d_type == DT_REG &&
+				!strcmp(result->d_name, SPECIAL_SYMBOL_AUTHOR_SIGNATURE_FILE) &&
+				isAuthorSignature) {
+			continue;
+		}
 
-            if (referenceSet.end() ==
-                referenceSet.find(linkPath))
-            {
-                LogDebug("Found file : " << (directory + result->d_name));
-                LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
-                closedir(dirp);
-                return ERROR_REFERENCE_NOT_FOUND;
-            }
+		if (currentDir == m_dirpath && result->d_type == DT_REG &&
+				isDistributorSignature(result->d_name)) {
+			continue;
+		}
 
-            Result ret = checkOutbound(linkPath, m_dirpath);
-            if (ret != NO_ERROR) {
-                LogError("Link file point wrong path");
-                closedir(dirp);
-                return ret;
-            }
-        } else {
-            LogError("Unknown file type.");
-            closedir(dirp);
-            return ERROR_UNSUPPORTED_FILE_TYPE;
-        }
-    }
+		if (result->d_type == DT_DIR) {
+			LogDebug("Open directory : " << (directory + result->d_name));
+			std::string tmp_directory = directory + result->d_name + "/";
+			Result result = dfsCheckDirectories(referenceSet,
+												tmp_directory,
+												isAuthorSignature);
 
-    if (ret != 0) {
-        closedir(dirp);
-        return ERROR_READING_DIR;
-    }
+			if (result != NO_ERROR) {
+				closedir(dirp);
+				return result;
+			}
+		} else if (result->d_type == DT_REG) {
+			if (referenceSet.end() ==
+					referenceSet.find(directory + result->d_name)) {
+				LogDebug("Found file : " << (directory + result->d_name));
+				LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
+				closedir(dirp);
+				return ERROR_REFERENCE_NOT_FOUND;
+			}
+		} else if (result->d_type == DT_LNK) {
+			std::string linkPath(directory + result->d_name);
 
-    closedir(dirp);
+			if (referenceSet.end() ==
+					referenceSet.find(linkPath)) {
+				LogDebug("Found file : " << (directory + result->d_name));
+				LogError("Unknown ERROR_REFERENCE_NOT_FOUND.");
+				closedir(dirp);
+				return ERROR_REFERENCE_NOT_FOUND;
+			}
 
-    return NO_ERROR;
+			Result ret = checkOutbound(linkPath, m_dirpath);
+
+			if (ret != NO_ERROR) {
+				LogError("Link file point wrong path");
+				closedir(dirp);
+				return ret;
+			}
+		} else {
+			LogError("Unknown file type.");
+			closedir(dirp);
+			return ERROR_UNSUPPORTED_FILE_TYPE;
+		}
+	}
+
+	if (ret != 0) {
+		closedir(dirp);
+		return ERROR_READING_DIR;
+	}
+
+	closedir(dirp);
+	return NO_ERROR;
 }
 
 ReferenceValidator::ReferenceValidator(const std::string &dirpath)
-  : m_impl(new Impl(dirpath))
+	: m_impl(new Impl(dirpath))
 {}
 
-ReferenceValidator::~ReferenceValidator(){
-    delete m_impl;
+ReferenceValidator::~ReferenceValidator()
+{
+	delete m_impl;
 }
 
 ReferenceValidator::Result ReferenceValidator::checkReferences(
-    const SignatureData &signatureData)
+	const SignatureData &signatureData)
 {
-    return m_impl->checkReferences(signatureData);
+	return m_impl->checkReferences(signatureData);
 }
 
 ReferenceValidator::Result ReferenceValidator::checkOutbound(
-    const std::string &linkPath, const std::string &appPath)
+	const std::string &linkPath, const std::string &appPath)
 {
-    return m_impl->checkOutbound(linkPath, appPath);
+	return m_impl->checkOutbound(linkPath, appPath);
 }
 } // ValidationCore

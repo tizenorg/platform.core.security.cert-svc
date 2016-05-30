@@ -26,131 +26,131 @@
 namespace ValidationCore {
 
 SignatureData::SignatureData()
-  : m_signatureNumber(-1)
-  , m_certificateSorted(false)
+	: m_signatureNumber(-1)
+	, m_certificateSorted(false)
 {}
 
 SignatureData::SignatureData(const std::string &fileName, int fileNumber)
-  : m_signatureNumber(fileNumber)
-  , m_fileName(fileName)
-  , m_certificateSorted(false)
+	: m_signatureNumber(fileNumber)
+	, m_fileName(fileName)
+	, m_certificateSorted(false)
 {}
 
 SignatureData::~SignatureData()
 {}
 
-const ReferenceSet& SignatureData::getReferenceSet() const
+const ReferenceSet &SignatureData::getReferenceSet() const
 {
-    return m_referenceSet;
+	return m_referenceSet;
 }
 
 void SignatureData::setReference(const ReferenceSet &referenceSet)
 {
-    m_referenceSet = referenceSet;
+	m_referenceSet = referenceSet;
 }
 
 CertificateList SignatureData::getCertList() const
 {
-    return m_certList;
+	return m_certList;
 }
 
 void SignatureData::setSortedCertificateList(const CertificateList &list)
 {
-    m_certList = list;
-    m_certificateSorted = true;
+	m_certList = list;
+	m_certificateSorted = true;
 }
 
 bool SignatureData::isAuthorSignature() const
 {
-    return m_signatureNumber == -1;
+	return m_signatureNumber == -1;
 }
 
 std::string SignatureData::getSignatureFileName() const
 {
-    return m_fileName;
+	return m_fileName;
 }
 
 int SignatureData::getSignatureNumber() const
 {
-    return m_signatureNumber;
+	return m_signatureNumber;
 }
 
 std::string SignatureData::getRoleURI() const
 {
-    return m_roleURI;
+	return m_roleURI;
 }
 
 std::string SignatureData::getProfileURI() const
 {
-    return m_profileURI;
+	return m_profileURI;
 }
 
 bool SignatureData::containObjectReference(const std::string &ref) const
 {
-    std::string rName = "#";
-    rName += ref;
-    return m_referenceSet.end() != m_referenceSet.find(rName);
+	std::string rName = "#";
+	rName += ref;
+	return m_referenceSet.end() != m_referenceSet.find(rName);
 }
 
 ObjectList SignatureData::getObjectList() const
 {
-    return m_objectList;
+	return m_objectList;
 }
 
 void SignatureData::setStorageType(const CertStoreId::Set &storeIdSet)
 {
-    m_storeIdSet = storeIdSet;
+	m_storeIdSet = storeIdSet;
 }
 
 bool SignatureData::isCertListSorted() const
 {
-    return m_certificateSorted;
+	return m_certificateSorted;
 }
 
-const CertStoreId::Set& SignatureData::getStorageType() const
+const CertStoreId::Set &SignatureData::getStorageType() const
 {
-    return m_storeIdSet;
+	return m_storeIdSet;
 }
 
 CertStoreId::Type SignatureData::getVisibilityLevel() const
 {
-    if (!m_storeIdSet.isContainsVis()) {
-        LogWarning("Visibility level was broken.");
-        return 0;
-    }
+	if (!m_storeIdSet.isContainsVis()) {
+		LogWarning("Visibility level was broken.");
+		return 0;
+	}
 
-    if (m_storeIdSet.contains(CertStoreId::VIS_PLATFORM))
-        return CertStoreId::VIS_PLATFORM;
-    else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER))
-        return CertStoreId::VIS_PARTNER;
-    else
-        return CertStoreId::VIS_PUBLIC;
+	if (m_storeIdSet.contains(CertStoreId::VIS_PLATFORM))
+		return CertStoreId::VIS_PLATFORM;
+	else if (m_storeIdSet.contains(CertStoreId::VIS_PARTNER))
+		return CertStoreId::VIS_PARTNER;
+	else
+		return CertStoreId::VIS_PUBLIC;
 }
 
-const SignatureData::IMEIList& SignatureData::getIMEIList() const
+const SignatureData::IMEIList &SignatureData::getIMEIList() const
 {
-    return m_imeiList;
+	return m_imeiList;
 }
 
-const SignatureData::MEIDList& SignatureData::getMEIDList() const
+const SignatureData::MEIDList &SignatureData::getMEIDList() const
 {
-    return m_meidList;
+	return m_meidList;
 }
 
 CertificatePtr SignatureData::getEndEntityCertificatePtr() const
 {
-    if (m_certificateSorted)
-        return m_certList.front();
+	if (m_certificateSorted)
+		return m_certList.front();
 
-    return CertificatePtr();
+	return CertificatePtr();
 }
 
 CertificatePtr SignatureData::getRootCaCertificatePtr() const
 {
-    if (m_certificateSorted)
-        return m_certList.back();
+	if (m_certificateSorted)
+		return m_certList.back();
 
-    return CertificatePtr();
+	return CertificatePtr();
 }
 
 } // ValidationCore

@@ -25,57 +25,57 @@ typedef bio_st BIO;
 namespace ValidationCore {
 class Base64Encoder {
 public:
-    class Exception {
-    public:
-        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError)
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
-    };
-    Base64Encoder();
-    void append(const std::string &data);
-    void finalize();
-    std::string get();
-    void reset();
-    ~Base64Encoder();
+	class Exception {
+	public:
+		VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError)
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
+	};
+	Base64Encoder();
+	void append(const std::string &data);
+	void finalize();
+	std::string get();
+	void reset();
+	~Base64Encoder();
 
 private:
-    Base64Encoder(const Base64Encoder &);
-    const Base64Encoder &operator=(const Base64Encoder &);
+	Base64Encoder(const Base64Encoder &);
+	const Base64Encoder &operator=(const Base64Encoder &);
 
-    BIO *m_b64;
-    BIO *m_bmem;
-    bool m_finalized;
+	BIO *m_b64;
+	BIO *m_bmem;
+	bool m_finalized;
 };
 
 class Base64Decoder {
 public:
-    class Exception {
-    public:
-        VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError)
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
-        VCORE_DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
-    };
-    Base64Decoder();
-    void append(const std::string &data);
+	class Exception {
+	public:
+		VCORE_DECLARE_EXCEPTION_TYPE(ValidationCore::Exception, Base)
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, InternalError)
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, NotFinalized)
+		VCORE_DECLARE_EXCEPTION_TYPE(Base, AlreadyFinalized)
+	};
+	Base64Decoder();
+	void append(const std::string &data);
 
-    /*
-     *  Function will return false when BIO_read fails
-     *  (for example: when string was not in base64 format).
-     */
-    bool finalize();
-    std::string get() const;
-    void reset();
-    ~Base64Decoder() {}
+	/*
+	 *  Function will return false when BIO_read fails
+	 *  (for example: when string was not in base64 format).
+	 */
+	bool finalize();
+	std::string get() const;
+	void reset();
+	~Base64Decoder() {}
 
 private:
-    Base64Decoder(const Base64Decoder &);
-    const Base64Decoder &operator=(const Base64Decoder &);
+	Base64Decoder(const Base64Decoder &);
+	const Base64Decoder &operator=(const Base64Decoder &);
 
-    std::string m_input;
-    std::string m_output;
-    bool m_finalized;
+	std::string m_input;
+	std::string m_output;
+	bool m_finalized;
 };
 } // namespace ValidationCore
 

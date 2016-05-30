@@ -27,7 +27,7 @@ namespace ValidationCore {
 namespace CertStoreId {
 
 Set::Set()
-  : m_certificateStorage(0)
+	: m_certificateStorage(0)
 {}
 
 Set::~Set()
@@ -36,53 +36,58 @@ Set::~Set()
 
 void Set::add(Type second)
 {
-    m_certificateStorage |= second;
+	m_certificateStorage |= second;
 }
 
 bool Set::contains(Type second) const
 {
-    return static_cast<bool>(m_certificateStorage & second);
+	return static_cast<bool>(m_certificateStorage & second);
 }
 
 bool Set::isContainsVis() const
 {
-    Type visType = VIS_PUBLIC;
-    visType |= VIS_PARTNER;
-    visType |= VIS_PLATFORM;
+	Type visType = VIS_PUBLIC;
+	visType |= VIS_PARTNER;
+	visType |= VIS_PLATFORM;
+	visType &= m_certificateStorage;
 
-    visType &= m_certificateStorage;
+	if (visType == 0)
+		return false;
 
-    if (visType == 0)
-        return false;
-
-    return true;
+	return true;
 }
 
 bool Set::isEmpty() const
 {
-    return m_certificateStorage == 0;
+	return m_certificateStorage == 0;
 }
 
 std::string Set::typeToString() const
 {
-    std::string ret;
+	std::string ret;
 
-    if (m_certificateStorage & TIZEN_DEVELOPER)
-        ret += "TIZEN_DEVELOPER ";
-    if (m_certificateStorage & TIZEN_TEST)
-        ret += "TIZEN_TEST ";
-    if (m_certificateStorage & TIZEN_VERIFY)
-        ret += "TIZEN_VERIFY ";
-    if (m_certificateStorage & TIZEN_STORE)
-        ret += "TIZEN_STORE ";
-    if (m_certificateStorage & VIS_PUBLIC)
-        ret += "VIS_PUBLIC ";
-    if (m_certificateStorage & VIS_PARTNER)
-        ret += "VIS_PARTNER ";
-    if (m_certificateStorage & VIS_PLATFORM)
-        ret += "VIS_PLATFORM ";
+	if (m_certificateStorage & TIZEN_DEVELOPER)
+		ret += "TIZEN_DEVELOPER ";
 
-    return ret;
+	if (m_certificateStorage & TIZEN_TEST)
+		ret += "TIZEN_TEST ";
+
+	if (m_certificateStorage & TIZEN_VERIFY)
+		ret += "TIZEN_VERIFY ";
+
+	if (m_certificateStorage & TIZEN_STORE)
+		ret += "TIZEN_STORE ";
+
+	if (m_certificateStorage & VIS_PUBLIC)
+		ret += "VIS_PUBLIC ";
+
+	if (m_certificateStorage & VIS_PARTNER)
+		ret += "VIS_PARTNER ";
+
+	if (m_certificateStorage & VIS_PLATFORM)
+		ret += "VIS_PLATFORM ";
+
+	return ret;
 }
 
 } // namespace CertStoreId

@@ -26,11 +26,11 @@
 
 CertSvcInstance vinstance;
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    certsvc_instance_new(&vinstance);
-    int status = VcoreDPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
-    certsvc_instance_free(vinstance);
-    return status;
+	certsvc_instance_new(&vinstance);
+	int status = VcoreDPL::Test::TestRunnerSingleton::Instance().ExecTestRunner(argc, argv);
+	certsvc_instance_free(vinstance);
+	return status;
 }
 

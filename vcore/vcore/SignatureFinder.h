@@ -31,56 +31,55 @@ namespace ValidationCore {
 
 class SignatureFileInfo {
 public:
-    SignatureFileInfo(const std::string &fileName, int num)
-      : m_fileName(fileName)
-      , m_fileNumber(num)
-    {}
+	SignatureFileInfo(const std::string &fileName, int num)
+		: m_fileName(fileName)
+		, m_fileNumber(num)
+	{}
 
-    std::string getFileName() const
-    {
-        return m_fileName;
-    }
+	std::string getFileName() const
+	{
+		return m_fileName;
+	}
 
-    int getFileNumber() const
-    {
-        return m_fileNumber;
-    }
+	int getFileNumber() const
+	{
+		return m_fileNumber;
+	}
 
-    bool operator<(const SignatureFileInfo &second) const
-    {
-        return m_fileNumber < second.m_fileNumber;
-    }
+	bool operator<(const SignatureFileInfo &second) const
+	{
+		return m_fileNumber < second.m_fileNumber;
+	}
 
 private:
-    std::string m_fileName;
-    int m_fileNumber;
+	std::string m_fileName;
+	int m_fileNumber;
 };
 
 typedef std::set<SignatureFileInfo> SignatureFileInfoSet;
 
 class SignatureFinder {
 public:
-    enum Result
-    {
-        NO_ERROR,
-        ERROR_OPENING_DIR,
-        ERROR_READING_DIR,
-        ERROR_ISTREAM
-    };
+	enum Result {
+		NO_ERROR,
+		ERROR_OPENING_DIR,
+		ERROR_READING_DIR,
+		ERROR_ISTREAM
+	};
 
-    SignatureFinder() = delete;
-    explicit SignatureFinder(const std::string& dir);
+	SignatureFinder() = delete;
+	explicit SignatureFinder(const std::string &dir);
 
-    virtual ~SignatureFinder();
+	virtual ~SignatureFinder();
 
-    Result find(SignatureFileInfoSet &set);
+	Result find(SignatureFileInfoSet &set);
 
 private:
-    class Impl;
-    Impl *m_impl;
+	class Impl;
+	Impl *m_impl;
 
-    SignatureFinder(const SignatureFinder &);
-    const SignatureFinder &operator=(const SignatureFinder &);
+	SignatureFinder(const SignatureFinder &);
+	const SignatureFinder &operator=(const SignatureFinder &);
 };
 
 } // namespace ValidationCore

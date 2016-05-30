@@ -33,66 +33,65 @@
 #include <stdexcept>
 
 namespace VcoreDPL {
-namespace // anonymous
-{
+namespace { // anonymous
 const size_t DEFAULT_ERRNO_STRING_SIZE = 32;
 } // namespace anonymous
 
 std::string GetErrnoString(int error)
 {
-    size_t size = DEFAULT_ERRNO_STRING_SIZE;
-    char *buffer = NULL;
+	size_t size = DEFAULT_ERRNO_STRING_SIZE;
+	char *buffer = NULL;
 
-    for (;;) {
-        // Add one extra characted for end of string null value
-        char *newBuffer = static_cast<char *>(::realloc(buffer, size + 1));
+	for (;;) {
+		// Add one extra characted for end of string null value
+		char *newBuffer = static_cast<char *>(::realloc(buffer, size + 1));
 
-        if (!newBuffer) {
-            // Failed to realloc
-            ::free(buffer);
-            throw std::bad_alloc();
-        }
+		if (!newBuffer) {
+			// Failed to realloc
+			::free(buffer);
+			throw std::bad_alloc();
+		}
 
-        // Setup reallocated buffer
-        buffer = newBuffer;
-        ::memset(buffer, 0, size + 1);
-
-        // Try to retrieve error string
+		// Setup reallocated buffer
+		buffer = newBuffer;
+		::memset(buffer, 0, size + 1);
+		// Try to retrieve error string
 #if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
-        // The XSI-compliant version of strerror_r() is provided if:
-        int result = ::strerror_r(error, buffer, size);
+		// The XSI-compliant version of strerror_r() is provided if:
+		int result = ::strerror_r(error, buffer, size);
 
-        if (result == 0) {
-            ScopedFree<char> scopedBufferFree(buffer);
-            return std::string(buffer);
-        }
+		if (result == 0) {
+			ScopedFree<char> scopedBufferFree(buffer);
+			return std::string(buffer);
+		}
+
 #else
-        errno = 0;
+		errno = 0;
+		// Otherwise, the GNU-specific version is provided.
+		char *result = ::strerror_r(error, buffer, size);
 
-        // Otherwise, the GNU-specific version is provided.
-        char *result = ::strerror_r(error, buffer, size);
+		if (result != NULL) {
+			ScopedFree<char> scopedBufferFree(buffer);
+			return std::string(result);
+		}
 
-        if (result != NULL) {
-            ScopedFree<char> scopedBufferFree(buffer);
-            return std::string(result);
-        }
 #endif
 
-        // Interpret errors
-        switch (errno) {
-        case EINVAL:
-            // We got an invalid errno value
-                ::free(buffer);
-            ThrowMsg(InvalidErrnoValue, "Invalid errno value: " << error);
+		// Interpret errors
+		switch (errno) {
+		case EINVAL:
+			// We got an invalid errno value
+			::free(buffer);
+			ThrowMsg(InvalidErrnoValue, "Invalid errno value: " << error);
 
-        case ERANGE:
-            // Incease buffer size and retry
-            size <<= 1;
-            continue;
+		case ERANGE:
+			// Incease buffer size and retry
+			size <<= 1;
+			continue;
 
-        default:
-            AssertMsg(0, "Invalid errno value after call to strerror_r!");
-        }
-    }
+		default:
+			AssertMsg(0, "Invalid errno value after call to strerror_r!");
+		}
+	}
 }
 } // namespace VcoreDPL

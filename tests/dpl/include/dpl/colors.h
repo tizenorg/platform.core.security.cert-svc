@@ -27,45 +27,45 @@
 namespace VcoreDPL {
 namespace Colors {
 namespace Text {
-extern const char* BOLD_GREEN_BEGIN;
-extern const char* BOLD_GREEN_END;
-extern const char* PURPLE_BEGIN;
-extern const char* PURPLE_END;
-extern const char* RED_BEGIN;
-extern const char* RED_END;
-extern const char* GREEN_BEGIN;
-extern const char* GREEN_END;
-extern const char* CYAN_BEGIN;
-extern const char* CYAN_END;
-extern const char* BOLD_RED_BEGIN;
-extern const char* BOLD_RED_END;
-extern const char* BOLD_YELLOW_BEGIN;
-extern const char* BOLD_YELLOW_END;
-extern const char* BOLD_GOLD_BEGIN;
-extern const char* BOLD_GOLD_END;
-extern const char* BOLD_WHITE_BEGIN;
-extern const char* BOLD_WHITE_END;
+extern const char *BOLD_GREEN_BEGIN;
+extern const char *BOLD_GREEN_END;
+extern const char *PURPLE_BEGIN;
+extern const char *PURPLE_END;
+extern const char *RED_BEGIN;
+extern const char *RED_END;
+extern const char *GREEN_BEGIN;
+extern const char *GREEN_END;
+extern const char *CYAN_BEGIN;
+extern const char *CYAN_END;
+extern const char *BOLD_RED_BEGIN;
+extern const char *BOLD_RED_END;
+extern const char *BOLD_YELLOW_BEGIN;
+extern const char *BOLD_YELLOW_END;
+extern const char *BOLD_GOLD_BEGIN;
+extern const char *BOLD_GOLD_END;
+extern const char *BOLD_WHITE_BEGIN;
+extern const char *BOLD_WHITE_END;
 } //namespace Text
 
 namespace Html {
-extern const char* BOLD_GREEN_BEGIN;
-extern const char* BOLD_GREEN_END;
-extern const char* PURPLE_BEGIN;
-extern const char* PURPLE_END;
-extern const char* RED_BEGIN;
-extern const char* RED_END;
-extern const char* GREEN_BEGIN;
-extern const char* GREEN_END;
-extern const char* CYAN_BEGIN;
-extern const char* CYAN_END;
-extern const char* BOLD_RED_BEGIN;
-extern const char* BOLD_RED_END;
-extern const char* BOLD_YELLOW_BEGIN;
-extern const char* BOLD_YELLOW_END;
-extern const char* BOLD_GOLD_BEGIN;
-extern const char* BOLD_GOLD_END;
-extern const char* BOLD_WHITE_BEGIN;
-extern const char* BOLD_WHITE_END;
+extern const char *BOLD_GREEN_BEGIN;
+extern const char *BOLD_GREEN_END;
+extern const char *PURPLE_BEGIN;
+extern const char *PURPLE_END;
+extern const char *RED_BEGIN;
+extern const char *RED_END;
+extern const char *GREEN_BEGIN;
+extern const char *GREEN_END;
+extern const char *CYAN_BEGIN;
+extern const char *CYAN_END;
+extern const char *BOLD_RED_BEGIN;
+extern const char *BOLD_RED_END;
+extern const char *BOLD_YELLOW_BEGIN;
+extern const char *BOLD_YELLOW_END;
+extern const char *BOLD_GOLD_BEGIN;
+extern const char *BOLD_GOLD_END;
+extern const char *BOLD_WHITE_BEGIN;
+extern const char *BOLD_WHITE_END;
 } //namespace Html
 } //namespace Colors
 } //namespace VcoreDPL

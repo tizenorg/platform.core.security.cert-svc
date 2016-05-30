@@ -26,8 +26,7 @@
 
 namespace ValidationCore {
 
-class CryptoInit : public VcoreDPL::Noncopyable
-{
+class CryptoInit : public VcoreDPL::Noncopyable {
 public:
 	CryptoInit();
 	virtual ~CryptoInit();

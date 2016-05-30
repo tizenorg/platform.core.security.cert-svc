@@ -32,7 +32,7 @@
 
 namespace ValidationCore {
 
-const CertificateIdentifier& createCertificateIdentifier()
+const CertificateIdentifier &createCertificateIdentifier()
 {
 	static CertificateIdentifier certificateIdentifier;
 	static bool initialized = false;
@@ -42,18 +42,15 @@ const CertificateIdentifier& createCertificateIdentifier()
 		std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
 		LogDebug("File with fingerprint list is : " << file);
 		LogDebug("File with fingerprint list schema is : " << schema);
-
 		// Read the fingerprint original list.
 		CertificateConfigReader reader;
 		reader.initialize(file, schema);
 		reader.read(certificateIdentifier);
 
 		// Check the fingerprint extention list exist.
-		if (std::ifstream(FINGERPRINT_LIST_EXT_PATH))
-		{
+		if (std::ifstream(FINGERPRINT_LIST_EXT_PATH)) {
 			std::string extFile(FINGERPRINT_LIST_EXT_PATH);
 			LogDebug("Exist fingerprint extention file, add it.");
-
 			// Read the fingerprint extention list.
 			CertificateConfigReader extReader;
 			extReader.initialize(extFile, schema);
@@ -63,7 +60,7 @@ const CertificateIdentifier& createCertificateIdentifier()
 		initialized = true;
 	}
 
-    return certificateIdentifier;
+	return certificateIdentifier;
 }
 
 } // namespace ValidationCore

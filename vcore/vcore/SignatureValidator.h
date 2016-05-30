@@ -64,37 +64,37 @@ using UriList = std::list<std::string>;
  */
 class SignatureValidator {
 public:
-    SignatureValidator(const SignatureFileInfo &info);
-    virtual ~SignatureValidator();
+	SignatureValidator(const SignatureFileInfo &info);
+	virtual ~SignatureValidator();
 
-    SignatureValidator() = delete;
-    SignatureValidator(const SignatureValidator &) = delete;
-    const SignatureValidator &operator=(const SignatureValidator &) = delete;
+	SignatureValidator() = delete;
+	SignatureValidator(const SignatureValidator &) = delete;
+	const SignatureValidator &operator=(const SignatureValidator &) = delete;
 
-    VCerr check(
-        const std::string &contentPath,
-        bool checkOcsp,
-        bool checkReferences,
-        SignatureData &outData);
+	VCerr check(
+		const std::string &contentPath,
+		bool checkOcsp,
+		bool checkReferences,
+		SignatureData &outData);
 
-    VCerr checkList(
-        bool checkOcsp,
-        const UriList &uriList,
-        SignatureData &outData);
+	VCerr checkList(
+		bool checkOcsp,
+		const UriList &uriList,
+		SignatureData &outData);
 
-    /*
-     *  @Remarks : cert list isn't completed with self-signed root CA system cert
-     *             if completeWithSystemCert is false.
-     */
-    VCerr makeChainBySignature(
-        bool completeWithSystemCert,
-        CertificateList &certList);
+	/*
+	 *  @Remarks : cert list isn't completed with self-signed root CA system cert
+	 *             if completeWithSystemCert is false.
+	 */
+	VCerr makeChainBySignature(
+		bool completeWithSystemCert,
+		CertificateList &certList);
 
-    std::string errorToString(int code);
+	std::string errorToString(int code);
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_pImpl;
+	class Impl;
+	std::unique_ptr<Impl> m_pImpl;
 };
 
 } // namespace ValidationCore

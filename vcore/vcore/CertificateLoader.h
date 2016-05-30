@@ -25,83 +25,80 @@
 #include <vcore/Certificate.h>
 
 namespace ValidationCore {
-class CertificateLoader : public VcoreDPL::Noncopyable
-{
-  public:
-    class CertificateLoaderComparator
-    {
-      public:
-        virtual bool compare(X509 *x509cert) = 0;
-        virtual ~CertificateLoaderComparator()
-        {
-        }
-    };
+class CertificateLoader : public VcoreDPL::Noncopyable {
+public:
+	class CertificateLoaderComparator {
+	public:
+		virtual bool compare(X509 *x509cert) = 0;
+		virtual ~CertificateLoaderComparator()
+		{
+		}
+	};
 
-    enum CertificateLoaderResult
-    {
-        NO_ERROR,
-        CERTIFICATE_NOT_FOUND,
-        UNSUPPORTED_CERTIFICATE_FIELD,
-        WRONG_ARGUMENTS,
-        CERTIFICATE_SECURITY_ERROR,                  //!< there are some issues with certificate security (i.e. key too short)
-        UNKNOWN_ERROR
-    };
+	enum CertificateLoaderResult {
+		NO_ERROR,
+		CERTIFICATE_NOT_FOUND,
+		UNSUPPORTED_CERTIFICATE_FIELD,
+		WRONG_ARGUMENTS,
+		CERTIFICATE_SECURITY_ERROR,                  //!< there are some issues with certificate security (i.e. key too short)
+		UNKNOWN_ERROR
+	};
 
-    CertificateLoader()
-    {
-    }
+	CertificateLoader()
+	{
+	}
 
-    virtual ~CertificateLoader()
-    {
-    }
+	virtual ~CertificateLoader()
+	{
+	}
 
-    CertificateLoaderResult loadCertificate(const std::string& storage,
-            CertificateLoaderComparator *cmp);
+	CertificateLoaderResult loadCertificate(const std::string &storage,
+											CertificateLoaderComparator *cmp);
 
-    CertificateLoaderResult loadCertificateBasedOnSubjectName(
-            const std::string &subjectName);
-    CertificateLoaderResult loadCertificateBasedOnExponentAndModulus(
-            const std::string &m_modulus,
-            const std::string  &m_exponent);
-    // KW     CertificateLoaderResult loadCertificateBasedOnIssuerName(const std::string &isserName,
-    // KW       const std::string &serialNumber);
+	CertificateLoaderResult loadCertificateBasedOnSubjectName(
+		const std::string &subjectName);
+	CertificateLoaderResult loadCertificateBasedOnExponentAndModulus(
+		const std::string &m_modulus,
+		const std::string  &m_exponent);
+	// KW     CertificateLoaderResult loadCertificateBasedOnIssuerName(const std::string &isserName,
+	// KW       const std::string &serialNumber);
 
-    CertificateLoaderResult loadCertificateFromRawData(
-            const std::string &rawData);
+	CertificateLoaderResult loadCertificateFromRawData(
+		const std::string &rawData);
 
-    CertificateLoaderResult loadCertificateBasedOnDSAComponents(
-            const std::string& strP,
-            const std::string& strQ,
-            const std::string& strG,
-            const std::string& strY,
-            const std::string& strJ,
-            const std::string& strSeed,
-            const std::string& strPGenCounter);
+	CertificateLoaderResult loadCertificateBasedOnDSAComponents(
+		const std::string &strP,
+		const std::string &strQ,
+		const std::string &strG,
+		const std::string &strY,
+		const std::string &strJ,
+		const std::string &strSeed,
+		const std::string &strPGenCounter);
 
-    CertificateLoaderResult loadCertificateWithECKEY(
-            const std::string &curveName,
-            const std::string &publicKey);
+	CertificateLoaderResult loadCertificateWithECKEY(
+		const std::string &curveName,
+		const std::string &publicKey);
 
-    /**
-     * converts base64 encoded node to SSL bignum
-     * allocates mem on *ppBigNum, don't forget to free it later with BN_free!
-     * returns conversion status
-     */
-    static bool convertBase64NodeToBigNum(const std::string& strNode,
-            BIGNUM** ppBigNum);
+	/**
+	 * converts base64 encoded node to SSL bignum
+	 * allocates mem on *ppBigNum, don't forget to free it later with BN_free!
+	 * returns conversion status
+	 */
+	static bool convertBase64NodeToBigNum(const std::string &strNode,
+										  BIGNUM **ppBigNum);
 
-    /*
-     * encodes SSL bignum into base64 octstring
-     * returns conversion status
-     */
-    // KW     static bool convertBigNumToBase64Node(const BIGNUM* pBigNum, std::string& strNode);
+	/*
+	 * encodes SSL bignum into base64 octstring
+	 * returns conversion status
+	 */
+	// KW     static bool convertBigNumToBase64Node(const BIGNUM* pBigNum, std::string& strNode);
 
-    CertificatePtr getCertificatePtr() const
-    {
-        return m_certificatePtr;
-    }
-  private:
-    CertificatePtr m_certificatePtr;
+	CertificatePtr getCertificatePtr() const
+	{
+		return m_certificatePtr;
+	}
+private:
+	CertificatePtr m_certificatePtr;
 };
 } // namespace ValidationCore
 

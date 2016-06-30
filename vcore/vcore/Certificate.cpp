@@ -137,6 +137,10 @@ CertificatePtr Certificate::createFromFile(const std::string &location)
 					  "File content is empty : " << location);
 
 	unsigned char *content = new unsigned char[filesize + 1];
+	if (content == NULL)
+		VcoreThrowMsg(Certificate::Exception::InternalError,
+					  "Fail to allocate memory.");
+
 	memset(content, 0x00, filesize + 1);
 	rewind(fp);
 
@@ -369,6 +373,12 @@ std::string Certificate::getUID(FieldType type) const
 		return std::string();
 
 	char *temp = new char[uid->length + 1];
+
+	if(temp == NULL) {
+		LogError("Fail to allocate memory.");
+		return std::string();
+	}
+
 	memcpy(temp, uid->data, uid->length);
 	temp[uid->length] = 0;
 	std::string uidStr(temp);

@@ -1610,17 +1610,19 @@ int certsvc_get_certificate(CertSvcInstance instance,
 			if (fwrite(certBuffer, sizeof(char), length, fp_write) != length) {
 				LogError("Fail to write certificate.");
 				result = CERTSVC_FAIL;
+				fclose(fp_write);
 				goto error;
 			}
 
-			fclose(fp_write);
 			result = certsvc_certificate_new_from_file(instance, fileName.c_str(), certificate);
 
 			if (result != CERTSVC_SUCCESS) {
 				LogError("Failed to construct certificate from buffer.");
+				fclose(fp_write);
 				goto error;
 			}
 
+			fclose(fp_write);
 			unlink(fileName.c_str());
 		}
 

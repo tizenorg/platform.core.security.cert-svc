@@ -39,7 +39,7 @@
 
 #include <vcore/SignatureValidator.h>
 
-#ifdef PROFILE_MOBILE
+#ifdef TIZEN_PROFILE_MOBILE
 #include <cchecker/ocsp.h>
 #endif
 
@@ -410,12 +410,10 @@ VCerr SignatureValidator::Impl::baseCheck(
 		return E_SIG_NONE;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
-#ifdef PROFILE_MOBILE
+#ifdef TIZEN_PROFILE_MOBILE
 		LogInfo("Launch cert-checker.");
-
 		if (cchecker_ocsp_request() != 0)
 			LogError("Load cert-checker failed.");
-
 #endif
 	} catch (const std::exception &e) {
 		LogError("std exception occured : " << e.what());
@@ -474,12 +472,10 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		return E_SIG_NONE;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
-#ifdef PROFILE_MOBILE
+#ifdef TIZEN_PROFILE_MOBILE
 		LogInfo("Launch cert-checker.");
-
 		if (cchecker_ocsp_request() != 0)
 			LogError("Load cert-checker failed.");
-
 #endif
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::checkList");

@@ -101,7 +101,11 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
          -DCERT_SVC_RO_PATH=%CERT_SVC_RO_PATH \
          -DCERT_SVC_DB=%CERT_SVC_DB \
          -DCERT_SVC_PKCS12=%CERT_SVC_PKCS12 \
-         -DPROFILE_TARGET=%{?profile} \
+%if "%{?profile}" == "mobile"
+         -DTIZEN_PROFILE_MOBILE:BOOL=ON \
+%else
+         -DTIZEN_PROFILE_MOBILE:BOOL=OFF \
+%endif
 %if 0%{?certsvc_test_build}
          -DCERTSVC_TEST_BUILD=1 \
          -DCERT_SVC_TESTS=%CERT_SVC_TESTS \

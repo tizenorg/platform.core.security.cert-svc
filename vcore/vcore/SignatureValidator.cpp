@@ -407,13 +407,18 @@ VCerr SignatureValidator::Impl::baseCheck(
 		return E_SIG_INVALID_FORMAT;
 	} catch (const Ocsp::Exception::OcspUnsupported &e) {
 		LogInfo("Ocsp unsupported : " << e.DumpToString());
-		return E_SIG_NONE;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
 #ifdef TIZEN_PROFILE_MOBILE
 		LogInfo("Launch cert-checker.");
-		if (cchecker_ocsp_request() != 0)
-			LogError("Load cert-checker failed.");
+		try {
+			if (cchecker_ocsp_request() != 0)
+				LogError("Load cert-checker failed.");
+		} catch (const std::exception &e) {
+			LogError("std exception occured while cchecker running : " << e.what());
+		} catch (...) {
+			LogError("Unknown exception occuured while cchecker running. ");
+		}
 #endif
 	} catch (const std::exception &e) {
 		LogError("std exception occured : " << e.what());
@@ -469,13 +474,18 @@ VCerr SignatureValidator::Impl::baseCheckList(
 		return E_SIG_INVALID_FORMAT;
 	} catch (const Ocsp::Exception::OcspUnsupported &e) {
 		LogInfo("Ocsp unsupported : " << e.DumpToString());
-		return E_SIG_NONE;
 	} catch (const Ocsp::Exception::Base &e) {
 		LogInfo("Ocsp check throw exeption : " << e.DumpToString());
 #ifdef TIZEN_PROFILE_MOBILE
 		LogInfo("Launch cert-checker.");
-		if (cchecker_ocsp_request() != 0)
-			LogError("Load cert-checker failed.");
+		try {
+			if (cchecker_ocsp_request() != 0)
+				LogError("Load cert-checker failed.");
+		} catch (const std::exception &e) {
+			LogError("std exception occured while cchecker running : " << e.what());
+		} catch (...) {
+			LogError("Unknown exception occuured while cchecker running. ");
+		}
 #endif
 	} catch (...) {
 		LogError("Unknown exception in SignatureValidator::checkList");

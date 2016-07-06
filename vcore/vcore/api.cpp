@@ -1610,7 +1610,6 @@ int certsvc_get_certificate(CertSvcInstance instance,
 			if (fwrite(certBuffer, sizeof(char), length, fp_write) != length) {
 				LogError("Fail to write certificate.");
 				result = CERTSVC_FAIL;
-				fclose(fp_write);
 				goto error;
 			}
 
@@ -1618,24 +1617,26 @@ int certsvc_get_certificate(CertSvcInstance instance,
 
 			if (result != CERTSVC_SUCCESS) {
 				LogError("Failed to construct certificate from buffer.");
-				fclose(fp_write);
 				goto error;
 			}
 
-			fclose(fp_write);
 			unlink(fileName.c_str());
 		}
 
 		result = CERTSVC_SUCCESS;
 	} catch (std::bad_alloc &) {
-		return CERTSVC_BAD_ALLOC;
+		result = CERTSVC_BAD_ALLOC;
 	} catch (...) {}
 
 error:
+	if (x509Struct)
+		X509_free(x509Struct);
 
-	if (x509Struct) X509_free(x509Struct);
+	if (pBio)
+		BIO_free(pBio);
 
-	if (pBio) BIO_free(pBio);
+	if (fp_write)
+		fclose(fp_write);
 
 	return result;
 }

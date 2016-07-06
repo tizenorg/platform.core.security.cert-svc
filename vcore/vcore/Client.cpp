@@ -68,12 +68,10 @@ void initialize_req_data(VcoreRequestData *pData)
 
 CertSvcStoreCertList *createStoreListNode(VcoreCertResponseData *cert)
 {
-	CertSvcStoreCertList *node = NULL;
-
-	if (cert == NULL || cert->gname == NULL || cert->title == NULL)
+	if (cert == NULL)
 		return NULL;
 
-	node = (CertSvcStoreCertList *)malloc(sizeof(CertSvcStoreCertList));
+	CertSvcStoreCertList *node = (CertSvcStoreCertList *)malloc(sizeof(CertSvcStoreCertList));
 
 	if (node == NULL)
 		return NULL;

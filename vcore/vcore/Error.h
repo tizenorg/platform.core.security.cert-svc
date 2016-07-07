@@ -33,11 +33,12 @@ const VCerr E_SIG_INVALID_SIG    = -4;
 const VCerr E_SIG_INVALID_REF    = -5;
 const VCerr E_SIG_CERT_EXPIRED   = -6;
 const VCerr E_SIG_CERT_NOT_YET   = -7;
-const VCerr E_SIG_DISREGARDED    = -8;
-const VCerr E_SIG_REVOKED        = -9;
-const VCerr E_SIG_PLUGIN         = -10;
-const VCerr E_SIG_OUT_OF_MEM     = -11;
-const VCerr E_SIG_UNKNOWN        = -12;
+const VCerr E_SIG_CERT_REVOKED   = -8;
+const VCerr E_SIG_DISREGARDED    = -9;
+const VCerr E_SIG_REVOKED        = -10;
+const VCerr E_SIG_PLUGIN         = -11;
+const VCerr E_SIG_OUT_OF_MEM     = -12;
+const VCerr E_SIG_UNKNOWN        = -13;
 
 const VCerr E_SCOPE_FIRST        = E_SIG_INVALID_FORMAT;
 const VCerr E_SCOPE_LAST         = E_SIG_UNKNOWN;

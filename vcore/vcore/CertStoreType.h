@@ -36,6 +36,7 @@ const Type TIZEN_DEVELOPER = 1;
 const Type TIZEN_TEST = 1 << 1;
 const Type TIZEN_VERIFY = 1 << 2;
 const Type TIZEN_STORE = 1 << 3;
+const Type TIZEN_REVOKED = 1 << 4;
 // RootCA's visibility level : public
 const Type VIS_PUBLIC = 1 << 6;
 // RootCA's visibility level : partner

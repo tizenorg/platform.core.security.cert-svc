@@ -289,6 +289,11 @@ VCerr SignatureValidator::Impl::preStep(void)
 	// Check root CA certificate has proper domain.
 	LogDebug("root certificate from " << storeIdSet.typeToString() << " domain");
 
+	if (storeIdSet.contains(TIZEN_REVOKED)) {
+		LogInfo("root certificate is revoked!");
+		return E_SIG_CERT_REVOKED;
+	}
+
 	if (m_data.isAuthorSignature()) {
 		if (!storeIdSet.contains(TIZEN_DEVELOPER)) {
 			LogError("author-signature.xml's root certificate "

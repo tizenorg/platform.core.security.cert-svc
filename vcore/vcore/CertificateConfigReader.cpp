@@ -38,6 +38,7 @@ const std::string TOKEN_VALUE_TIZEN_DEVELOPER = "tizen-developer";
 const std::string TOKEN_VALUE_TIZEN_TEST = "tizen-test";
 const std::string TOKEN_VALUE_TIZEN_VERIFY = "tizen-verify";
 const std::string TOKEN_VALUE_TIZEN_STORE = "tizen-store";
+const std::string TOKEN_VALUE_TIZEN_REVOKED = "tizen-revoked";
 const std::string TOKEN_VALUE_VISIBILITY_PUBLIC = "tizen-public";
 const std::string TOKEN_VALUE_VISIBILITY_PARTNER = "tizen-partner";
 const std::string TOKEN_VALUE_VISIBILITY_PLATFORM = "tizen-platform";
@@ -122,6 +123,8 @@ void CertificateConfigReader::tokenCertificateDomain(CertificateIdentifier &)
 		m_certificateDomain = CertStoreId::TIZEN_VERIFY;
 	} else if (name == TOKEN_VALUE_TIZEN_STORE) {
 		m_certificateDomain = CertStoreId::TIZEN_STORE;
+	} else if (name == TOKEN_VALUE_TIZEN_REVOKED) {
+		m_certificateDomain = CertStoreId::TIZEN_REVOKED;
 	} else if (name == TOKEN_VALUE_VISIBILITY_PUBLIC) {
 		m_certificateDomain = CertStoreId::VIS_PUBLIC;
 	} else if (name == TOKEN_VALUE_VISIBILITY_PARTNER) {

@@ -37,28 +37,33 @@ const CertificateIdentifier &createCertificateIdentifier()
 	static CertificateIdentifier certificateIdentifier;
 	static bool initialized = false;
 
-	if (!initialized) {
-		std::string file(FINGERPRINT_LIST_PATH);
-		std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
-		LogDebug("File with fingerprint list is : " << file);
-		LogDebug("File with fingerprint list schema is : " << schema);
-		// Read the fingerprint original list.
-		CertificateConfigReader reader;
-		reader.initialize(file, schema);
-		reader.read(certificateIdentifier);
+	if (initialized)
+		return certificateIdentifier;
 
-		// Check the fingerprint extention list exist.
-		if (std::ifstream(FINGERPRINT_LIST_EXT_PATH)) {
-			std::string extFile(FINGERPRINT_LIST_EXT_PATH);
-			LogDebug("Exist fingerprint extention file, add it.");
-			// Read the fingerprint extention list.
-			CertificateConfigReader extReader;
-			extReader.initialize(extFile, schema);
-			extReader.read(certificateIdentifier);
-		}
+	std::string file(FINGERPRINT_LIST_PATH);
+	std::string schema(FINGERPRINT_LIST_SCHEMA_PATH);
+	LogDebug("File with fingerprint list is : " << file);
+	LogDebug("File with fingerprint list schema is : " << schema);
+	// Read the fingerprint original list.
+	CertificateConfigReader reader;
+	reader.initialize(file, schema);
+	reader.read(certificateIdentifier);
 
-		initialized = true;
+	if (std::ifstream(FINGERPRINT_LIST_EXT_PATH)) {
+		LogInfo(FINGERPRINT_LIST_EXT_PATH << " exist, add it.");
+		CertificateConfigReader exReader;
+		exReader.initialize(FINGERPRINT_LIST_EXT_PATH, schema);
+		exReader.read(certificateIdentifier);
 	}
+
+	if (std::ifstream(FINGERPRINT_LIST_RW_PATH)) {
+		LogInfo(FINGERPRINT_LIST_RW_PATH << " exist, add it.");
+		CertificateConfigReader rwReader;
+		rwReader.initialize(FINGERPRINT_LIST_RW_PATH, schema);
+		rwReader.read(certificateIdentifier);
+	}
+
+	initialized = true;
 
 	return certificateIdentifier;
 }

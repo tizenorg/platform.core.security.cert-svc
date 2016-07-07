@@ -78,6 +78,9 @@ std::string Set::typeToString() const
 	if (m_certificateStorage & TIZEN_STORE)
 		ret += "TIZEN_STORE ";
 
+	if (m_certificateStorage & TIZEN_REVOKED)
+		ret += "TIZEN_REVOKED ";
+
 	if (m_certificateStorage & VIS_PUBLIC)
 		ret += "VIS_PUBLIC ";
 

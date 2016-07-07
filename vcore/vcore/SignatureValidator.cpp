@@ -282,6 +282,15 @@ VCerr SignatureValidator::Impl::preStep(void)
 	if (result != E_SIG_NONE)
 		return result;
 
+	for (const auto &certptr : m_data.getCertList()) {
+		auto storeIdSet = createCertificateIdentifier().find(certptr);
+		if (!storeIdSet.contains(TIZEN_REVOKED))
+			continue;
+
+		LogInfo("Revoked certificate: " << certptr->getOneLine());
+		return E_SIG_REVOKED;
+	}
+
 	// Get Identifier from fingerprint original, extention file.
 	LogDebug("Start to check certificate domain.");
 	auto certificatePtr = m_data.getCertList().back();

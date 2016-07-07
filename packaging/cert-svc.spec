@@ -24,6 +24,7 @@ BuildRequires: pkgconfig(libsystemd-journal)
 BuildRequires: pkgconfig(sqlite3)
 BuildRequires: ca-certificates
 BuildRequires: ca-certificates-devel
+BuildRequires: ca-certificates-tizen-devel
 Requires: ca-certificates
 Requires: ca-certificates-tizen
 Requires: security-config
@@ -97,6 +98,7 @@ export FFLAGS="$FFLAGS -DTIZEN_EMULATOR_MODE"
          -DTZ_SYS_CA_CERTS=%TZ_SYS_CA_CERTS \
          -DTZ_SYS_CA_CERTS_ORIG=%TZ_SYS_CA_CERTS_ORIG \
          -DTZ_SYS_CA_BUNDLE=%TZ_SYS_CA_BUNDLE \
+         -DFINGERPRINT_LIST_RW_PATH=%TZ_SYS_REVOKED_CERTS_FINGERPRINTS_RUNTIME \
          -DCERT_SVC_PATH=%CERT_SVC_PATH \
          -DCERT_SVC_RO_PATH=%CERT_SVC_RO_PATH \
          -DCERT_SVC_DB=%CERT_SVC_DB \

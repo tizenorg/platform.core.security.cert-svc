@@ -40,6 +40,7 @@ SET(CA_CERTS_PATH ${TZ_SYS_RO_SHARE}/ca-certificates)
 ADD_DEFINITIONS("-DTZ_SYS_CA_CERTS_TIZEN=\"${CA_CERTS_PATH}/tizen\"")
 ADD_DEFINITIONS("-DFINGERPRINT_LIST_PATH=\"${CA_CERTS_PATH}/fingerprint/fingerprint_list.xml\"")
 ADD_DEFINITIONS("-DFINGERPRINT_LIST_EXT_PATH=\"${CA_CERTS_PATH}/fingerprint/fingerprint_list_ext.xml\"")
+ADD_DEFINITIONS("-DFINGERPRINT_LIST_RW_PATH=\"${FINGERPRINT_LIST_RW_PATH}\"")
 ADD_DEFINITIONS("-DFINGERPRINT_LIST_SCHEMA_PATH=\"${CA_CERTS_PATH}/fingerprint/fingerprint_list.xsd\"")
 
 CONFIGURE_FILE(cert-svc-vcore.pc.in cert-svc-vcore.pc @ONLY)

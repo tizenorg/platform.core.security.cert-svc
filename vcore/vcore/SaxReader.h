@@ -122,12 +122,6 @@ public:
 	 */
 	NodeType type();
 
-	/**
-	 * Save all contonet of xml file which is between current tag and
-	 * it's close tag into buffer.
-	 */
-	void dumpNode(std::string &buffer);
-
 private:
 	/*
 	 * internal libxml text reader

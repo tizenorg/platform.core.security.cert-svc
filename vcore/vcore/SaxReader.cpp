@@ -243,24 +243,4 @@ SaxReader::NodeType SaxReader::type()
 	}
 }
 
-void SaxReader::dumpNode(std::string &buffer)
-{
-	xmlBufferPtr buff = xmlBufferCreate();
-	xmlNodePtr node = xmlTextReaderExpand(m_reader);
-
-	if (!node) {
-		xmlBufferFree(buff);
-		VcoreThrowMsg(SaxReader::Exception::ParserInternalError,
-					  "xmlTextReaderExpand error");
-	}
-
-	int size = xmlNodeDump(buff, node->doc, node, 0, 0);
-
-	if (size > 0) {
-		buffer.insert(0, reinterpret_cast<char *>(buff->content), size);
-	}
-
-	xmlBufferFree(buff);
-}
-
 } // namespace ValidationCore

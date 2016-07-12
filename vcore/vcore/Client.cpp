@@ -489,16 +489,19 @@ int vcore_client_get_certificate_from_store(CertStoreType storeType, const char 
 
 	if (recvData.dataBlockLen > 0 && recvData.dataBlockLen <= VCORE_MAX_RECV_DATA_SIZE) {
 		outData = (char *)malloc(recvData.dataBlockLen + 1);
+		if (outData == nullptr)
+			return CERTSVC_BAD_ALLOC;
+
 		memset(outData, 0x00, recvData.dataBlockLen + 1);
 		memcpy(outData, recvData.dataBlock, recvData.dataBlockLen);
 		*certData = outData;
 		*certSize = recvData.dataBlockLen;
+
+		return recvData.result;
 	} else {
 		LogError("revcData length is wrong : " << recvData.dataBlockLen);
 		return CERTSVC_WRONG_ARGUMENT;
 	}
-
-	return recvData.result;
 }
 
 int vcore_client_delete_certificate_from_store(CertStoreType storeType, const char *gname)

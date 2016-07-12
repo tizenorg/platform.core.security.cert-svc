@@ -560,7 +560,10 @@ int extractPkcs12(const std::string &path,
 	PKCS12_free(container);
 
 	if (result != 1) {
-		LogError("Failed to parse the file passed. openssl err : " << ERR_get_error());
+		unsigned long e = ERR_get_error();
+		char buf[1024];
+		ERR_error_string_n(e, buf, 1023);
+		LogError("Failed to parse the file passed. openssl err: " << buf);
 		return CERTSVC_FAIL;
 	}
 
@@ -837,9 +840,20 @@ int pkcs12_has_password(const char *filepath, int *passworded)
 	if (cert != NULL)
 		X509_free(cert);
 
-	if (result != 1 && ERR_GET_REASON(ERR_peek_last_error()) != PKCS12_R_MAC_VERIFY_FAILURE)
-		return CERTSVC_FAIL;
+	if (result != 1) {
+		unsigned long e = ERR_get_error();
+		if (ERR_GET_REASON(e) == PKCS12_R_MAC_VERIFY_FAILURE) {
+			LogInfo("verify failed without password. file(" << filepath << ") is password-protected.");
+			*passworded = CERTSVC_TRUE;
+		} else {
+			char buf[1024];
+			ERR_error_string_n(e, buf, 1023);
+			LogError("Error on PKCS12_pasre file(" << filepath << "): " << buf);
+			return CERTSVC_FAIL;
+		}
+	} else {
+		*passworded = CERTSVC_FALSE;
+	}
 
-	*passworded = (result == 1) ? 1 : 0;
 	return CERTSVC_SUCCESS;
 }

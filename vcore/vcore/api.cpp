@@ -1559,86 +1559,85 @@ int certsvc_get_certificate(CertSvcInstance instance,
 							const char *gname,
 							CertSvcCertificate *certificate)
 {
-	int result = CERTSVC_SUCCESS;
-	char *certBuffer = NULL;
-	std::string fileName;
-	size_t length = 0;
-	FILE *fp_write = NULL;
-	BIO *pBio = NULL;
-	X509 *x509Struct = NULL;
-
 	try {
-		result = vcore_client_get_certificate_from_store(storeType, gname, &certBuffer, &length, PEM_CRT);
+		size_t len = 0;
+		char *certbuf = nullptr;
+		int result = vcore_client_get_certificate_from_store(storeType, gname, &certbuf,
+															 &len, PEM_CRT);
 
 		if (result != CERTSVC_SUCCESS) {
 			LogError("Failed to get certificate buffer from store.");
 			return result;
 		}
+		std::unique_ptr<char, void(*)(void *)> certbufptr(certbuf, free);
 
-		pBio = BIO_new(BIO_s_mem());
+		LogInfo("certbuf: " << certbuf);
 
-		if (pBio == NULL) {
+		std::unique_ptr<BIO, int(*)(BIO *)> bioptr(BIO_new(BIO_s_mem()), BIO_free);
+		if (bioptr == nullptr) {
 			LogError("Failed to allocate memory.");
-			result = CERTSVC_BAD_ALLOC;
+			return CERTSVC_BAD_ALLOC;
 		}
 
-		length = BIO_write(pBio, (const void *)certBuffer, (int)length);
+		len = BIO_write(bioptr.get(), (const void *)certbuf, (int)len);
 
-		if ((int)length < 1) {
+		if ((int)len < 1) {
 			LogError("Failed to load cert into bio.");
-			result = CERTSVC_BAD_ALLOC;
+			return CERTSVC_BAD_ALLOC;
 		}
 
-		x509Struct = PEM_read_bio_X509(pBio, NULL, 0, NULL);
+		std::unique_ptr<X509, void(*)(X509 *)> x509ptr(
+				PEM_read_bio_X509_AUX(bioptr.get(), nullptr, nullptr, nullptr), X509_free);
 
-		if (x509Struct != NULL) {
-			CertificatePtr cert(new Certificate(x509Struct));
-			certificate->privateInstance = instance;
-			certificate->privateHandler = impl(instance)->addCert(cert);
+		CertificatePtr cert;
 
-			if (certBuffer != NULL) free(certBuffer);
-		} else {
-			fileName.append(CERTSVC_PKCS12_STORAGE_DIR);
-			fileName.append(gname);
-
-			if (!(fp_write = fopen(fileName.c_str(), "w"))) {
-				LogError("Failed to open the file for writing, [" << fileName << "].");
-				result = CERTSVC_FAIL;
-				goto error;
-			}
-
-			if (fwrite(certBuffer, sizeof(char), length, fp_write) != length) {
-				LogError("Fail to write certificate.");
-				result = CERTSVC_FAIL;
-				goto error;
-			}
-
-			result = certsvc_certificate_new_from_file(instance, fileName.c_str(), certificate);
-
-			if (result != CERTSVC_SUCCESS) {
-				LogError("Failed to construct certificate from buffer.");
-				goto error;
-			}
-
-			unlink(fileName.c_str());
+		if (x509ptr != nullptr) {
+			LogInfo("PEM_read_bio_X509_AUX returned x509 struct!");
+			try {
+				cert.reset(new Certificate(x509ptr.get()));
+				LogInfo("Parse cert success with PEM(AUX) form!");
+			} catch (...) {}
 		}
 
-		result = CERTSVC_SUCCESS;
+		if (cert == nullptr) {
+			x509ptr.reset(PEM_read_bio_X509(bioptr.get(), nullptr, nullptr, nullptr));
+			if (x509ptr != nullptr) {
+				LogInfo("PEM_read_bio_X509 returned x509 struct!");
+				try {
+					cert.reset(new Certificate(x509ptr.get()));
+					LogInfo("Parse cert success with PEM form!");
+				} catch (...) {}
+			}
+		}
+
+		if (cert == nullptr) {
+			try {
+				cert.reset(new Certificate(certbuf, Certificate::FormType::FORM_BASE64));
+				LogInfo("Parse cert success with Base64 form!");
+			} catch (...) {}
+		}
+
+		if (cert == nullptr) {
+			try {
+				cert.reset(new Certificate(certbuf, Certificate::FormType::FORM_DER));
+				LogInfo("Parse cert success with DER form!");
+			} catch (...) {}
+		}
+
+		if (cert == nullptr) {
+			LogError("Failed to parse cert on all of PEM/DER/Base64 form!");
+			return CERTSVC_INVALID_CERTIFICATE;
+		}
+
+		certificate->privateInstance = instance;
+		certificate->privateHandler = impl(instance)->addCert(cert);
+
+		return CERTSVC_SUCCESS;
 	} catch (std::bad_alloc &) {
-		result = CERTSVC_BAD_ALLOC;
-	} catch (...) {}
-
-error:
-	if (x509Struct)
-		X509_free(x509Struct);
-
-	if (pBio)
-		BIO_free(pBio);
-
-	if (fp_write)
-		fclose(fp_write);
-
-	return result;
+		return CERTSVC_BAD_ALLOC;
+	} catch (...) {
+		return CERTSVC_FAIL;
+	}
 }
 
 int certsvc_pkcs12_check_alias_exists_in_store(CertSvcInstance instance,

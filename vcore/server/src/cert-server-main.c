@@ -111,7 +111,7 @@ void CertSvcServerComm(void)
 		FD_ZERO(&fd);
 		FD_SET(server_sockfd, &fd);
 
-		tv.tv_sec = 1;
+		tv.tv_sec = 10;
 		tv.tv_usec = 0;
 
 		memset(&recv_data, 0x00, sizeof(VcoreRequestData));

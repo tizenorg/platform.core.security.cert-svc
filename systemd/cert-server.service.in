@@ -5,4 +5,5 @@ Description=Start cert server for cert-svc managing root ssl certs
 ExecStart=@TZ_SYS_BIN@/cert-server
 User=security_fw
 Group=security_fw
+SmackProcessLabel=System
 Sockets=cert-server.socket

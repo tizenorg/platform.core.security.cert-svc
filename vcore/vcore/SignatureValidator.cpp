@@ -369,6 +369,7 @@ VCerr SignatureValidator::Impl::baseCheck(
 		if (!m_data.isAuthorSignature() && m_data.getSignatureNumber() != 1)
 			m_context.allowBrokenChain = true;
 
+#if 0
 		// XmlSec validate
 		XmlSecSingleton::Instance().validate(m_context);
 		// Check reference of 'Object' tag - OID
@@ -394,6 +395,10 @@ VCerr SignatureValidator::Impl::baseCheck(
 			LogError("Certificate is Revoked by OCSP server.");
 			return E_SIG_REVOKED;
 		}
+#endif
+	(void) contentPath;
+	(void) checkOcsp;
+	(void) checkReferences;
 
 		LogDebug("Signature validation check done successfully ");
 	} catch (const CertificateCollection::Exception::Base &e) {

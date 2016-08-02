@@ -45,6 +45,8 @@
 
 #include <vcore/XmlsecAdapter.h>
 
+#define VCORE_ERRORS_BUFFER_SIZE 1024
+
 IMPLEMENT_SINGLETON(ValidationCore::XmlSec)
 
 namespace {
@@ -166,15 +168,34 @@ void LogDebugPrint(const char *file,
 				   int reason,
 				   const char *msg)
 {
-	std::stringstream ss;
-	ss << "[" << file << ":" << line << "][" << func
-	   << "] : [" << errorObject << "] : [" << errorSubject
-	   << "] : [" << msg << "]" << std::endl;
+	// Get error message from xmlsec.
+	const char *errorMsg = NULL;
+	for (xmlSecSize i = 0; (i < XMLSEC_ERRORS_MAX_NUMBER) &&
+							(xmlSecErrorsGetMsg(i) != NULL); ++i) {
+		if (xmlSecErrorsGetCode(i) == reason) {
+			errorMsg = xmlSecErrorsGetMsg(i);
+			break;
+		}
+	}
 
-	if (reason == 256)
-		LogError(ss.str());
+	// Make full error message.
+	char buff[VCORE_ERRORS_BUFFER_SIZE];
+	snprintf(buff,
+			sizeof(buff),
+			"[%s:%d] %s(): obj=%s, subj=%s, error=%d:%s:%s\n",
+			file,
+			line,
+			func,
+			(errorObject != NULL) ? errorObject : "",
+			(errorSubject != NULL) ? errorSubject : "",
+			reason,
+			(errorMsg != NULL) ? errorMsg : "",
+			(msg != NULL) ? msg : "");
+
+	if (reason == XMLSEC_ERRORS_MAX_NUMBER)
+		LogError(buff);
 	else
-		LogDebug(ss.str());
+		LogDebug(buff);
 }
 
 XmlSec::XmlSec()
